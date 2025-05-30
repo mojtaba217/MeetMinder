@@ -28,7 +28,7 @@ A real-time AI meeting assistant with system audio transcription, intelligent to
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/yourusername/meetminder.git
+   git clone https://github.com/mojtaba217/meetminder.git
    cd meetminder
    ```
 
@@ -230,9 +230,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🆘 Support & Issues
 
 - **Website**: [https://meetminder.io/](https://meetminder.io/)
-- **Issues**: [GitHub Issues](https://github.com/yourusername/meetminder/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/meetminder/discussions)
-- **Wiki**: [Documentation Wiki](https://github.com/yourusername/meetminder/wiki)
+- **Issues**: [GitHub Issues](https://github.com/mojtaba217/meetminder/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/mojtaba217/meetminder/discussions)
+- **Wiki**: [Documentation Wiki](https://github.com/mojtaba217/meetminder/wiki)
 
 ## 🙏 Acknowledgments
 
