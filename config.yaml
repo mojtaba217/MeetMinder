@@ -1,0 +1,189 @@
+# MeetMinder Configuration
+# Edit this file to configure your AI meeting assistant
+
+# AI Provider Configuration
+ai_provider:
+  type: azure_openai  # Options: azure_openai, openai, google_gemini
+  
+  # Azure OpenAI Configuration
+  azure_openai:
+    api_key: "your-azure-openai-api-key-here"
+    endpoint: "https://your-resource.openai.azure.com/"
+    api_version: "2024-02-01"
+    model: "gpt-4"
+    deployment_name: "gpt-4"
+  
+  # OpenAI Configuration
+  openai:
+    api_key: "your-openai-api-key-here"
+    model: "gpt-4"
+  
+  # Google Gemini Configuration
+  google_gemini:
+    api_key: "your-gemini-api-key-here"
+    model: "gemini-2.0-flash"
+    project_id: "your-project-id"
+
+# Audio Processing Settings
+audio:
+  mode: dual_stream  # Options: single_stream, dual_stream
+  sample_rate: 44100
+  channels: 1
+  chunk_size: 1024
+  buffer_duration_minutes: 5
+  processing_interval_seconds: 1.6
+  silence_threshold_seconds: 30
+  transcript_segments_max: 50
+  
+  # Dual stream specific settings
+  dual_stream:
+    enable_microphone: true
+    enable_system_audio: true
+    microphone_threshold: 0.001
+    system_audio_threshold: 0.001
+    separate_transcription: true
+    conversation_analysis: true
+    meeting_detection: true
+    content_detection: true
+    solo_mode_detection: true
+  
+  # Whisper settings for local transcription
+  whisper:
+    model_size: base  # Options: tiny, base, small, medium, large
+
+# Transcription Provider Settings
+transcription:
+  provider: local_whisper  # Options: local_whisper, google_speech, azure_speech
+  
+  # Local Whisper settings
+  whisper:
+    model_size: base
+    language: en
+  
+  # Google Speech-to-Text settings
+  google_speech:
+    credentials_path: "path-to-your-service-account.json"
+    language: en-US
+  
+  # Azure Speech settings
+  azure_speech:
+    subscription_key: "your-azure-speech-key"
+    service_region: "your-region"  # e.g., "eastus"
+    language: en-US
+
+# MeetMinder Behavior
+assistant:
+  activation_mode: manual  # Options: manual, auto
+  verbosity: standard  # Options: concise, standard, detailed
+  response_style: professional  # Options: professional, casual, technical
+  auto_hide_behavior: timer  # Options: timer, manual, never
+  input_prioritization: system_audio  # Options: mic, system_audio, balanced
+
+# User Interface Settings
+ui:
+  overlay:
+    # Size and position
+    size_multiplier: 1.0  # 1.0 to 4.0 scaling
+    position: top_center
+    width: 1000
+    height: 60
+    
+    # Appearance
+    opacity: 0.9
+    font_family: "Segoe UI Variable"
+    font_size: 14
+    
+    # Behavior
+    auto_hide_seconds: 5  # 0 to disable
+    show_transcript: false
+    hide_from_sharing: true
+    
+    # Animation
+    fade_animation_steps: 5
+  
+  # Stealth mode settings
+  stealth_mode:
+    always_on_top: true
+    skip_taskbar: true
+    skip_screen_capture: true
+    transparent_background: true
+
+# Global Hotkeys
+hotkeys:
+  trigger_assistance: ctrl+space
+  toggle_overlay: ctrl+b
+  take_screenshot: ctrl+h
+  move_left: alt+left
+  move_right: alt+right
+  move_up: alt+up
+  move_down: alt+down
+  emergency_reset: ctrl+shift+r
+
+# Context Analysis Settings
+context:
+  # Solo mode settings
+  solo_mode:
+    window_title_tracking: true
+    clipboard_history_max: 10
+    code_file_extensions:
+      - .py
+      - .js
+      - .ts
+      - .java
+      - .cpp
+      - .c
+      - .cs
+  
+  # Meeting mode settings
+  meeting_mode:
+    rolling_buffer_minutes: 30
+    question_indicators:
+      - "?"
+      - "what"
+      - "how"
+      - "why"
+      - "when"
+      - "where"
+      - "who"
+    objection_keywords:
+      - "but"
+      - "however"
+      - "concern"
+      - "issue"
+      - "problem"
+      - "worry"
+  
+  # Response settings
+  response_settings:
+    temperature: 0.7
+    max_tokens: 500
+    response_timeout_seconds: 10
+
+# Topic Graph and Knowledge Management
+topic_graph:
+  enabled: true
+  auto_suggestions: true
+  matching_threshold: 0.6
+  new_topic_threshold: 0.3
+  max_matches: 3
+
+# User Profile Settings
+user_profile:
+  enabled: true
+  auto_reload: true
+  include_in_prompts: true
+
+# Debug and Logging
+debug:
+  enabled: false
+  verbose_logging: false
+  save_audio_chunks: false
+  save_transcriptions: false
+  audio_chunk_format: wav
+  max_debug_files: 100
+
+logging:
+  level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
+  file_path: logs/ai_assistant.log
+  max_file_size_mb: 10
+  backup_count: 3

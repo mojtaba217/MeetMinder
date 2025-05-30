@@ -1,0 +1,24 @@
+# Topic Graph Definition
+# Format: Parent -> Child (suggestion: "Optional suggestion text")
+
+Machine Learning -> Supervised Learning (suggestion: "Discuss classification vs regression approaches")
+Machine Learning -> Unsupervised Learning (suggestion: "Explore clustering and dimensionality reduction")
+Machine Learning -> Error Analysis (suggestion: "Ask how to debug your model's loss spikes")
+Machine Learning -> Validation Techniques (suggestion: "Request more robust cross-val strategies")
+
+Data Engineering -> ETL Pipelines (suggestion: "Review data transformation and validation steps")
+Data Engineering -> Data Quality (suggestion: "Discuss monitoring and anomaly detection")
+Data Engineering -> Scalability (suggestion: "Explore distributed processing solutions")
+
+NLP -> Text Preprocessing (suggestion: "Cover tokenization, normalization, and feature extraction")
+NLP -> Language Models (suggestion: "Compare transformer architectures and fine-tuning")
+NLP -> Sentiment Analysis (suggestion: "Discuss approach selection and evaluation metrics")
+
+Computer Vision -> Image Classification (suggestion: "Review CNN architectures and transfer learning")
+Computer Vision -> Object Detection (suggestion: "Compare YOLO, R-CNN, and newer approaches")
+
+Deep Learning -> Neural Networks (suggestion: "Cover architecture design and optimization")
+Deep Learning -> Training Strategies (suggestion: "Discuss learning rates, regularization, and convergence")
+
+Career Development -> Technical Interviews (suggestion: "Practice system design and coding problems")
+Career Development -> Skill Building (suggestion: "Identify learning paths and project ideas")

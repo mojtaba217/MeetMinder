@@ -1,0 +1,32 @@
+# MeetMinder Dependencies
+# Core GUI Framework
+PyQt5>=5.15.0
+
+# AI and ML Libraries
+openai>=1.0.0
+openai-whisper>=20231117
+google-generativeai>=0.3.0
+
+# Audio Processing
+pyaudio>=0.2.11
+sounddevice>=0.4.6
+numpy>=1.21.0
+
+# Configuration and Data
+PyYAML>=6.0
+Pillow>=8.0.0
+
+# System Integration
+keyboard>=0.13.5
+psutil>=5.8.0
+pygetwindow>=0.0.9
+
+# Screen Capture
+mss>=6.1.0
+
+# Async Support
+asyncio-mqtt>=0.11.1
+
+# Optional: Enhanced audio processing
+# scipy>=1.7.0
+# librosa>=0.8.1

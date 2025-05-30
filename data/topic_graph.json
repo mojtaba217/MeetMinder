@@ -1,0 +1,97 @@
+{
+  "topics": [
+    {
+      "name": "Machine Learning",
+      "category": "AI",
+      "subcategory": "Machine Learning",
+      "keywords": [
+        "ml",
+        "model",
+        "training",
+        "algorithm",
+        "neural network"
+      ],
+      "related_topics": [
+        "Deep Learning",
+        "Data Science",
+        "Statistics"
+      ],
+      "suggestions": [
+        "Consider discussing model evaluation metrics",
+        "Explore different algorithm types for this use case",
+        "Discuss data preprocessing requirements"
+      ],
+      "depth_level": 1
+    },
+    {
+      "name": "Model Evaluation",
+      "category": "AI",
+      "subcategory": "Machine Learning",
+      "keywords": [
+        "accuracy",
+        "precision",
+        "recall",
+        "f1",
+        "validation",
+        "overfitting"
+      ],
+      "related_topics": [
+        "Cross Validation",
+        "Hyperparameter Tuning",
+        "Bias-Variance"
+      ],
+      "suggestions": [
+        "Emphasize use of validation sets and cross-validation",
+        "Discuss appropriate metrics for the problem type",
+        "Consider ensemble methods for better performance"
+      ],
+      "depth_level": 2
+    },
+    {
+      "name": "Software Development",
+      "category": "Technology",
+      "subcategory": "Programming",
+      "keywords": [
+        "code",
+        "programming",
+        "development",
+        "software",
+        "application"
+      ],
+      "related_topics": [
+        "Code Review",
+        "Testing",
+        "Architecture"
+      ],
+      "suggestions": [
+        "Follow best practices and coding standards",
+        "Implement proper error handling",
+        "Consider scalability and maintainability"
+      ],
+      "depth_level": 1
+    },
+    {
+      "name": "Code Review",
+      "category": "Technology",
+      "subcategory": "Programming",
+      "keywords": [
+        "review",
+        "pull request",
+        "feedback",
+        "quality",
+        "standards"
+      ],
+      "related_topics": [
+        "Testing",
+        "Documentation",
+        "Version Control"
+      ],
+      "suggestions": [
+        "Focus on code readability and maintainability",
+        "Check for security vulnerabilities",
+        "Ensure proper test coverage"
+      ],
+      "depth_level": 2
+    }
+  ]
+}
