@@ -3,6 +3,7 @@ import ctypes
 import time
 import threading
 import psutil
+import os
 from typing import Dict, Any, Optional, Callable
 from PyQt5 import QtWidgets, QtCore, QtGui
 from PyQt5.QtCore import QTimer, pyqtSignal, QThread, QPropertyAnimation, QEasingCurve, pyqtSlot
@@ -253,6 +254,11 @@ class ModernOverlay(QWidget):
         )
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         
+        # Set window title and icon
+        self.setWindowTitle("MeetMinder")
+        if os.path.exists("MeetMinderIcon.ico"):
+            self.setWindowIcon(QtGui.QIcon("MeetMinderIcon.ico"))
+        
         # Main layout - vertical to stack bar and expandable content
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(0, 0, 0, 0)
@@ -270,9 +276,11 @@ class ModernOverlay(QWidget):
         self.resize(self.scale(1000), self.scale(60))  # Wide horizontal bar
         self.position_window()
         
-        # Start hidden
-        self.setWindowOpacity(0.0)
-        self.hide()
+        # Start visible and ensure it's shown  
+        self.setWindowOpacity(1.0)  # Start fully visible
+        self.is_visible = True      # Set visible state
+        self.show()                 # Show immediately
+        print("✅ Overlay initialized and shown")
     
     def setup_horizontal_bar(self, parent_layout):
         """Setup the main horizontal bar"""
@@ -741,6 +749,11 @@ class ModernOverlay(QWidget):
     def show_overlay(self):
         """Show overlay with animation"""
         if self.is_visible:
+            # During startup, still ensure it's visible even if marked as such
+            if not self.isVisible():
+                print("🔍 Overlay marked visible but not showing - forcing show")
+                self.show()
+                self.animate_fade_in()
             return
         
         self.is_visible = True

@@ -28,8 +28,9 @@ from screen.capture import ScreenCapture
 from utils.hotkeys import AsyncHotkeyManager
 
 # PyQt5 imports for the app
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtWidgets import QApplication, QSplashScreen, QLabel
 from PyQt5.QtCore import QTimer, QMetaObject, Qt
+from PyQt5.QtGui import QIcon, QPixmap, QFont
 
 class AIAssistant:
     def __init__(self):
@@ -39,8 +40,63 @@ class AIAssistant:
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)  # Keep app running even when window is hidden
         
+        # Set application properties
+        self.app.setApplicationName("MeetMinder")
+        self.app.setApplicationDisplayName("MeetMinder")
+        self.app.setApplicationVersion("1.0.0")
+        self.app.setOrganizationName("MeetMinder Project")
+        self.app.setOrganizationDomain("meetminder.io")
+        
+        # Set application icon
+        if os.path.exists("MeetMinderIcon.ico"):
+            self.app.setWindowIcon(QIcon("MeetMinderIcon.ico"))
+            print("✅ MeetMinder icon loaded")
+        
+        # Show loading screen
+        self.splash = self._create_loading_screen()
+        self.splash.show()
+        self.app.processEvents()  # Make sure splash is visible
+        
+        # Initialize components with progress updates
+        self._initialize_components()
+        
+        # Hide loading screen
+        self.splash.finish(None)
+        
+        print("✓ MeetMinder initialized successfully")
+        print("🎯 Ready to start!")
+    
+    def _create_loading_screen(self):
+        """Create a simple loading screen"""
+        # Create a simple pixmap for the splash screen
+        pixmap = QPixmap(400, 200)
+        pixmap.fill(Qt.black)
+        
+        splash = QSplashScreen(pixmap)
+        splash.setStyleSheet("""
+            QSplashScreen {
+                background: #1a1a1a;
+                color: #ffffff;
+                border: 2px solid #0078d4;
+                border-radius: 8px;
+            }
+        """)
+        
+        # Show loading message
+        splash.showMessage("🚀 Loading MeetMinder...\nPlease wait...", 
+                          Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        return splash
+    
+    def _initialize_components(self):
+        """Initialize all MeetMinder components with progress updates"""
+        self.splash.showMessage("🔧 Loading configuration...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.app.processEvents()
+        
         # Load configuration
         self.config = ConfigManager()
+        
+        self.splash.showMessage("🎤 Initializing transcription engine...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.app.processEvents()
         
         # Initialize transcription engine
         print("🎤 Initializing transcription engine...")
@@ -57,6 +113,9 @@ class AIAssistant:
             from core.config import TranscriptionConfig
             fallback_config = TranscriptionConfig(provider="local_whisper")
             self.transcription_engine = TranscriptionEngineFactory.create_engine(fallback_config)
+        
+        self.splash.showMessage("🤖 Loading AI models...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.app.processEvents()
         
         # Load Whisper model for backward compatibility (if using local Whisper)
         self.whisper_model = None
@@ -81,6 +140,9 @@ class AIAssistant:
                 print("   Please ensure Whisper is installed: pip install openai-whisper")
                 sys.exit(1)
         
+        self.splash.showMessage("🧠 Initializing AI components...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.app.processEvents()
+        
         # Initialize components
         self.profile_manager = UserProfileManager(self.config)
         self.topic_manager = TopicGraphManager(self.config)
@@ -96,6 +158,9 @@ class AIAssistant:
         
         # Initialize live topic analyzer
         self.topic_analyzer = LiveTopicAnalyzer(self.ai_helper, self.config)
+        
+        self.splash.showMessage("🎵 Setting up audio processing...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.app.processEvents()
         
         # Choose audio contextualizer based on configuration
         audio_config = self.config.get_audio_config()
@@ -116,6 +181,9 @@ class AIAssistant:
                 whisper_language=self.whisper_language
             )
         
+        self.splash.showMessage("🖥️ Initializing interface...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.app.processEvents()
+        
         self.screen_capture = ScreenCapture()
         self.hotkey_manager = AsyncHotkeyManager(self.config.get_hotkeys_config())
         
@@ -131,11 +199,11 @@ class AIAssistant:
         self.is_running = False
         self.current_context_type = "general"
         
+        self.splash.showMessage("⚙️ Finalizing setup...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.app.processEvents()
+        
         # Setup callbacks
         self._setup_callbacks()
-        
-        print("✓ MeetMinder initialized successfully")
-        print("🎯 Ready to start!")
     
     def _setup_callbacks(self):
         """Setup callbacks for various components"""

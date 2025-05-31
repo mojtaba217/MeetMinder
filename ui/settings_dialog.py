@@ -1,13 +1,14 @@
 import sys
+import os
 from typing import Dict, Any, Callable
 from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel, 
                            QPushButton, QCheckBox, QSpinBox, QComboBox,
                            QGroupBox, QFormLayout, QSlider, QFrame, 
                            QTabWidget, QTextEdit, QLineEdit, QScrollArea,
                            QWidget, QGridLayout, QFileDialog, QMessageBox,
-                           QApplication, QDesktopWidget)
+                           QApplication, QDesktopWidget, QSizePolicy)
 from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtGui import QFont
+from PyQt5.QtGui import QFont, QIcon
 
 class ModernSettingsDialog(QDialog):
     """Modern tabbed settings dialog with organized sections"""
@@ -36,9 +37,13 @@ class ModernSettingsDialog(QDialog):
         """Setup the tabbed settings UI"""
         self.setWindowTitle("MeetMinder Settings")
         
+        # Set window icon
+        if os.path.exists("MeetMinderIcon.ico"):
+            self.setWindowIcon(QIcon("MeetMinderIcon.ico"))
+        
         # Responsive sizing based on screen resolution
-        dialog_width = self.scale(1200)
-        dialog_height = self.scale(800)
+        dialog_width = self.scale(1400)  # Increased width for better content visibility
+        dialog_height = self.scale(900)   # Increased height for better content visibility
         self.setFixedSize(dialog_width, dialog_height)
         
         # Center on screen
@@ -105,16 +110,16 @@ class ModernSettingsDialog(QDialog):
             }}
             QLabel {{
                 color: #ffffff;
-                font-size: {self.scale(13)}px;
-                min-height: {self.scale(25)}px;
-                padding: {self.scale(3)}px;
+                font-size: {self.scale(14)}px;
+                min-height: {self.scale(28)}px;
+                padding: {self.scale(4)}px;
             }}
             QCheckBox {{
                 color: #ffffff;
-                font-size: {self.scale(13)}px;
-                spacing: {self.scale(10)}px;
-                min-height: {self.scale(30)}px;
-                padding: {self.scale(5)}px;
+                font-size: {self.scale(14)}px;
+                spacing: {self.scale(12)}px;
+                min-height: {self.scale(32)}px;
+                padding: {self.scale(6)}px;
             }}
             QCheckBox::indicator {{
                 width: {self.scale(20)}px;
@@ -256,18 +261,24 @@ class ModernSettingsDialog(QDialog):
         """Setup AI Provider configuration tab"""
         tab = QScrollArea()
         content = QWidget()
+        
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))
+        
         layout = QVBoxLayout(content)
-        layout.setSpacing(self.scale(20))
-        layout.setContentsMargins(self.scale(20), self.scale(20), self.scale(20), self.scale(20))
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Provider Selection
         provider_group = QGroupBox("🤖 AI Provider")
         provider_layout = QFormLayout()
-        provider_layout.setSpacing(self.scale(15))
+        provider_layout.setSpacing(self.scale(20))
         provider_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.ai_provider_type = QComboBox()
         self.ai_provider_type.addItems(["azure_openai", "openai", "google_gemini"])
+        self.ai_provider_type.setMinimumHeight(self.scale(40))
         self.ai_provider_type.currentTextChanged.connect(self.on_provider_changed)
         provider_layout.addRow("Provider:", self.ai_provider_type)
         
@@ -345,7 +356,13 @@ class ModernSettingsDialog(QDialog):
         layout.addWidget(self.gemini_group)
         
         layout.addStretch()
+        
+        # Set the widget to the scroll area and configure scroll area
         tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
         self.tab_widget.addTab(tab, "🤖 AI Provider")
     
     def setup_audio_tab(self):
@@ -353,8 +370,8 @@ class ModernSettingsDialog(QDialog):
         tab = QScrollArea()
         content = QWidget()
         layout = QVBoxLayout(content)
-        layout.setSpacing(self.scale(20))
-        layout.setContentsMargins(self.scale(20), self.scale(20), self.scale(20), self.scale(20))
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Audio Mode
         mode_group = QGroupBox("🎤 Audio Configuration")
@@ -414,8 +431,8 @@ class ModernSettingsDialog(QDialog):
         tab = QScrollArea()
         content = QWidget()
         layout = QVBoxLayout(content)
-        layout.setSpacing(self.scale(20))
-        layout.setContentsMargins(self.scale(20), self.scale(20), self.scale(20), self.scale(20))
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Appearance
         appearance_group = QGroupBox("🎨 Appearance")
@@ -459,37 +476,53 @@ class ModernSettingsDialog(QDialog):
         """Setup MeetMinder behavior tab"""
         tab = QScrollArea()
         content = QWidget()
+        
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))  # Set minimum size
+        
         layout = QVBoxLayout(content)
-        layout.setSpacing(self.scale(20))
-        layout.setContentsMargins(self.scale(20), self.scale(20), self.scale(20), self.scale(20))
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Behavior Settings
         behavior_group = QGroupBox("🧠 Assistant Behavior")
+        behavior_group.setMinimumHeight(self.scale(400))  # Set minimum height for group
         behavior_layout = QFormLayout()
-        behavior_layout.setSpacing(self.scale(15))
+        behavior_layout.setSpacing(self.scale(20))  # Increased spacing
         behavior_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.activation_mode = QComboBox()
         self.activation_mode.addItems(["manual", "auto"])
+        self.activation_mode.setMinimumHeight(self.scale(40))  # Larger height
         behavior_layout.addRow("Activation Mode:", self.activation_mode)
         
         self.verbosity = QComboBox()
         self.verbosity.addItems(["concise", "standard", "detailed"])
+        self.verbosity.setMinimumHeight(self.scale(40))
         behavior_layout.addRow("Response Verbosity:", self.verbosity)
         
         self.response_style = QComboBox()
         self.response_style.addItems(["professional", "casual", "technical"])
+        self.response_style.setMinimumHeight(self.scale(40))
         behavior_layout.addRow("Response Style:", self.response_style)
         
         self.input_prioritization = QComboBox()
         self.input_prioritization.addItems(["mic", "system_audio", "balanced"])
+        self.input_prioritization.setMinimumHeight(self.scale(40))
         behavior_layout.addRow("Input Priority:", self.input_prioritization)
         
         behavior_group.setLayout(behavior_layout)
         layout.addWidget(behavior_group)
         
         layout.addStretch()
+        
+        # Set the widget to the scroll area and configure scroll area
         tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
         self.tab_widget.addTab(tab, "🧠 Assistant")
     
     def setup_prompts_tab(self):
@@ -497,8 +530,8 @@ class ModernSettingsDialog(QDialog):
         tab = QScrollArea()
         content = QWidget()
         layout = QVBoxLayout(content)
-        layout.setSpacing(self.scale(20))
-        layout.setContentsMargins(self.scale(20), self.scale(20), self.scale(20), self.scale(20))
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # System Prompt
         prompt_group = QGroupBox("📝 AI Prompt Configuration")
@@ -540,8 +573,8 @@ class ModernSettingsDialog(QDialog):
         tab = QScrollArea()
         content = QWidget()
         layout = QVBoxLayout(content)
-        layout.setSpacing(self.scale(20))
-        layout.setContentsMargins(self.scale(20), self.scale(20), self.scale(20), self.scale(20))
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Knowledge Graph Settings
         knowledge_group = QGroupBox("🧠 Knowledge Graph")
@@ -615,8 +648,8 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         tab = QScrollArea()
         content = QWidget()
         layout = QVBoxLayout(content)
-        layout.setSpacing(self.scale(20))
-        layout.setContentsMargins(self.scale(20), self.scale(20), self.scale(20), self.scale(20))
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Hotkeys
         hotkeys_group = QGroupBox("⌨️ Global Hotkeys")
@@ -648,8 +681,8 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         tab = QScrollArea()
         content = QWidget()
         layout = QVBoxLayout(content)
-        layout.setSpacing(self.scale(20))
-        layout.setContentsMargins(self.scale(20), self.scale(20), self.scale(20), self.scale(20))
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Debug Settings
         debug_group = QGroupBox("🐛 Debug & Logging")
