@@ -70,12 +70,13 @@ class ScreenSharingDetector(QThread):
     """Detects when screen sharing applications are running"""
     screen_sharing_changed = pyqtSignal(bool)  # True when screen sharing detected
     
-    # Common screen sharing application process names
+    # Only detect dedicated screen sharing/streaming applications
+    # Removed browsers as they don't guarantee screen sharing is active
     SCREEN_SHARING_APPS = {
         'zoom.exe', 'teams.exe', 'discord.exe', 'obs64.exe', 'obs32.exe', 
-        'streamlabs obs.exe', 'xsplit.core.exe', 'skype.exe', 'googlemeet',
-        'chrome.exe', 'firefox.exe', 'msedge.exe',  # Browsers (for web meetings)
-        'webexmta.exe', 'gotomeeting.exe', 'anydesk.exe', 'teamviewer.exe'
+        'streamlabs obs.exe', 'xsplit.core.exe', 'skype.exe',
+        'webexmta.exe', 'gotomeeting.exe', 'anydesk.exe', 'teamviewer.exe',
+        'loom.exe', 'camtasia.exe', 'bandicam.exe', 'fraps.exe'
     }
     
     def __init__(self):
@@ -92,8 +93,9 @@ class ScreenSharingDetector(QThread):
                 if current_state != self.screen_sharing_active:
                     self.screen_sharing_active = current_state
                     self.screen_sharing_changed.emit(current_state)
+                    print(f"🔍 Screen sharing state changed: {'ACTIVE' if current_state else 'INACTIVE'}")
                     
-                self.msleep(2000)  # Check every 2 seconds
+                self.msleep(3000)  # Check every 3 seconds (less frequent)
             except Exception as e:
                 print(f"❌ Error in screen sharing detection: {e}")
                 self.msleep(5000)  # Wait longer on error
@@ -104,13 +106,18 @@ class ScreenSharingDetector(QThread):
             running_processes = {proc.name().lower() for proc in psutil.process_iter(['name'])}
             
             # Check for known screen sharing apps
+            detected_apps = []
             for app in self.SCREEN_SHARING_APPS:
                 if app.lower() in running_processes:
-                    return True
-                    
-            # Additional check for browser-based meetings (look for specific window titles)
-            if self.check_browser_meetings():
+                    detected_apps.append(app)
+            
+            if detected_apps:
+                print(f"🔍 Screen sharing apps detected: {', '.join(detected_apps)}")
                 return True
+                    
+            # Additional check for browser-based meetings (disabled for now to avoid false positives)
+            # if self.check_browser_meetings():
+            #     return True
                 
             return False
         except Exception as e:
@@ -120,9 +127,10 @@ class ScreenSharingDetector(QThread):
     def check_browser_meetings(self) -> bool:
         """Check for browser-based meeting indicators"""
         try:
-            # This is a simplified check - in practice you might want to check window titles
-            # or other indicators for browser-based meetings
-            return False  # For now, just return False
+            # This feature is disabled to prevent false positives
+            # In the future, this could check for specific window titles
+            # like "Zoom Meeting", "Teams Meeting", etc.
+            return False
         except:
             return False
     
@@ -208,9 +216,17 @@ class ModernOverlay(QWidget):
         self.mic_timer = MicrophoneTimer()
         self.mic_timer.time_updated.connect(self.update_timer_display)
         
-        # Screen sharing detector
-        self.screen_sharing_detector = ScreenSharingDetector()
-        self.screen_sharing_detector.screen_sharing_changed.connect(self.on_screen_sharing_changed)
+        # Screen sharing detector (only start if enabled)
+        screen_sharing_config = config.get('screen_sharing_detection', {})
+        self.screen_sharing_enabled = screen_sharing_config.get('enabled', True)  # Default enabled
+        
+        if self.screen_sharing_enabled:
+            self.screen_sharing_detector = ScreenSharingDetector()
+            self.screen_sharing_detector.screen_sharing_changed.connect(self.on_screen_sharing_changed)
+            print("🔍 Screen sharing detection enabled")
+        else:
+            self.screen_sharing_detector = None
+            print("🔍 Screen sharing detection disabled by configuration")
         
         # Animation
         self.fade_animation = None
@@ -228,7 +244,8 @@ class ModernOverlay(QWidget):
         self.apply_screen_protection()
         
         # Start screen sharing detection
-        self.screen_sharing_detector.start()
+        if self.screen_sharing_enabled:
+            self.screen_sharing_detector.start()
         
         # Add test transcript after short delay
         if self.show_transcript:
@@ -1130,8 +1147,8 @@ class ModernOverlay(QWidget):
         if hasattr(self, 'mic_timer'):
             self.mic_timer.stop_timer()
         
-        # Stop screen sharing detector
-        if hasattr(self, 'screen_sharing_detector'):
+        # Stop screen sharing detector (only if enabled)
+        if hasattr(self, 'screen_sharing_detector') and self.screen_sharing_detector is not None:
             self.screen_sharing_detector.stop_detection()
             self.screen_sharing_detector.wait()  # Wait for thread to finish
             

@@ -287,29 +287,35 @@ class ModernSettingsDialog(QDialog):
         
         # Azure OpenAI Settings
         self.azure_group = QGroupBox("🔷 Azure OpenAI Configuration")
+        self.azure_group.setMinimumHeight(self.scale(350))
         azure_layout = QFormLayout()
-        azure_layout.setSpacing(self.scale(15))
+        azure_layout.setSpacing(self.scale(20))
         azure_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.azure_endpoint = QLineEdit()
         self.azure_endpoint.setPlaceholderText("https://your-resource.openai.azure.com/")
+        self.azure_endpoint.setMinimumHeight(self.scale(40))
         azure_layout.addRow("Endpoint:", self.azure_endpoint)
         
         self.azure_api_key = QLineEdit()
         self.azure_api_key.setPlaceholderText("Your Azure OpenAI API key")
         self.azure_api_key.setEchoMode(QLineEdit.Password)
+        self.azure_api_key.setMinimumHeight(self.scale(40))
         azure_layout.addRow("API Key:", self.azure_api_key)
         
         self.azure_model = QLineEdit()
         self.azure_model.setPlaceholderText("gpt-4")
+        self.azure_model.setMinimumHeight(self.scale(40))
         azure_layout.addRow("Model:", self.azure_model)
         
         self.azure_deployment = QLineEdit()
         self.azure_deployment.setPlaceholderText("gpt-4")
+        self.azure_deployment.setMinimumHeight(self.scale(40))
         azure_layout.addRow("Deployment:", self.azure_deployment)
         
         self.azure_api_version = QLineEdit()
         self.azure_api_version.setText("2024-02-01")
+        self.azure_api_version.setMinimumHeight(self.scale(40))
         azure_layout.addRow("API Version:", self.azure_api_version)
         
         self.azure_group.setLayout(azure_layout)
@@ -317,17 +323,20 @@ class ModernSettingsDialog(QDialog):
         
         # OpenAI Settings
         self.openai_group = QGroupBox("🟢 OpenAI Configuration")
+        self.openai_group.setMinimumHeight(self.scale(200))
         openai_layout = QFormLayout()
-        openai_layout.setSpacing(self.scale(15))
+        openai_layout.setSpacing(self.scale(20))
         openai_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.openai_api_key = QLineEdit()
         self.openai_api_key.setPlaceholderText("Your OpenAI API key")
         self.openai_api_key.setEchoMode(QLineEdit.Password)
+        self.openai_api_key.setMinimumHeight(self.scale(40))
         openai_layout.addRow("API Key:", self.openai_api_key)
         
         self.openai_model = QLineEdit()
         self.openai_model.setPlaceholderText("gpt-4")
+        self.openai_model.setMinimumHeight(self.scale(40))
         openai_layout.addRow("Model:", self.openai_model)
         
         self.openai_group.setLayout(openai_layout)
@@ -335,21 +344,25 @@ class ModernSettingsDialog(QDialog):
         
         # Google Gemini Settings
         self.gemini_group = QGroupBox("🔴 Google Gemini Configuration")
+        self.gemini_group.setMinimumHeight(self.scale(250))
         gemini_layout = QFormLayout()
-        gemini_layout.setSpacing(self.scale(15))
+        gemini_layout.setSpacing(self.scale(20))
         gemini_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.gemini_api_key = QLineEdit()
         self.gemini_api_key.setPlaceholderText("Your Gemini API key")
         self.gemini_api_key.setEchoMode(QLineEdit.Password)
+        self.gemini_api_key.setMinimumHeight(self.scale(40))
         gemini_layout.addRow("API Key:", self.gemini_api_key)
         
         self.gemini_model = QLineEdit()
         self.gemini_model.setPlaceholderText("gemini-2.0-flash")
+        self.gemini_model.setMinimumHeight(self.scale(40))
         gemini_layout.addRow("Model:", self.gemini_model)
         
         self.gemini_project_id = QLineEdit()
         self.gemini_project_id.setPlaceholderText("your-project-id")
+        self.gemini_project_id.setMinimumHeight(self.scale(40))
         gemini_layout.addRow("Project ID:", self.gemini_project_id)
         
         self.gemini_group.setLayout(gemini_layout)
@@ -369,30 +382,40 @@ class ModernSettingsDialog(QDialog):
         """Setup Audio settings tab"""
         tab = QScrollArea()
         content = QWidget()
+        
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))
+        
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Audio Mode
         mode_group = QGroupBox("🎤 Audio Configuration")
+        mode_group.setMinimumHeight(self.scale(300))
         mode_layout = QFormLayout()
-        mode_layout.setSpacing(self.scale(15))
+        mode_layout.setSpacing(self.scale(20))
         mode_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.audio_mode = QComboBox()
         self.audio_mode.addItems(["single_stream", "dual_stream"])
+        self.audio_mode.setMinimumHeight(self.scale(40))
         mode_layout.addRow("Audio Mode:", self.audio_mode)
         
         self.buffer_duration = QSpinBox()
         self.buffer_duration.setRange(1, 30)
         self.buffer_duration.setSuffix(" minutes")
+        self.buffer_duration.setMinimumHeight(self.scale(40))
         mode_layout.addRow("Buffer Duration:", self.buffer_duration)
         
         self.processing_interval = QSlider(Qt.Horizontal)
         self.processing_interval.setRange(5, 50)
         self.processing_interval.setValue(16)
+        self.processing_interval.setMinimumHeight(self.scale(40))
         self.processing_label = QLabel("1.6s")
         self.processing_label.setMinimumWidth(self.scale(50))
+        self.processing_label.setMinimumHeight(self.scale(28))
         self.processing_interval.valueChanged.connect(
             lambda v: self.processing_label.setText(f"{v/10:.1f}s")
         )
@@ -407,44 +430,61 @@ class ModernSettingsDialog(QDialog):
         
         # Transcription Provider
         transcription_group = QGroupBox("📝 Transcription Settings")
+        transcription_group.setMinimumHeight(self.scale(200))
         transcription_layout = QFormLayout()
-        transcription_layout.setSpacing(self.scale(15))
+        transcription_layout.setSpacing(self.scale(20))
         transcription_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.transcription_provider = QComboBox()
         self.transcription_provider.addItems(["local_whisper", "google_speech", "azure_speech"])
+        self.transcription_provider.setMinimumHeight(self.scale(40))
         transcription_layout.addRow("Provider:", self.transcription_provider)
         
         self.whisper_model = QComboBox()
         self.whisper_model.addItems(["tiny", "base", "small", "medium", "large"])
+        self.whisper_model.setMinimumHeight(self.scale(40))
         transcription_layout.addRow("Whisper Model:", self.whisper_model)
         
         transcription_group.setLayout(transcription_layout)
         layout.addWidget(transcription_group)
         
         layout.addStretch()
+        
+        # Set the widget to the scroll area and configure scroll area
         tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
         self.tab_widget.addTab(tab, "🎤 Audio")
     
     def setup_ui_tab(self):
         """Setup UI settings tab"""
         tab = QScrollArea()
         content = QWidget()
+        
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))
+        
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Appearance
         appearance_group = QGroupBox("🎨 Appearance")
+        appearance_group.setMinimumHeight(self.scale(400))
         appearance_layout = QFormLayout()
-        appearance_layout.setSpacing(self.scale(15))
+        appearance_layout.setSpacing(self.scale(20))
         appearance_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.size_multiplier = QSlider(Qt.Horizontal)
         self.size_multiplier.setRange(10, 40)
         self.size_multiplier.setValue(10)
+        self.size_multiplier.setMinimumHeight(self.scale(40))
         self.size_label = QLabel("1.0x")
         self.size_label.setMinimumWidth(self.scale(60))
+        self.size_label.setMinimumHeight(self.scale(28))
         self.size_multiplier.valueChanged.connect(
             lambda v: self.size_label.setText(f"{v/10:.1f}x")
         )
@@ -455,21 +495,36 @@ class ModernSettingsDialog(QDialog):
         appearance_layout.addRow("Size Multiplier:", size_layout)
         
         self.show_transcript = QCheckBox("Show live transcript in expanded view")
+        self.show_transcript.setMinimumHeight(self.scale(32))
         appearance_layout.addRow("", self.show_transcript)
         
         self.hide_from_sharing = QCheckBox("Hide from screen sharing")
+        self.hide_from_sharing.setMinimumHeight(self.scale(32))
         appearance_layout.addRow("", self.hide_from_sharing)
         
         self.auto_hide_seconds = QSpinBox()
         self.auto_hide_seconds.setRange(0, 60)
         self.auto_hide_seconds.setSuffix(" seconds (0 = disabled)")
+        self.auto_hide_seconds.setMinimumHeight(self.scale(40))
         appearance_layout.addRow("Auto-hide Timer:", self.auto_hide_seconds)
+        
+        # Screen sharing detection
+        self.enable_screen_sharing_detection = QCheckBox("Enable screen sharing detection")
+        self.enable_screen_sharing_detection.setMinimumHeight(self.scale(32))
+        self.enable_screen_sharing_detection.setToolTip("Automatically hide overlay when screen sharing apps are detected")
+        appearance_layout.addRow("", self.enable_screen_sharing_detection)
         
         appearance_group.setLayout(appearance_layout)
         layout.addWidget(appearance_group)
         
         layout.addStretch()
+        
+        # Set the widget to the scroll area and configure scroll area
         tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
         self.tab_widget.addTab(tab, "🖥️ Interface")
     
     def setup_assistant_tab(self):
@@ -529,30 +584,45 @@ class ModernSettingsDialog(QDialog):
         """Setup prompts configuration tab"""
         tab = QScrollArea()
         content = QWidget()
+        
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))
+        
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # System Prompt
         prompt_group = QGroupBox("📝 AI Prompt Configuration")
+        prompt_group.setMinimumHeight(self.scale(500))
         prompt_layout = QVBoxLayout()
+        prompt_layout.setSpacing(self.scale(15))
         
         prompt_info = QLabel("Customize the MeetMinder assistant's behavior and response style:")
-        prompt_info.setStyleSheet("color: rgba(255, 255, 255, 0.7); font-style: italic;")
+        prompt_info.setStyleSheet("color: #cccccc; font-style: italic;")
+        prompt_info.setMinimumHeight(self.scale(28))
         prompt_layout.addWidget(prompt_info)
         
         self.system_prompt = QTextEdit()
-        self.system_prompt.setMinimumHeight(300)
+        self.system_prompt.setMinimumHeight(self.scale(350))
         self.system_prompt.setPlaceholderText("Enter system prompt that defines the MeetMinder assistant's behavior, tone, and expertise...")
         prompt_layout.addWidget(self.system_prompt)
         
         # Load/Save buttons
         button_layout = QHBoxLayout()
+        button_layout.setSpacing(self.scale(15))
+        
         load_prompt_btn = QPushButton("📁 Load from File")
+        load_prompt_btn.setMinimumHeight(self.scale(40))
         load_prompt_btn.clicked.connect(self.load_prompt_file)
+        
         save_prompt_btn = QPushButton("💾 Save to File")
+        save_prompt_btn.setMinimumHeight(self.scale(40))
         save_prompt_btn.clicked.connect(self.save_prompt_file)
+        
         reset_prompt_btn = QPushButton("🔄 Reset to Default")
+        reset_prompt_btn.setMinimumHeight(self.scale(40))
         reset_prompt_btn.clicked.connect(self.reset_prompt_to_default)
         
         button_layout.addWidget(load_prompt_btn)
@@ -565,32 +635,50 @@ class ModernSettingsDialog(QDialog):
         layout.addWidget(prompt_group)
         
         layout.addStretch()
+        
+        # Set the widget to the scroll area and configure scroll area
         tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
         self.tab_widget.addTab(tab, "📝 Prompts")
     
     def setup_knowledge_tab(self):
         """Setup knowledge graph management tab"""
         tab = QScrollArea()
         content = QWidget()
+        
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))
+        
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Knowledge Graph Settings
         knowledge_group = QGroupBox("🧠 Knowledge Graph")
+        knowledge_group.setMinimumHeight(self.scale(500))
         knowledge_layout = QVBoxLayout()
+        knowledge_layout.setSpacing(self.scale(15))
         
         # Enable/disable
         self.enable_topic_graph = QCheckBox("Enable topic analysis and suggestions")
+        self.enable_topic_graph.setMinimumHeight(self.scale(32))
         knowledge_layout.addWidget(self.enable_topic_graph)
         
         # Settings
         settings_layout = QFormLayout()
+        settings_layout.setSpacing(self.scale(20))
+        settings_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.matching_threshold = QSlider(Qt.Horizontal)
         self.matching_threshold.setRange(1, 100)
         self.matching_threshold.setValue(60)
+        self.matching_threshold.setMinimumHeight(self.scale(40))
         self.matching_label = QLabel("60%")
+        self.matching_label.setMinimumHeight(self.scale(28))
         self.matching_threshold.valueChanged.connect(
             lambda v: self.matching_label.setText(f"{v}%")
         )
@@ -603,6 +691,7 @@ class ModernSettingsDialog(QDialog):
         self.max_matches = QSpinBox()
         self.max_matches.setRange(1, 10)
         self.max_matches.setValue(3)
+        self.max_matches.setMinimumHeight(self.scale(40))
         settings_layout.addRow("Max Suggestions:", self.max_matches)
         
         knowledge_layout.addLayout(settings_layout)
@@ -610,10 +699,11 @@ class ModernSettingsDialog(QDialog):
         # Topic definitions
         topic_info = QLabel("Define topics and their relationships (one per line):")
         topic_info.setStyleSheet("color: rgba(255, 255, 255, 0.7); margin-top: 15px;")
+        topic_info.setMinimumHeight(self.scale(28))
         knowledge_layout.addWidget(topic_info)
         
         self.topic_definitions = QTextEdit()
-        self.topic_definitions.setMinimumHeight(200)
+        self.topic_definitions.setMinimumHeight(self.scale(250))
         self.topic_definitions.setPlaceholderText("""Example topic definitions:
 Programming -> Python (suggestion: "Consider using virtual environments")
 Programming -> JavaScript (suggestion: "Don't forget async/await for promises")
@@ -623,11 +713,18 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         
         # Buttons
         topic_button_layout = QHBoxLayout()
+        topic_button_layout.setSpacing(self.scale(15))
+        
         import_topics_btn = QPushButton("📁 Import Topics")
+        import_topics_btn.setMinimumHeight(self.scale(40))
         import_topics_btn.clicked.connect(self.import_topics)
+        
         export_topics_btn = QPushButton("💾 Export Topics")
+        export_topics_btn.setMinimumHeight(self.scale(40))
         export_topics_btn.clicked.connect(self.export_topics)
+        
         clear_topics_btn = QPushButton("🗑️ Clear All")
+        clear_topics_btn.setMinimumHeight(self.scale(40))
         clear_topics_btn.clicked.connect(self.clear_topics)
         
         topic_button_layout.addWidget(import_topics_btn)
@@ -640,70 +737,107 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         layout.addWidget(knowledge_group)
         
         layout.addStretch()
+        
+        # Set the widget to the scroll area and configure scroll area
         tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
         self.tab_widget.addTab(tab, "🧠 Knowledge")
     
     def setup_hotkeys_tab(self):
         """Setup hotkeys configuration tab"""
         tab = QScrollArea()
         content = QWidget()
+        
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))
+        
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Hotkeys
         hotkeys_group = QGroupBox("⌨️ Global Hotkeys")
+        hotkeys_group.setMinimumHeight(self.scale(350))
         hotkeys_layout = QFormLayout()
-        hotkeys_layout.setSpacing(self.scale(15))
+        hotkeys_layout.setSpacing(self.scale(20))
         hotkeys_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.trigger_assistance = QLineEdit()
+        self.trigger_assistance.setMinimumHeight(self.scale(40))
         hotkeys_layout.addRow("Trigger AI:", self.trigger_assistance)
         
         self.toggle_overlay = QLineEdit()
+        self.toggle_overlay.setMinimumHeight(self.scale(40))
         hotkeys_layout.addRow("Toggle Overlay:", self.toggle_overlay)
         
         self.take_screenshot = QLineEdit()
+        self.take_screenshot.setMinimumHeight(self.scale(40))
         hotkeys_layout.addRow("Screenshot:", self.take_screenshot)
         
         self.emergency_reset = QLineEdit()
+        self.emergency_reset.setMinimumHeight(self.scale(40))
         hotkeys_layout.addRow("Emergency Reset:", self.emergency_reset)
         
         hotkeys_group.setLayout(hotkeys_layout)
         layout.addWidget(hotkeys_group)
         
         layout.addStretch()
+        
+        # Set the widget to the scroll area and configure scroll area
         tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
         self.tab_widget.addTab(tab, "⌨️ Hotkeys")
     
     def setup_debug_tab(self):
         """Setup debug settings tab"""
         tab = QScrollArea()
         content = QWidget()
+        
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))
+        
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Debug Settings
         debug_group = QGroupBox("🐛 Debug & Logging")
+        debug_group.setMinimumHeight(self.scale(400))
         debug_layout = QVBoxLayout()
+        debug_layout.setSpacing(self.scale(15))
         
         self.debug_enabled = QCheckBox("Enable debug mode")
+        self.debug_enabled.setMinimumHeight(self.scale(32))
         debug_layout.addWidget(self.debug_enabled)
         
         self.verbose_logging = QCheckBox("Verbose logging")
+        self.verbose_logging.setMinimumHeight(self.scale(32))
         debug_layout.addWidget(self.verbose_logging)
         
         self.save_transcriptions = QCheckBox("Save transcriptions to files")
+        self.save_transcriptions.setMinimumHeight(self.scale(32))
         debug_layout.addWidget(self.save_transcriptions)
         
         self.save_audio_chunks = QCheckBox("Save audio chunks for debugging")
+        self.save_audio_chunks.setMinimumHeight(self.scale(32))
         debug_layout.addWidget(self.save_audio_chunks)
         
         form_layout = QFormLayout()
+        form_layout.setSpacing(self.scale(20))
+        form_layout.setLabelAlignment(Qt.AlignLeft)
+        
         self.max_debug_files = QSpinBox()
         self.max_debug_files.setRange(10, 1000)
         self.max_debug_files.setValue(100)
+        self.max_debug_files.setMinimumHeight(self.scale(40))
         form_layout.addRow("Max Debug Files:", self.max_debug_files)
         
         debug_layout.addLayout(form_layout)
@@ -711,7 +845,13 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         layout.addWidget(debug_group)
         
         layout.addStretch()
+        
+        # Set the widget to the scroll area and configure scroll area
         tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        
         self.tab_widget.addTab(tab, "🐛 Debug")
     
     def on_provider_changed(self, provider):
@@ -884,6 +1024,10 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.hide_from_sharing.setChecked(ui.get('hide_from_sharing', True))
         self.auto_hide_seconds.setValue(ui.get('auto_hide_seconds', 5))
         
+        # Screen sharing detection
+        screen_sharing = self.current_config.get('screen_sharing_detection', {})
+        self.enable_screen_sharing_detection.setChecked(screen_sharing.get('enabled', False))
+        
         # Assistant
         assistant = self.current_config.get('assistant', {})
         self.activation_mode.setCurrentText(assistant.get('activation_mode', 'manual'))
@@ -962,6 +1106,12 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                     'hide_from_sharing': self.hide_from_sharing.isChecked(),
                     'auto_hide_seconds': self.auto_hide_seconds.value()
                 }
+            },
+            'screen_sharing_detection': {
+                'enabled': self.enable_screen_sharing_detection.isChecked(),
+                'auto_hide_overlay': True,
+                'detection_interval_seconds': 3,
+                'verbose_logging': False
             },
             'assistant': {
                 'activation_mode': self.activation_mode.currentText(),
