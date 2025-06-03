@@ -53,24 +53,34 @@ class ModernSettingsDialog(QDialog):
         # Modern dark theme with high contrast
         self.setStyleSheet(f"""
             QDialog {{
-                background: #1a1a1a;
+                background: #141414;
                 color: #ffffff;
                 font-family: 'Segoe UI', Arial, sans-serif;
                 font-size: {self.scale(14)}px;
             }}
+            QWidget {{
+                background: #141414;
+            }}
+            QScrollArea {{
+                background: #141414;
+                border: none;
+            }}
+            QScrollArea > QWidget > QWidget {{
+                background: #141414;
+            }}
             QTabWidget::pane {{
-                border: 2px solid #404040;
+                border: 1px solid #404040;
                 border-radius: {self.scale(8)}px;
-                background: #1a1a1a;
+                background: #141414;
                 margin-top: -1px;
             }}
-            QTabWidget::tab-bar {{
-                alignment: left;
+            QTabWidget QWidget {{
+                background: #141414;
             }}
             QTabBar::tab {{
-                background: #2d2d2d;
-                color: #cccccc;
-                border: 2px solid #404040;
+                background: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #404040;
                 border-bottom: none;
                 padding: {self.scale(12)}px {self.scale(24)}px;
                 margin-right: 2px;
@@ -83,21 +93,19 @@ class ModernSettingsDialog(QDialog):
             QTabBar::tab:selected {{
                 background: #0078d4;
                 color: #ffffff;
-                border: 2px solid #0078d4;
-                font-weight: 600;
+                border: 1px solid #0078d4;
             }}
             QTabBar::tab:hover:!selected {{
-                background: #404040;
-                color: #ffffff;
+                background: #262626;
             }}
             QGroupBox {{
                 font-size: {self.scale(16)}px;
                 font-weight: 600;
-                border: 2px solid #404040;
+                border: 1px solid #404040;
                 border-radius: {self.scale(8)}px;
                 margin-top: {self.scale(15)}px;
                 padding-top: {self.scale(10)}px;
-                background: #242424;
+                background: #1a1a1a;
                 color: #ffffff;
             }}
             QGroupBox::title {{
@@ -134,8 +142,8 @@ class ModernSettingsDialog(QDialog):
                 image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDNMNC41IDguNUwyIDYiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=);
             }}
             QComboBox, QSpinBox, QLineEdit {{
-                background: #2d2d2d;
-                border: 2px solid #404040;
+                background: #1a1a1a;
+                border: 1px solid #404040;
                 border-radius: {self.scale(6)}px;
                 color: #ffffff;
                 font-size: {self.scale(13)}px;
@@ -143,12 +151,12 @@ class ModernSettingsDialog(QDialog):
                 min-height: {self.scale(30)}px;
             }}
             QComboBox:hover, QSpinBox:hover, QLineEdit:hover {{
-                background: #404040;
-                border: 2px solid #0078d4;
+                background: #262626;
+                border: 1px solid #0078d4;
             }}
             QComboBox:focus, QSpinBox:focus, QLineEdit:focus {{
-                border: 2px solid #0078d4;
-                background: #404040;
+                border: 1px solid #0078d4;
+                background: #262626;
             }}
             QComboBox::drop-down {{
                 border: none;
@@ -156,6 +164,15 @@ class ModernSettingsDialog(QDialog):
             }}
             QComboBox::down-arrow {{
                 image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==);
+            }}
+            QComboBox QAbstractItemView {{
+                background: #1a1a1a;
+                border: 1px solid #404040;
+                color: #ffffff;
+                selection-background-color: #0078d4;
+            }}
+            QLineEdit::placeholder {{
+                color: #808080;
             }}
             QTextEdit {{
                 background: #2d2d2d;
@@ -196,10 +213,6 @@ class ModernSettingsDialog(QDialog):
             QPushButton.primary:hover {{
                 background: #106ebe;
                 border: 2px solid #106ebe;
-            }}
-            QScrollArea {{
-                border: none;
-                background: transparent;
             }}
             QScrollBar:vertical {{
                 background: #2d2d2d;
@@ -264,7 +277,7 @@ class ModernSettingsDialog(QDialog):
         
         # Set proper size policy for content to expand
         content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        content.setMinimumSize(self.scale(1200), self.scale(600))
+        content.setMinimumSize(self.scale(1200), self.scale(700))  # Increased for more providers
         
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
@@ -277,7 +290,7 @@ class ModernSettingsDialog(QDialog):
         provider_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.ai_provider_type = QComboBox()
-        self.ai_provider_type.addItems(["azure_openai", "openai", "google_gemini"])
+        self.ai_provider_type.addItems(["azure_openai", "openai", "google_gemini", "deepseek", "claude"])
         self.ai_provider_type.setMinimumHeight(self.scale(40))
         self.ai_provider_type.currentTextChanged.connect(self.on_provider_changed)
         provider_layout.addRow("Provider:", self.ai_provider_type)
@@ -295,27 +308,32 @@ class ModernSettingsDialog(QDialog):
         self.azure_endpoint = QLineEdit()
         self.azure_endpoint.setPlaceholderText("https://your-resource.openai.azure.com/")
         self.azure_endpoint.setMinimumHeight(self.scale(40))
+        self.azure_endpoint.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         azure_layout.addRow("Endpoint:", self.azure_endpoint)
         
         self.azure_api_key = QLineEdit()
         self.azure_api_key.setPlaceholderText("Your Azure OpenAI API key")
         self.azure_api_key.setEchoMode(QLineEdit.Password)
         self.azure_api_key.setMinimumHeight(self.scale(40))
+        self.azure_api_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         azure_layout.addRow("API Key:", self.azure_api_key)
         
         self.azure_model = QLineEdit()
         self.azure_model.setPlaceholderText("gpt-4")
         self.azure_model.setMinimumHeight(self.scale(40))
+        self.azure_model.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         azure_layout.addRow("Model:", self.azure_model)
         
         self.azure_deployment = QLineEdit()
-        self.azure_deployment.setPlaceholderText("gpt-4")
+        self.azure_deployment.setPlaceholderText("deployment-name")
         self.azure_deployment.setMinimumHeight(self.scale(40))
-        azure_layout.addRow("Deployment:", self.azure_deployment)
+        self.azure_deployment.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        azure_layout.addRow("Deployment Name:", self.azure_deployment)
         
         self.azure_api_version = QLineEdit()
-        self.azure_api_version.setText("2024-02-01")
+        self.azure_api_version.setText("2024-02-15-preview")
         self.azure_api_version.setMinimumHeight(self.scale(40))
+        self.azure_api_version.setStyleSheet("QLineEdit { color: #ffffff; }")
         azure_layout.addRow("API Version:", self.azure_api_version)
         
         self.azure_group.setLayout(azure_layout)
@@ -367,6 +385,64 @@ class ModernSettingsDialog(QDialog):
         
         self.gemini_group.setLayout(gemini_layout)
         layout.addWidget(self.gemini_group)
+        
+        # DeepSeek Settings
+        self.deepseek_group = QGroupBox("🧠 DeepSeek Configuration")
+        self.deepseek_group.setMinimumHeight(self.scale(250))
+        deepseek_layout = QFormLayout()
+        deepseek_layout.setSpacing(self.scale(20))
+        deepseek_layout.setLabelAlignment(Qt.AlignLeft)
+        
+        self.deepseek_api_key = QLineEdit()
+        self.deepseek_api_key.setPlaceholderText("Your DeepSeek API key")
+        self.deepseek_api_key.setEchoMode(QLineEdit.Password)
+        self.deepseek_api_key.setMinimumHeight(self.scale(40))
+        self.deepseek_api_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        deepseek_layout.addRow("API Key:", self.deepseek_api_key)
+        
+        self.deepseek_base_url = QLineEdit()
+        self.deepseek_base_url.setPlaceholderText("https://api.deepseek.com")
+        self.deepseek_base_url.setMinimumHeight(self.scale(40))
+        self.deepseek_base_url.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        deepseek_layout.addRow("Base URL:", self.deepseek_base_url)
+        
+        self.deepseek_model = QLineEdit()
+        self.deepseek_model.setPlaceholderText("deepseek-coder")
+        self.deepseek_model.setMinimumHeight(self.scale(40))
+        self.deepseek_model.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        deepseek_layout.addRow("Model:", self.deepseek_model)
+        
+        self.deepseek_group.setLayout(deepseek_layout)
+        layout.addWidget(self.deepseek_group)
+        
+        # Claude Settings
+        self.claude_group = QGroupBox("🎭 Claude Configuration")
+        self.claude_group.setMinimumHeight(self.scale(250))
+        claude_layout = QFormLayout()
+        claude_layout.setSpacing(self.scale(20))
+        claude_layout.setLabelAlignment(Qt.AlignLeft)
+        
+        self.claude_api_key = QLineEdit()
+        self.claude_api_key.setPlaceholderText("Your Anthropic API key")
+        self.claude_api_key.setEchoMode(QLineEdit.Password)
+        self.claude_api_key.setMinimumHeight(self.scale(40))
+        self.claude_api_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        claude_layout.addRow("API Key:", self.claude_api_key)
+        
+        self.claude_base_url = QLineEdit()
+        self.claude_base_url.setPlaceholderText("https://api.anthropic.com")
+        self.claude_base_url.setMinimumHeight(self.scale(40))
+        self.claude_base_url.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        claude_layout.addRow("Base URL:", self.claude_base_url)
+        
+        self.claude_model = QLineEdit()
+        self.claude_model.setPlaceholderText("claude-3-sonnet-20240229")
+        self.claude_model.setMinimumHeight(self.scale(40))
+        self.claude_model.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        claude_layout.addRow("Model:", self.claude_model)
+        
+        self.claude_group.setLayout(claude_layout)
+        layout.addWidget(self.claude_group)
         
         layout.addStretch()
         
@@ -467,6 +543,27 @@ class ModernSettingsDialog(QDialog):
         content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         content.setMinimumSize(self.scale(1200), self.scale(600))
         
+        # Ensure dark background
+        content.setStyleSheet(f"""
+            QWidget {{
+                background: #141414;
+            }}
+            QSpinBox {{
+                background: #1a1a1a;
+                color: #ffffff;
+                border: 1px solid #404040;
+                padding: {self.scale(4)}px {self.scale(8)}px;
+            }}
+            QSpinBox:hover {{
+                background: #262626;
+                border: 1px solid #0078d4;
+            }}
+            QSpinBox::up-button, QSpinBox::down-button {{
+                background: #262626;
+                border: none;
+            }}
+        """)
+        
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
@@ -477,6 +574,15 @@ class ModernSettingsDialog(QDialog):
         appearance_layout = QFormLayout()
         appearance_layout.setSpacing(self.scale(20))
         appearance_layout.setLabelAlignment(Qt.AlignLeft)
+        
+        # Ensure consistent styling for the group box
+        appearance_group.setStyleSheet(f"""
+            QGroupBox {{
+                background: #1a1a1a;
+                border: 1px solid #404040;
+                color: #ffffff;
+            }}
+        """)
         
         self.size_multiplier = QSlider(Qt.Horizontal)
         self.size_multiplier.setRange(10, 40)
@@ -600,7 +706,7 @@ class ModernSettingsDialog(QDialog):
         prompt_layout.setSpacing(self.scale(15))
         
         prompt_info = QLabel("Customize the MeetMinder assistant's behavior and response style:")
-        prompt_info.setStyleSheet("color: #cccccc; font-style: italic;")
+        prompt_info.setStyleSheet("color: #e6e6e6; font-style: italic;")
         prompt_info.setMinimumHeight(self.scale(28))
         prompt_layout.addWidget(prompt_info)
         
@@ -698,7 +804,7 @@ class ModernSettingsDialog(QDialog):
         
         # Topic definitions
         topic_info = QLabel("Define topics and their relationships (one per line):")
-        topic_info.setStyleSheet("color: rgba(255, 255, 255, 0.7); margin-top: 15px;")
+        topic_info.setStyleSheet("color: #e6e6e6; margin-top: 15px;")
         topic_info.setMinimumHeight(self.scale(28))
         knowledge_layout.addWidget(topic_info)
         
@@ -837,7 +943,6 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.max_debug_files = QSpinBox()
         self.max_debug_files.setRange(10, 1000)
         self.max_debug_files.setValue(100)
-        self.max_debug_files.setMinimumHeight(self.scale(40))
         form_layout.addRow("Max Debug Files:", self.max_debug_files)
         
         debug_layout.addLayout(form_layout)
@@ -859,6 +964,8 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.azure_group.setVisible(provider == "azure_openai")
         self.openai_group.setVisible(provider == "openai")
         self.gemini_group.setVisible(provider == "google_gemini")
+        self.deepseek_group.setVisible(provider == "deepseek")
+        self.claude_group.setVisible(provider == "claude")
     
     def load_prompt_file(self):
         """Load prompt from file"""
@@ -984,7 +1091,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         ai_provider = self.current_config.get('ai_provider', {})
         self.ai_provider_type.setCurrentText(ai_provider.get('type', 'azure_openai'))
         
-        # Azure OpenAI
+        # Azure OpenAI (Legacy)
         azure = ai_provider.get('azure_openai', {})
         self.azure_endpoint.setText(azure.get('endpoint', ''))
         self.azure_api_key.setText(azure.get('api_key', ''))
@@ -1002,6 +1109,18 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.gemini_api_key.setText(gemini.get('api_key', ''))
         self.gemini_model.setText(gemini.get('model', ''))
         self.gemini_project_id.setText(str(gemini.get('project_id', '')))
+        
+        # DeepSeek
+        deepseek = ai_provider.get('deepseek', {})
+        self.deepseek_api_key.setText(deepseek.get('api_key', ''))
+        self.deepseek_base_url.setText(deepseek.get('base_url', 'https://api.deepseek.com'))
+        self.deepseek_model.setText(deepseek.get('model', 'deepseek-coder'))
+        
+        # Claude
+        claude = ai_provider.get('claude', {})
+        self.claude_api_key.setText(claude.get('api_key', ''))
+        self.claude_base_url.setText(claude.get('base_url', 'https://api.anthropic.com'))
+        self.claude_model.setText(claude.get('model', 'claude-3-sonnet-20240229'))
         
         # Audio
         audio = self.current_config.get('audio', {})
@@ -1086,6 +1205,16 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                     'api_key': self.gemini_api_key.text(),
                     'model': self.gemini_model.text(),
                     'project_id': self.gemini_project_id.text()
+                },
+                'deepseek': {
+                    'api_key': self.deepseek_api_key.text(),
+                    'base_url': self.deepseek_base_url.text(),
+                    'model': self.deepseek_model.text()
+                },
+                'claude': {
+                    'api_key': self.claude_api_key.text(),
+                    'base_url': self.claude_base_url.text(),
+                    'model': self.claude_model.text()
                 }
             },
             'audio': {

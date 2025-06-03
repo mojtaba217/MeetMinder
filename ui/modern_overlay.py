@@ -342,22 +342,40 @@ class ModernOverlay(QWidget):
     
     def setup_recording_status(self, layout):
         """Setup recording status section"""
-        # Microphone button - larger for better visibility
+        # Microphone button - modern style with animation
         self.mic_button = ModernButton("🎤", size_multiplier=self.size_multiplier)
         self.mic_button.setFixedSize(self.scale(50), self.scale(50))
         self.mic_button.clicked.connect(self.toggle_recording)
-        self.mic_button.setToolTip("Toggle microphone recording")
+        self.mic_button.setToolTip("Toggle microphone recording (Ctrl+M)")
+        self.mic_button.setStyleSheet(f"""
+            ModernButton {{
+                background: rgba(255, 255, 255, 0.08);
+                border: 2px solid rgba(255, 255, 255, 0.12);
+                border-radius: {self.scale(25)}px;
+                padding: {self.scale(8)}px;
+                qproperty-icon: url(icons/mic-off.png);
+                qproperty-iconSize: {self.scale(24)}px {self.scale(24)}px;
+            }}
+            ModernButton:hover {{
+                background: rgba(255, 255, 255, 0.12);
+                border: 2px solid rgba(255, 255, 255, 0.16);
+            }}
+            ModernButton:pressed {{
+                background: rgba(255, 255, 255, 0.04);
+                border: 2px solid rgba(255, 255, 255, 0.08);
+            }}
+        """)
         
-        # Timer display - larger and more prominent
+        # Timer display - modern style
         self.timer_label = QLabel("00:00")
         self.timer_label.setStyleSheet(f"""
             QLabel {{
-                color: #FFD700;
+                color: #ffffff;
                 font-family: 'Segoe UI Variable';
                 font-size: {self.scale_font(16)}px;
                 font-weight: 600;
-                background: rgba(255, 215, 0, 0.2);
-                border: 2px solid rgba(255, 215, 0, 0.4);
+                background: rgba(0, 120, 212, 0.15);
+                border: 2px solid rgba(0, 120, 212, 0.25);
                 border-radius: {self.scale(18)}px;
                 padding: {self.scale(8)}px {self.scale(16)}px;
                 min-width: {self.scale(70)}px;
@@ -430,34 +448,65 @@ class ModernOverlay(QWidget):
     
     def setup_right_buttons(self, layout):
         """Setup right side control buttons"""
-        # Settings button - larger
+        # Settings button - modern style
         settings_button = ModernButton("⚙️", size_multiplier=self.size_multiplier)
         settings_button.setFixedSize(self.scale(50), self.scale(50))
         settings_button.clicked.connect(self.trigger_settings)
-        settings_button.setToolTip("Open settings")
+        settings_button.setToolTip("Open settings (Ctrl+,)")
+        settings_button.setStyleSheet(f"""
+            ModernButton {{
+                background: rgba(255, 255, 255, 0.08);
+                border: 2px solid rgba(255, 255, 255, 0.12);
+                border-radius: {self.scale(25)}px;
+                padding: {self.scale(8)}px;
+                qproperty-icon: url(icons/settings.png);
+                qproperty-iconSize: {self.scale(24)}px {self.scale(24)}px;
+            }}
+            ModernButton:hover {{
+                background: rgba(255, 255, 255, 0.12);
+                border: 2px solid rgba(255, 255, 255, 0.16);
+            }}
+            ModernButton:pressed {{
+                background: rgba(255, 255, 255, 0.04);
+                border: 2px solid rgba(255, 255, 255, 0.08);
+            }}
+        """)
         
-        # Hide/show button - larger
+        # Hide/show button - modern style
         self.visibility_button = ModernButton("Hide", size_multiplier=self.size_multiplier)
         self.visibility_button.setFixedSize(self.scale(70), self.scale(50))
         self.visibility_button.clicked.connect(self.toggle_visibility)
+        self.visibility_button.setStyleSheet(f"""
+            ModernButton {{
+                background: rgba(255, 255, 255, 0.08);
+                border: 2px solid rgba(255, 255, 255, 0.12);
+                border-radius: {self.scale(25)}px;
+                color: white;
+                font-weight: 500;
+            }}
+            ModernButton:hover {{
+                background: rgba(255, 255, 255, 0.12);
+                border: 2px solid rgba(255, 255, 255, 0.16);
+            }}
+        """)
         
-        # Close button - larger and more prominent
+        # Close button - modern style
         self.close_button = ModernButton("✕", size_multiplier=self.size_multiplier)
         self.close_button.setFixedSize(self.scale(50), self.scale(50))
         self.close_button.clicked.connect(self.close_application)
         self.close_button.setToolTip("Close application")
         self.close_button.setStyleSheet(f"""
             ModernButton {{
-                background: rgba(255, 0, 0, 0.2);
-                border: 2px solid rgba(255, 0, 0, 0.4);
-                color: #FF6B6B;
+                background: rgba(255, 59, 48, 0.1);
+                border: 2px solid rgba(255, 59, 48, 0.2);
+                border-radius: {self.scale(25)}px;
+                color: #ff3b30;
                 font-weight: bold;
                 font-size: {self.scale_font(18)}px;
-                border-radius: {self.scale(25)}px;
             }}
             ModernButton:hover {{
-                background: rgba(255, 0, 0, 0.3);
-                border: 2px solid rgba(255, 0, 0, 0.6);
+                background: rgba(255, 59, 48, 0.15);
+                border: 2px solid rgba(255, 59, 48, 0.3);
             }}
         """)
         
@@ -754,26 +803,74 @@ class ModernOverlay(QWidget):
     
     def position_window(self):
         """Position window at top center of screen"""
+        if not self.isVisible():
+            return
+            
         screen = QApplication.primaryScreen().availableGeometry()
         
         # Center horizontally, top of screen
         x = (screen.width() - self.width()) // 2
         y = 20  # Small margin from top
         
+        # Ensure coordinates are valid
+        x = max(0, min(x, screen.width() - self.width()))
+        y = max(0, min(y, screen.height() - self.height()))
+        
         self.move(x, y)
     
-    @pyqtSlot()
+    def hide_overlay(self):
+        """Hide overlay with animation"""
+        if not self.is_visible:
+            return
+        
+        # First collapse if expanded
+        if self.is_expanded:
+            self.collapse_content()
+            # Wait for collapse animation to finish
+            if self.expand_animation and self.expand_animation.state() == QPropertyAnimation.Running:
+                self.expand_animation.finished.connect(self._do_hide_overlay)
+                return
+        
+        self._do_hide_overlay()
+    
+    def _do_hide_overlay(self):
+        """Actually perform the hide animation"""
+        self.is_visible = False
+        
+        # Ensure valid window geometry before animation
+        if not self.isVisible():
+            return
+            
+        current_geo = self.geometry()
+        if not current_geo.isValid():
+            self.resize(self.scale(1000), self.scale(60))
+            self.position_window()
+        
+        self.animate_fade_out()
+        self.visibility_button.setText("Show")
+    
     def show_overlay(self):
         """Show overlay with animation"""
         if self.is_visible:
             # During startup, still ensure it's visible even if marked as such
             if not self.isVisible():
                 print("🔍 Overlay marked visible but not showing - forcing show")
-                self.show()
-                self.animate_fade_in()
+                self._do_show_overlay()
             return
         
+        self._do_show_overlay()
+    
+    def _do_show_overlay(self):
+        """Actually perform the show animation"""
+        # Ensure proper initial state
         self.is_visible = True
+        self.setWindowOpacity(0.0)  # Start fully transparent
+        
+        # Reset size to collapsed state
+        self.resize(self.scale(1000), self.scale(60))
+        self.position_window()
+        
+        # Show window and animate
         self.show()
         self.animate_fade_in()
         self.visibility_button.setText("Hide")
@@ -782,89 +879,11 @@ class ModernOverlay(QWidget):
         if self.is_expanded:
             self.collapse_content()
     
-    def hide_overlay(self):
-        """Hide overlay with animation"""
-        if not self.is_visible:
-            return
-        
-        self.is_visible = False
-        self.animate_fade_out()
-        self.visibility_button.setText("Show")
-    
-    @pyqtSlot()
-    def toggle_visibility(self):
-        """Toggle overlay visibility"""
-        if self.is_visible:
-            self.hide_overlay()
-        else:
-            self.show_overlay()
-    
-    @pyqtSlot(str)
-    def update_transcript(self, text: str):
-        """Update the live transcript area"""
-        print(f"🔍 DEBUG: update_transcript called with: '{text}'")
-        print(f"🔍 DEBUG: show_transcript = {self.show_transcript}")
-        print(f"🔍 DEBUG: has transcript_area = {hasattr(self, 'transcript_area')}")
-        
-        # Always process transcript updates, but only display if enabled and area exists
-        if hasattr(self, 'transcript_area') and self.transcript_area is not None:
-            print(f"🔍 DEBUG: Transcript area exists, processing...")
-            
-            # Only show system audio content
-            if '[SYSTEM]' in text:
-                clean_text = text.replace('[SYSTEM] ', '').strip()
-                print(f"🔍 DEBUG: System audio text: '{clean_text}'")
-                
-                if clean_text:  # Only add non-empty text
-                    current_text = self.transcript_area.toPlainText()
-                    
-                    # Add timestamp
-                    import time
-                    timestamp = time.strftime("%H:%M:%S")
-                    timestamped_text = f"[{timestamp}] {clean_text}"
-                    
-                    # Keep only last 5 lines
-                    if current_text.strip():
-                        lines = current_text.split('\n')
-                        lines.append(timestamped_text)
-                        if len(lines) > 5:
-                            lines = lines[-5:]
-                        new_text = '\n'.join(lines)
-                    else:
-                        new_text = timestamped_text
-                    
-                    print(f"🔍 DEBUG: Setting transcript text: '{new_text}'")
-                    self.transcript_area.setPlainText(new_text)
-                    
-                    # Auto-scroll to bottom
-                    scrollbar = self.transcript_area.verticalScrollBar()
-                    scrollbar.setValue(scrollbar.maximum())
-                    
-                    print("✅ Transcript updated successfully")
-            else:
-                print(f"🔍 DEBUG: Text doesn't contain [SYSTEM]: '{text}'")
-        else:
-            print(f"❌ DEBUG: No transcript area available")
-    
-    def update_transcript_threadsafe(self, text: str):
-        """Thread-safe version of update_transcript"""
-        print(f"🔍 DEBUG: update_transcript_threadsafe called with: '{text}'")
-        self.update_transcript_signal.emit(text)
-    
-    def apply_screen_protection(self):
-        """Apply screen capture protection"""
-        if HAS_WINDOWS_API:
-            try:
-                hwnd = int(self.winId())
-                user32.SetWindowDisplayAffinity(hwnd, WDA_MONITOR)
-                print("✓ Screen capture protection enabled")
-            except Exception as e:
-                print(f"⚠ Could not enable screen protection: {e}")
-        else:
-            print("⚠ Screen protection not available (Windows API not found)")
-    
     def animate_fade_in(self):
         """Animate fade in"""
+        if self.fade_animation and self.fade_animation.state() == QPropertyAnimation.Running:
+            self.fade_animation.stop()
+        
         self.fade_animation = QPropertyAnimation(self, b"windowOpacity")
         self.fade_animation.setDuration(300)
         self.fade_animation.setStartValue(0.0)
@@ -874,13 +893,23 @@ class ModernOverlay(QWidget):
     
     def animate_fade_out(self):
         """Animate fade out"""
+        if self.fade_animation and self.fade_animation.state() == QPropertyAnimation.Running:
+            self.fade_animation.stop()
+        
         self.fade_animation = QPropertyAnimation(self, b"windowOpacity")
         self.fade_animation.setDuration(200)
         self.fade_animation.setStartValue(1.0)
         self.fade_animation.setEndValue(0.0)
         self.fade_animation.setEasingCurve(QEasingCurve.InQuart)
-        self.fade_animation.finished.connect(self.hide)
+        self.fade_animation.finished.connect(self._finish_hide)
         self.fade_animation.start()
+    
+    def _finish_hide(self):
+        """Finish hide animation by actually hiding the window"""
+        self.hide()
+        # Disconnect to prevent memory leaks
+        if self.fade_animation:
+            self.fade_animation.finished.disconnect(self._finish_hide)
     
     def toggle_recording(self):
         """Toggle microphone recording"""
@@ -890,54 +919,90 @@ class ModernOverlay(QWidget):
             self.start_recording()
     
     def start_recording(self):
-        """Start recording"""
+        """Start recording with modern UI updates"""
         print("🎤 DEBUG: start_recording() called")
         self.is_recording = True
         
         # Start the timer
-        print("🎤 DEBUG: Starting mic timer...")
         self.mic_timer.start_recording()
         
-        # Update button style
-        print("🎤 DEBUG: Updating button style...")
-        self.mic_button.setStyleSheet(self.mic_button.styleSheet() + """
-            ModernButton {
-                background: rgba(255, 0, 0, 0.15);
-                border: 1px solid rgba(255, 0, 0, 0.3);
-            }
+        # Update button style for active state
+        self.mic_button.setStyleSheet(f"""
+            ModernButton {{
+                background: rgba(255, 59, 48, 0.15);
+                border: 2px solid rgba(255, 59, 48, 0.25);
+                border-radius: {self.scale(25)}px;
+                padding: {self.scale(8)}px;
+                qproperty-icon: url(icons/mic-on.png);
+                qproperty-iconSize: {self.scale(24)}px {self.scale(24)}px;
+            }}
+            ModernButton:hover {{
+                background: rgba(255, 59, 48, 0.2);
+                border: 2px solid rgba(255, 59, 48, 0.3);
+            }}
+        """)
+        
+        # Update timer label style
+        self.timer_label.setStyleSheet(f"""
+            QLabel {{
+                color: #ffffff;
+                font-family: 'Segoe UI Variable';
+                font-size: {self.scale_font(16)}px;
+                font-weight: 600;
+                background: rgba(255, 59, 48, 0.15);
+                border: 2px solid rgba(255, 59, 48, 0.25);
+                border-radius: {self.scale(18)}px;
+                padding: {self.scale(8)}px {self.scale(16)}px;
+                min-width: {self.scale(70)}px;
+            }}
         """)
         
         # Call the callback
-        print("🎤 DEBUG: Calling toggle mic callback...")
         if self.on_toggle_mic:
             self.on_toggle_mic(True)
-        
-        print("✅ Recording started successfully!")
     
     def stop_recording(self):
-        """Stop recording"""
+        """Stop recording with modern UI updates"""
         print("🎤 DEBUG: stop_recording() called")
         self.is_recording = False
         
         # Stop the timer
-        print("🎤 DEBUG: Stopping mic timer...")
         self.mic_timer.stop_recording()
         
         # Reset button style
-        print("🎤 DEBUG: Resetting button style...")
-        self.mic_button.setStyleSheet(self.mic_button.styleSheet().replace("""
-            ModernButton {
-                background: rgba(255, 0, 0, 0.15);
-                border: 1px solid rgba(255, 0, 0, 0.3);
-            }
-        """, ""))
+        self.mic_button.setStyleSheet(f"""
+            ModernButton {{
+                background: rgba(255, 255, 255, 0.08);
+                border: 2px solid rgba(255, 255, 255, 0.12);
+                border-radius: {self.scale(25)}px;
+                padding: {self.scale(8)}px;
+                qproperty-icon: url(icons/mic-off.png);
+                qproperty-iconSize: {self.scale(24)}px {self.scale(24)}px;
+            }}
+            ModernButton:hover {{
+                background: rgba(255, 255, 255, 0.12);
+                border: 2px solid rgba(255, 255, 255, 0.16);
+            }}
+        """)
+        
+        # Reset timer label style
+        self.timer_label.setStyleSheet(f"""
+            QLabel {{
+                color: #ffffff;
+                font-family: 'Segoe UI Variable';
+                font-size: {self.scale_font(16)}px;
+                font-weight: 600;
+                background: rgba(0, 120, 212, 0.15);
+                border: 2px solid rgba(0, 120, 212, 0.25);
+                border-radius: {self.scale(18)}px;
+                padding: {self.scale(8)}px {self.scale(16)}px;
+                min-width: {self.scale(70)}px;
+            }}
+        """)
         
         # Call the callback
-        print("🎤 DEBUG: Calling toggle mic callback...")
         if self.on_toggle_mic:
             self.on_toggle_mic(False)
-        
-        print("✅ Recording stopped successfully!")
     
     def update_timer_display(self, time_str):
         """Update the timer display"""
@@ -1179,4 +1244,76 @@ class ModernOverlay(QWidget):
         self.start_recording()
         # Auto-enable transcript for testing
         if hasattr(self, 'toggle_transcript_visibility'):
-            self.toggle_transcript_visibility(True) 
+            self.toggle_transcript_visibility(True)
+    
+    @pyqtSlot()
+    def toggle_visibility(self):
+        """Toggle overlay visibility"""
+        if self.is_visible:
+            self.hide_overlay()
+        else:
+            self.show_overlay()
+    
+    @pyqtSlot(str)
+    def update_transcript(self, text: str):
+        """Update the live transcript area"""
+        print(f"🔍 DEBUG: update_transcript called with: '{text}'")
+        print(f"🔍 DEBUG: show_transcript = {self.show_transcript}")
+        print(f"🔍 DEBUG: has transcript_area = {hasattr(self, 'transcript_area')}")
+        
+        # Always process transcript updates, but only display if enabled and area exists
+        if hasattr(self, 'transcript_area') and self.transcript_area is not None:
+            print(f"🔍 DEBUG: Transcript area exists, processing...")
+            
+            # Only show system audio content
+            if '[SYSTEM]' in text:
+                clean_text = text.replace('[SYSTEM] ', '').strip()
+                print(f"🔍 DEBUG: System audio text: '{clean_text}'")
+                
+                if clean_text:  # Only add non-empty text
+                    current_text = self.transcript_area.toPlainText()
+                    
+                    # Add timestamp
+                    import time
+                    timestamp = time.strftime("%H:%M:%S")
+                    timestamped_text = f"[{timestamp}] {clean_text}"
+                    
+                    # Keep only last 5 lines
+                    if current_text.strip():
+                        lines = current_text.split('\n')
+                        lines.append(timestamped_text)
+                        if len(lines) > 5:
+                            lines = lines[-5:]
+                        new_text = '\n'.join(lines)
+                    else:
+                        new_text = timestamped_text
+                    
+                    print(f"🔍 DEBUG: Setting transcript text: '{new_text}'")
+                    self.transcript_area.setPlainText(new_text)
+                    
+                    # Auto-scroll to bottom
+                    scrollbar = self.transcript_area.verticalScrollBar()
+                    scrollbar.setValue(scrollbar.maximum())
+                    
+                    print("✅ Transcript updated successfully")
+            else:
+                print(f"🔍 DEBUG: Text doesn't contain [SYSTEM]: '{text}'")
+        else:
+            print(f"❌ DEBUG: No transcript area available")
+    
+    def update_transcript_threadsafe(self, text: str):
+        """Thread-safe version of update_transcript"""
+        print(f"🔍 DEBUG: update_transcript_threadsafe called with: '{text}'")
+        self.update_transcript_signal.emit(text)
+    
+    def apply_screen_protection(self):
+        """Apply screen capture protection"""
+        if HAS_WINDOWS_API:
+            try:
+                hwnd = int(self.winId())
+                user32.SetWindowDisplayAffinity(hwnd, WDA_MONITOR)
+                print("✓ Screen capture protection enabled")
+            except Exception as e:
+                print(f"⚠ Could not enable screen protection: {e}")
+        else:
+            print("⚠ Screen protection not available (Windows API not found)") 

@@ -108,6 +108,29 @@ ui:
     skip_screen_capture: true
     transparent_background: true
 
+# Screen Sharing Detection Settings
+screen_sharing_detection:
+  enabled: false  # Disabled by default to prevent false positives
+  auto_hide_overlay: true  # Hide overlay when screen sharing is detected
+  detection_interval_seconds: 3
+  verbose_logging: false
+  # Only detect these specific apps (browsers removed to prevent false positives)
+  monitored_apps:
+    - zoom.exe
+    - teams.exe
+    - discord.exe
+    - obs64.exe
+    - obs32.exe
+    - streamlabs obs.exe
+    - xsplit.core.exe
+    - skype.exe
+    - webexmta.exe
+    - gotomeeting.exe
+    - anydesk.exe
+    - teamviewer.exe
+    - loom.exe
+    - camtasia.exe
+
 # Global Hotkeys
 hotkeys:
   trigger_assistance: ctrl+space
@@ -187,3 +210,26 @@ logging:
   file_path: logs/ai_assistant.log
   max_file_size_mb: 10
   backup_count: 3
+
+providers:
+  azure:
+    enabled: true
+    endpoint: "https://your-resource.openai.azure.com/"
+    api_key: ""
+    api_version: "2024-02-15-preview"  # Latest Azure API version
+    models:
+      deepseek:
+        deployment_name: "deepseek-coder"
+        model_name: "deepseek-coder-33b-instruct"
+        max_tokens: 4096
+        temperature: 0.7
+      claude:
+        deployment_name: "claude3-sonnet"
+        model_name: "claude-3-sonnet-20240229"
+        max_tokens: 4096
+        temperature: 0.7
+      gpt4:
+        deployment_name: "gpt-4"
+        model_name: "gpt-4"
+        max_tokens: 4096
+        temperature: 0.7
