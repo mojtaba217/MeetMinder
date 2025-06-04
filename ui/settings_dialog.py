@@ -9,6 +9,7 @@ from PyQt5.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
                            QApplication, QDesktopWidget, QSizePolicy)
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QIcon
+import json
 
 class ModernSettingsDialog(QDialog):
     """Modern tabbed settings dialog with organized sections"""
@@ -461,7 +462,7 @@ class ModernSettingsDialog(QDialog):
         
         # Set proper size policy for content to expand
         content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
-        content.setMinimumSize(self.scale(1200), self.scale(600))
+        content.setMinimumSize(self.scale(1200), self.scale(1100))  # Increased for transcription settings
         
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
@@ -504,22 +505,300 @@ class ModernSettingsDialog(QDialog):
         mode_group.setLayout(mode_layout)
         layout.addWidget(mode_group)
         
+        # System Audio Monitoring
+        system_audio_group = QGroupBox("🔊 System Audio Monitoring")
+        system_audio_group.setMinimumHeight(self.scale(400))
+        system_audio_layout = QVBoxLayout()
+        system_audio_layout.setSpacing(self.scale(15))
+        
+        # Full system audio monitoring toggle
+        self.full_system_audio = QCheckBox("Monitor all system audio (overrides specific app selection)")
+        self.full_system_audio.setMinimumHeight(self.scale(32))
+        self.full_system_audio.setStyleSheet("font-weight: 600; color: #ffffff;")
+        self.full_system_audio.toggled.connect(self.on_full_system_audio_changed)
+        self.full_system_audio.toggled.connect(self.update_monitoring_status)
+        system_audio_layout.addWidget(self.full_system_audio)
+        
+        # Separator line
+        separator = QFrame()
+        separator.setFrameShape(QFrame.HLine)
+        separator.setFrameShadow(QFrame.Sunken)
+        separator.setStyleSheet("color: #404040; background-color: #404040;")
+        system_audio_layout.addWidget(separator)
+        
+        # Application selection
+        app_selection_label = QLabel("Select specific applications to monitor:")
+        app_selection_label.setStyleSheet("color: #e6e6e6; font-style: italic; margin-top: 10px;")
+        app_selection_label.setMinimumHeight(self.scale(28))
+        system_audio_layout.addWidget(app_selection_label)
+        
+        # Add status indicator
+        self.monitoring_status = QLabel("📊 Currently monitoring: Loading...")
+        self.monitoring_status.setStyleSheet("color: #0078d4; font-weight: 600; margin-bottom: 10px; padding: 8px; background: #1a1a1a; border-radius: 4px;")
+        self.monitoring_status.setMinimumHeight(self.scale(32))
+        self.monitoring_status.setWordWrap(True)
+        system_audio_layout.addWidget(self.monitoring_status)
+        
+        # Create a grid layout for application checkboxes
+        apps_widget = QWidget()
+        apps_layout = QGridLayout(apps_widget)
+        apps_layout.setSpacing(self.scale(15))
+        
+        # Meeting/Conferencing Applications (default enabled)
+        meeting_apps = [
+            ("Google Meet", "google_meet", "🟢"),
+            ("Zoom", "zoom", "🔵"),
+            ("Microsoft Teams", "teams", "🟣"),
+            ("Skype", "skype", "🔷"),
+            ("Discord", "discord", "🟦"),
+            ("Slack", "slack", "🟨"),
+            ("WebEx", "webex", "🟧"),
+            ("GoToMeeting", "gotomeeting", "🟫")
+        ]
+        
+        # Communication & Productivity Apps
+        other_apps = [
+            ("Chrome/Edge Browser", "browser", "🌐"),
+            ("Firefox", "firefox", "🦊"),
+            ("Spotify", "spotify", "🎵"),
+            ("YouTube", "youtube", "📺"),
+            ("VLC Media Player", "vlc", "🎬"),
+            ("OBS Studio", "obs", "📹"),
+            ("Custom Application", "custom", "⚙️")
+        ]
+        
+        self.app_checkboxes = {}
+        
+        # Add meeting apps (left column)
+        meeting_label = QLabel("📞 Meeting & Communication Apps (Enabled by Default)")
+        meeting_label.setStyleSheet("font-weight: 600; color: #0078d4; margin-bottom: 5px;")
+        meeting_label.setMinimumHeight(self.scale(32))
+        apps_layout.addWidget(meeting_label, 0, 0, 1, 2)
+        
+        row = 1
+        for app_name, app_key, emoji in meeting_apps:
+            checkbox = QCheckBox(f"{emoji} {app_name}")
+            checkbox.setMinimumHeight(self.scale(32))
+            checkbox.setChecked(True)  # Default to enabled for meeting apps
+            checkbox.setStyleSheet("""
+                QCheckBox {
+                    color: #ffffff;
+                    font-weight: 500;
+                }
+                QCheckBox::indicator:checked {
+                    background: #0078d4;
+                    border: 2px solid #0078d4;
+                }
+            """)
+            checkbox.toggled.connect(self.update_monitoring_status)
+            self.app_checkboxes[app_key] = checkbox
+            apps_layout.addWidget(checkbox, row, 0)
+            row += 1
+        
+        # Add other apps (right column)
+        other_label = QLabel("🖥️ Other Applications (Disabled by Default)")
+        other_label.setStyleSheet("font-weight: 600; color: #666666; margin-bottom: 5px;")
+        other_label.setMinimumHeight(self.scale(32))
+        apps_layout.addWidget(other_label, 0, 2, 1, 2)
+        
+        row = 1
+        for app_name, app_key, emoji in other_apps:
+            checkbox = QCheckBox(f"{emoji} {app_name}")
+            checkbox.setMinimumHeight(self.scale(32))
+            checkbox.setChecked(False)  # Default to disabled for other apps
+            checkbox.setStyleSheet("""
+                QCheckBox {
+                    color: #ffffff;
+                    font-weight: 500;
+                }
+                QCheckBox::indicator:checked {
+                    background: #0078d4;
+                    border: 2px solid #0078d4;
+                }
+            """)
+            checkbox.toggled.connect(self.update_monitoring_status)
+            self.app_checkboxes[app_key] = checkbox
+            apps_layout.addWidget(checkbox, row, 2)
+            row += 1
+        
+        # Custom application input
+        custom_layout = QHBoxLayout()
+        self.custom_app_input = QLineEdit()
+        self.custom_app_input.setPlaceholderText("Enter custom application name (e.g., MyApp.exe)")
+        self.custom_app_input.setMinimumHeight(self.scale(40))
+        self.custom_app_input.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        
+        add_custom_btn = QPushButton("➕ Add")
+        add_custom_btn.setMinimumHeight(self.scale(40))
+        add_custom_btn.setMaximumWidth(self.scale(80))
+        add_custom_btn.clicked.connect(self.add_custom_application)
+        
+        custom_layout.addWidget(self.custom_app_input)
+        custom_layout.addWidget(add_custom_btn)
+        apps_layout.addLayout(custom_layout, row, 2, 1, 2)
+        
+        system_audio_layout.addWidget(apps_widget)
+        
+        # Audio filtering options
+        filter_label = QLabel("🎛️ Audio Filtering:")
+        filter_label.setStyleSheet("font-weight: 600; color: #ffffff; margin-top: 15px;")
+        filter_label.setMinimumHeight(self.scale(28))
+        system_audio_layout.addWidget(filter_label)
+        
+        self.filter_music = QCheckBox("🎵 Filter out music and non-speech audio (recommended)")
+        self.filter_music.setMinimumHeight(self.scale(32))
+        self.filter_music.setChecked(True)
+        self.filter_music.setToolTip("Uses AI to detect and ignore music, sound effects, and other non-speech audio")
+        system_audio_layout.addWidget(self.filter_music)
+        
+        self.speech_detection_threshold = QSlider(Qt.Horizontal)
+        self.speech_detection_threshold.setRange(10, 90)
+        self.speech_detection_threshold.setValue(60)
+        self.speech_detection_threshold.setMinimumHeight(self.scale(40))
+        self.speech_threshold_label = QLabel("60%")
+        self.speech_threshold_label.setMinimumWidth(self.scale(50))
+        self.speech_threshold_label.setMinimumHeight(self.scale(28))
+        self.speech_detection_threshold.valueChanged.connect(
+            lambda v: self.speech_threshold_label.setText(f"{v}%")
+        )
+        
+        threshold_layout = QHBoxLayout()
+        threshold_layout.addWidget(QLabel("Speech Detection Sensitivity:"))
+        threshold_layout.addWidget(self.speech_detection_threshold)
+        threshold_layout.addWidget(self.speech_threshold_label)
+        system_audio_layout.addLayout(threshold_layout)
+        
+        system_audio_group.setLayout(system_audio_layout)
+        layout.addWidget(system_audio_group)
+        
         # Transcription Provider
         transcription_group = QGroupBox("📝 Transcription Settings")
-        transcription_group.setMinimumHeight(self.scale(200))
-        transcription_layout = QFormLayout()
-        transcription_layout.setSpacing(self.scale(20))
-        transcription_layout.setLabelAlignment(Qt.AlignLeft)
+        transcription_group.setMinimumHeight(self.scale(500))  # Increased for more content
+        transcription_layout = QVBoxLayout()
+        transcription_layout.setSpacing(self.scale(15))
+        
+        # Provider selection
+        provider_form = QFormLayout()
+        provider_form.setSpacing(self.scale(20))
+        provider_form.setLabelAlignment(Qt.AlignLeft)
         
         self.transcription_provider = QComboBox()
-        self.transcription_provider.addItems(["local_whisper", "google_speech", "azure_speech"])
+        self.transcription_provider.addItems(["local_whisper", "google_speech", "azure_speech", "openai_whisper"])
         self.transcription_provider.setMinimumHeight(self.scale(40))
-        transcription_layout.addRow("Provider:", self.transcription_provider)
+        self.transcription_provider.currentTextChanged.connect(self.on_transcription_provider_changed)
+        provider_form.addRow("Provider:", self.transcription_provider)
+        
+        transcription_layout.addLayout(provider_form)
+        
+        # Local Whisper Settings
+        self.whisper_group = QGroupBox("🤖 Local Whisper Configuration")
+        self.whisper_group.setMinimumHeight(self.scale(120))
+        whisper_layout = QFormLayout()
+        whisper_layout.setSpacing(self.scale(15))
+        whisper_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.whisper_model = QComboBox()
         self.whisper_model.addItems(["tiny", "base", "small", "medium", "large"])
         self.whisper_model.setMinimumHeight(self.scale(40))
-        transcription_layout.addRow("Whisper Model:", self.whisper_model)
+        whisper_layout.addRow("Model Size:", self.whisper_model)
+        
+        self.whisper_group.setLayout(whisper_layout)
+        transcription_layout.addWidget(self.whisper_group)
+        
+        # Google Speech Settings
+        self.google_speech_group = QGroupBox("🔴 Google Speech-to-Text Configuration")
+        self.google_speech_group.setMinimumHeight(self.scale(200))
+        google_layout = QVBoxLayout()
+        google_layout.setSpacing(self.scale(15))
+        
+        # JSON config file option
+        json_file_layout = QHBoxLayout()
+        self.google_json_file = QLineEdit()
+        self.google_json_file.setPlaceholderText("Path to Google Cloud service account JSON file")
+        self.google_json_file.setMinimumHeight(self.scale(40))
+        self.google_json_file.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        
+        browse_json_btn = QPushButton("📁 Browse")
+        browse_json_btn.setMinimumHeight(self.scale(40))
+        browse_json_btn.setMaximumWidth(self.scale(100))
+        browse_json_btn.clicked.connect(self.browse_google_json_file)
+        
+        json_file_layout.addWidget(QLabel("Service Account JSON:"))
+        json_file_layout.addWidget(self.google_json_file)
+        json_file_layout.addWidget(browse_json_btn)
+        google_layout.addLayout(json_file_layout)
+        
+        # Alternative: Direct JSON input
+        google_layout.addWidget(QLabel("Or paste JSON content directly:"))
+        self.google_json_content = QTextEdit()
+        self.google_json_content.setMinimumHeight(self.scale(100))
+        self.google_json_content.setPlaceholderText('{\n  "type": "service_account",\n  "project_id": "your-project",\n  "private_key_id": "...",\n  ...\n}')
+        self.google_json_content.setStyleSheet("QTextEdit { color: #ffffff; font-family: 'Consolas', monospace; }")
+        google_layout.addWidget(self.google_json_content)
+        
+        self.google_speech_group.setLayout(google_layout)
+        transcription_layout.addWidget(self.google_speech_group)
+        
+        # Azure Speech Settings
+        self.azure_speech_group = QGroupBox("🔷 Azure Speech Services Configuration")
+        self.azure_speech_group.setMinimumHeight(self.scale(250))
+        azure_speech_layout = QFormLayout()
+        azure_speech_layout.setSpacing(self.scale(20))
+        azure_speech_layout.setLabelAlignment(Qt.AlignLeft)
+        
+        self.azure_speech_key = QLineEdit()
+        self.azure_speech_key.setPlaceholderText("Your Azure Speech API key")
+        self.azure_speech_key.setEchoMode(QLineEdit.Password)
+        self.azure_speech_key.setMinimumHeight(self.scale(40))
+        self.azure_speech_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        azure_speech_layout.addRow("API Key:", self.azure_speech_key)
+        
+        self.azure_speech_region = QLineEdit()
+        self.azure_speech_region.setPlaceholderText("eastus")
+        self.azure_speech_region.setMinimumHeight(self.scale(40))
+        self.azure_speech_region.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        azure_speech_layout.addRow("Region:", self.azure_speech_region)
+        
+        self.azure_speech_endpoint = QLineEdit()
+        self.azure_speech_endpoint.setPlaceholderText("https://your-region.api.cognitive.microsoft.com/ (optional)")
+        self.azure_speech_endpoint.setMinimumHeight(self.scale(40))
+        self.azure_speech_endpoint.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        azure_speech_layout.addRow("Custom Endpoint:", self.azure_speech_endpoint)
+        
+        self.azure_speech_language = QComboBox()
+        self.azure_speech_language.addItems(["en-US", "en-GB", "es-ES", "fr-FR", "de-DE", "it-IT", "pt-BR", "zh-CN", "ja-JP", "ko-KR"])
+        self.azure_speech_language.setMinimumHeight(self.scale(40))
+        azure_speech_layout.addRow("Language:", self.azure_speech_language)
+        
+        self.azure_speech_group.setLayout(azure_speech_layout)
+        transcription_layout.addWidget(self.azure_speech_group)
+        
+        # OpenAI Whisper API Settings
+        self.openai_whisper_group = QGroupBox("🟢 OpenAI Whisper API Configuration")
+        self.openai_whisper_group.setMinimumHeight(self.scale(200))
+        openai_whisper_layout = QFormLayout()
+        openai_whisper_layout.setSpacing(self.scale(20))
+        openai_whisper_layout.setLabelAlignment(Qt.AlignLeft)
+        
+        self.openai_whisper_api_key = QLineEdit()
+        self.openai_whisper_api_key.setPlaceholderText("Your OpenAI API key")
+        self.openai_whisper_api_key.setEchoMode(QLineEdit.Password)
+        self.openai_whisper_api_key.setMinimumHeight(self.scale(40))
+        self.openai_whisper_api_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+        openai_whisper_layout.addRow("API Key:", self.openai_whisper_api_key)
+        
+        self.openai_whisper_model = QComboBox()
+        self.openai_whisper_model.addItems(["whisper-1"])
+        self.openai_whisper_model.setMinimumHeight(self.scale(40))
+        openai_whisper_layout.addRow("Model:", self.openai_whisper_model)
+        
+        self.openai_whisper_language = QComboBox()
+        self.openai_whisper_language.addItems(["auto-detect", "en", "es", "fr", "de", "it", "pt", "zh", "ja", "ko"])
+        self.openai_whisper_language.setMinimumHeight(self.scale(40))
+        openai_whisper_layout.addRow("Language:", self.openai_whisper_language)
+        
+        self.openai_whisper_group.setLayout(openai_whisper_layout)
+        transcription_layout.addWidget(self.openai_whisper_group)
         
         transcription_group.setLayout(transcription_layout)
         layout.addWidget(transcription_group)
@@ -967,6 +1246,81 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.deepseek_group.setVisible(provider == "deepseek")
         self.claude_group.setVisible(provider == "claude")
     
+    def on_full_system_audio_changed(self, checked):
+        """Handle full system audio monitoring toggle"""
+        # Disable/enable specific app checkboxes when full monitoring is toggled
+        for checkbox in self.app_checkboxes.values():
+            checkbox.setEnabled(not checked)
+        
+        # Update custom app input
+        self.custom_app_input.setEnabled(not checked)
+        
+        # Visual feedback
+        if checked:
+            for checkbox in self.app_checkboxes.values():
+                checkbox.setStyleSheet("color: #666666;")
+        else:
+            for checkbox in self.app_checkboxes.values():
+                checkbox.setStyleSheet("color: #ffffff;")
+    
+    def on_transcription_provider_changed(self, provider):
+        """Handle transcription provider selection change"""
+        self.whisper_group.setVisible(provider == "local_whisper")
+        self.google_speech_group.setVisible(provider == "google_speech")
+        self.azure_speech_group.setVisible(provider == "azure_speech")
+        self.openai_whisper_group.setVisible(provider == "openai_whisper")
+    
+    def browse_google_json_file(self):
+        """Browse for Google Cloud service account JSON file"""
+        file_path, _ = QFileDialog.getOpenFileName(
+            self, "Select Google Cloud Service Account JSON", "", "JSON Files (*.json);;All Files (*)"
+        )
+        if file_path:
+            self.google_json_file.setText(file_path)
+            # Optionally load and validate the JSON content
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    json_content = f.read()
+                    # Basic validation - check if it's valid JSON
+                    json.loads(json_content)
+                    self.google_json_content.setPlainText(json_content)
+                    QMessageBox.information(self, "Success", "JSON file loaded successfully!")
+            except json.JSONDecodeError:
+                QMessageBox.warning(self, "Invalid JSON", "The selected file does not contain valid JSON.")
+            except Exception as e:
+                QMessageBox.warning(self, "Error", f"Failed to load file: {e}")
+    
+    def add_custom_application(self):
+        """Add a custom application to monitor"""
+        app_name = self.custom_app_input.text().strip()
+        if not app_name:
+            QMessageBox.warning(self, "Invalid Input", "Please enter an application name.")
+            return
+        
+        # Create a unique key from the app name
+        app_key = f"custom_{app_name.lower().replace(' ', '_').replace('.exe', '')}"
+        
+        # Check if already exists
+        if app_key in self.app_checkboxes:
+            QMessageBox.information(self, "Already Added", f"'{app_name}' is already in the list.")
+            return
+        
+        # Add the checkbox (find a good position for it)
+        checkbox = QCheckBox(f"⚙️ {app_name}")
+        checkbox.setMinimumHeight(self.scale(32))
+        checkbox.setChecked(True)
+        self.app_checkboxes[app_key] = checkbox
+        
+        # Add to the layout - find the custom application section
+        # For now, we'll show a success message and suggest restart
+        QMessageBox.information(
+            self, "Custom App Added", 
+            f"'{app_name}' has been added to the monitoring list.\n\nNote: You may need to restart the application for changes to take effect."
+        )
+        
+        # Clear the input
+        self.custom_app_input.clear()
+    
     def load_prompt_file(self):
         """Load prompt from file"""
         file_path, _ = QFileDialog.getOpenFileName(
@@ -1129,11 +1483,60 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         processing_interval = audio.get('processing_interval_seconds', 1.6)
         self.processing_interval.setValue(int(processing_interval * 10))
         
+        # System Audio Monitoring
+        system_audio = audio.get('system_audio_monitoring', {})
+        self.full_system_audio.setChecked(system_audio.get('full_monitoring', False))
+        
+        # Load monitored applications
+        monitored_apps = system_audio.get('monitored_applications', {
+            # Default to meeting apps enabled
+            'google_meet': True, 'zoom': True, 'teams': True, 'skype': True,
+            'discord': True, 'slack': True, 'webex': True, 'gotomeeting': True,
+            # Other apps disabled by default
+            'browser': False, 'firefox': False, 'spotify': False, 'youtube': False,
+            'vlc': False, 'obs': False, 'custom': False
+        })
+        
+        for app_key, checkbox in self.app_checkboxes.items():
+            checkbox.setChecked(monitored_apps.get(app_key, False))
+        
+        # Audio filtering settings
+        audio_filtering = system_audio.get('audio_filtering', {})
+        self.filter_music.setChecked(audio_filtering.get('filter_non_speech', True))
+        speech_threshold = int(audio_filtering.get('speech_detection_threshold', 0.6) * 100)
+        self.speech_detection_threshold.setValue(speech_threshold)
+        
+        # Update UI state based on full monitoring setting
+        self.on_full_system_audio_changed(self.full_system_audio.isChecked())
+        
         # Transcription
         transcription = self.current_config.get('transcription', {})
         self.transcription_provider.setCurrentText(transcription.get('provider', 'local_whisper'))
+        
+        # Local Whisper config
         whisper_config = transcription.get('whisper', {})
         self.whisper_model.setCurrentText(whisper_config.get('model_size', 'base'))
+        
+        # Google Speech config
+        google_config = transcription.get('google_speech', {})
+        self.google_json_file.setText(google_config.get('json_file_path', ''))
+        self.google_json_content.setPlainText(google_config.get('json_content', ''))
+        
+        # Azure Speech config
+        azure_speech_config = transcription.get('azure_speech', {})
+        self.azure_speech_key.setText(azure_speech_config.get('api_key', ''))
+        self.azure_speech_region.setText(azure_speech_config.get('region', 'eastus'))
+        self.azure_speech_endpoint.setText(azure_speech_config.get('endpoint', ''))
+        self.azure_speech_language.setCurrentText(azure_speech_config.get('language', 'en-US'))
+        
+        # OpenAI Whisper config
+        openai_whisper_config = transcription.get('openai_whisper', {})
+        self.openai_whisper_api_key.setText(openai_whisper_config.get('api_key', ''))
+        self.openai_whisper_model.setCurrentText(openai_whisper_config.get('model', 'whisper-1'))
+        self.openai_whisper_language.setCurrentText(openai_whisper_config.get('language', 'auto-detect'))
+        
+        # Update transcription provider visibility
+        self.on_transcription_provider_changed(self.transcription_provider.currentText())
         
         # UI
         ui = self.current_config.get('ui', {}).get('overlay', {})
@@ -1184,6 +1587,9 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         
         # Update visibility based on provider
         self.on_provider_changed(self.ai_provider_type.currentText())
+        
+        # Update monitoring status display
+        self.update_monitoring_status()
     
     def save_settings(self):
         """Save all settings and emit signal"""
@@ -1220,12 +1626,35 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
             'audio': {
                 'mode': self.audio_mode.currentText(),
                 'buffer_duration_minutes': self.buffer_duration.value(),
-                'processing_interval_seconds': self.processing_interval.value() / 10.0
+                'processing_interval_seconds': self.processing_interval.value() / 10.0,
+                'system_audio_monitoring': {
+                    'full_monitoring': self.full_system_audio.isChecked(),
+                    'monitored_applications': {app_key: checkbox.isChecked() for app_key, checkbox in self.app_checkboxes.items()},
+                    'audio_filtering': {
+                        'filter_non_speech': self.filter_music.isChecked(),
+                        'speech_detection_threshold': self.speech_detection_threshold.value() / 100.0
+                    }
+                }
             },
             'transcription': {
                 'provider': self.transcription_provider.currentText(),
                 'whisper': {
                     'model_size': self.whisper_model.currentText()
+                },
+                'google_speech': {
+                    'json_file_path': self.google_json_file.text(),
+                    'json_content': self.google_json_content.toPlainText()
+                },
+                'azure_speech': {
+                    'api_key': self.azure_speech_key.text(),
+                    'region': self.azure_speech_region.text(),
+                    'endpoint': self.azure_speech_endpoint.text(),
+                    'language': self.azure_speech_language.currentText()
+                },
+                'openai_whisper': {
+                    'api_key': self.openai_whisper_api_key.text(),
+                    'model': self.openai_whisper_model.currentText(),
+                    'language': self.openai_whisper_language.currentText()
                 }
             },
             'ui': {
@@ -1297,3 +1726,47 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         if reply == QMessageBox.Yes:
             # Reset to defaults - you could reload from a default config here
             self.reject()  # For now, just close the dialog 
+
+    def update_monitoring_status(self):
+        """Update the monitoring status label"""
+        if self.full_system_audio.isChecked():
+            self.monitoring_status.setText("📊 Currently monitoring: 🌐 ALL SYSTEM AUDIO")
+            self.monitoring_status.setStyleSheet("color: #ff6b6b; font-weight: 600; margin-bottom: 10px; padding: 8px; background: #1a1a1a; border-radius: 4px;")
+            return
+        
+        # Get enabled apps
+        enabled_apps = []
+        app_names = {
+            'google_meet': 'Google Meet',
+            'zoom': 'Zoom',
+            'teams': 'Teams',
+            'skype': 'Skype',
+            'discord': 'Discord',
+            'slack': 'Slack',
+            'webex': 'WebEx',
+            'gotomeeting': 'GoToMeeting',
+            'browser': 'Browser',
+            'firefox': 'Firefox',
+            'spotify': 'Spotify',
+            'youtube': 'YouTube',
+            'vlc': 'VLC',
+            'obs': 'OBS',
+            'custom': 'Custom Apps'
+        }
+        
+        for app_key, checkbox in self.app_checkboxes.items():
+            if checkbox.isChecked():
+                enabled_apps.append(app_names.get(app_key, app_key))
+        
+        if enabled_apps:
+            if len(enabled_apps) <= 4:
+                status_text = f"📊 Currently monitoring: {', '.join(enabled_apps)}"
+            else:
+                status_text = f"📊 Currently monitoring: {', '.join(enabled_apps[:3])} and {len(enabled_apps)-3} more"
+            self.monitoring_status.setStyleSheet("color: #0078d4; font-weight: 600; margin-bottom: 10px; padding: 8px; background: #1a1a1a; border-radius: 4px;")
+        else:
+            status_text = "📊 Currently monitoring: ⚠️ No applications selected"
+            self.monitoring_status.setStyleSheet("color: #ffa500; font-weight: 600; margin-bottom: 10px; padding: 8px; background: #1a1a1a; border-radius: 4px;")
+        
+        self.monitoring_status.setText(status_text)
+    
