@@ -11,13 +11,14 @@ class WASAPISystemAudioCapture:
     This handles only the system audio stream, not microphone.
     """
     
-    def __init__(self, sample_rate: int = 44100, chunk_size: int = 1024):
+    def __init__(self, sample_rate: int = 44100, chunk_size: int = 1024, max_queue_size: int = 100):
         self.sample_rate = sample_rate
         self.chunk_size = chunk_size
+        self.max_queue_size = max_queue_size
         self.is_recording = False
         
-        # Audio processing
-        self.audio_queue = queue.Queue()
+        # Audio processing with bounded queue to prevent memory leaks
+        self.audio_queue = queue.Queue(maxsize=max_queue_size)
         self.callbacks = []
         
         # PyAudio instance and stream
@@ -27,6 +28,10 @@ class WASAPISystemAudioCapture:
         # Device info
         self.wasapi_info = None
         self.loopback_device = None
+        
+        # Performance monitoring
+        self.dropped_frames = 0
+        self.last_performance_log = time.time()
         
         self._discover_wasapi_loopback()
         

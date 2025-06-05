@@ -10,6 +10,8 @@ import sys
 import os
 from pathlib import Path
 import whisper
+from concurrent.futures import ThreadPoolExecutor
+import functools
 
 # Add the current directory to Python path
 sys.path.insert(0, str(Path(__file__).parent))
@@ -40,6 +42,12 @@ class AIAssistant:
         self.app = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)  # Keep app running even when window is hidden
         
+        # Thread pool for background tasks (improved resource management)
+        self.thread_pool = ThreadPoolExecutor(
+            max_workers=4, 
+            thread_name_prefix="MeetMinder"
+        )
+        
         # Set application properties
         self.app.setApplicationName("MeetMinder")
         self.app.setApplicationDisplayName("MeetMinder")
@@ -64,7 +72,7 @@ class AIAssistant:
         self.splash.finish(None)
         
         print("✓ MeetMinder initialized successfully")
-        print("🎯 Ready to start!")
+        print("�� Ready to start!")
     
     def _create_loading_screen(self):
         """Create a simple loading screen"""

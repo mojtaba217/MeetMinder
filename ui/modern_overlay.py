@@ -22,6 +22,63 @@ try:
 except:
     HAS_WINDOWS_API = False
 
+class PerformanceOptimizer:
+    """Performance optimization utilities for UI"""
+    
+    def __init__(self):
+        self.update_timers = {}
+        self.debounce_delays = {
+            'transcript_update': 100,  # ms
+            'ai_response_update': 50,
+            'metrics_update': 500
+        }
+    
+    def debounce_update(self, key: str, callback: Callable, delay_ms: int = None):
+        """Debounce UI updates to prevent excessive redraws"""
+        if delay_ms is None:
+            delay_ms = self.debounce_delays.get(key, 100)
+        
+        # Cancel existing timer
+        if key in self.update_timers:
+            self.update_timers[key].stop()
+        
+        # Create new timer
+        timer = QTimer()
+        timer.setSingleShot(True)
+        timer.timeout.connect(callback)
+        timer.start(delay_ms)
+        
+        self.update_timers[key] = timer
+
+class OptimizedTextEdit(QTextEdit):
+    """Optimized text edit with virtual scrolling and limited content"""
+    
+    def __init__(self, max_lines: int = 100, parent=None):
+        super().__init__(parent)
+        self.max_lines = max_lines
+        self.line_count = 0
+        
+        # Performance settings
+        self.setUndoRedoEnabled(False)
+        self.document().setMaximumBlockCount(max_lines)
+    
+    def append_optimized(self, text: str):
+        """Optimized append that manages content size"""
+        # Use moveCursor and insertPlainText for better performance
+        cursor = self.textCursor()
+        cursor.movePosition(QtGui.QTextCursor.End)
+        cursor.insertText(text + "\n")
+        
+        # Auto-scroll to bottom
+        scrollbar = self.verticalScrollBar()
+        scrollbar.setValue(scrollbar.maximum())
+        
+        self.line_count += 1
+        
+        # Trim if too many lines (handled by document().setMaximumBlockCount)
+        if self.line_count > self.max_lines:
+            self.line_count = self.max_lines
+
 class MicrophoneTimer(QThread):
     """Background thread for microphone timer"""
     time_updated = pyqtSignal(str)

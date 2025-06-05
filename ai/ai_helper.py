@@ -1,10 +1,73 @@
 from openai import AzureOpenAI
-from typing import List, Dict, Any, AsyncGenerator
+from typing import List, Dict, Any, AsyncGenerator, Optional
 import asyncio
 import time
 import threading
 import os
+import hashlib
+import json
+from functools import lru_cache
+from dataclasses import dataclass
+from collections import defaultdict
 from core.config import AIProviderConfig, AssistantConfig
+
+@dataclass
+class RequestCache:
+    """Cache for AI requests to reduce redundant calls"""
+    cache: Dict[str, Any]
+    timestamps: Dict[str, float]
+    max_age: float = 300.0  # 5 minutes
+    max_size: int = 100
+    
+    def __init__(self):
+        self.cache = {}
+        self.timestamps = {}
+    
+    def get(self, key: str) -> Optional[Any]:
+        """Get cached response if still valid"""
+        if key in self.cache:
+            if time.time() - self.timestamps[key] < self.max_age:
+                return self.cache[key]
+            else:
+                # Expired, remove
+                del self.cache[key]
+                del self.timestamps[key]
+        return None
+    
+    def set(self, key: str, value: Any):
+        """Cache a response"""
+        # Clean old entries if cache is full
+        if len(self.cache) >= self.max_size:
+            oldest_key = min(self.timestamps.keys(), key=lambda k: self.timestamps[k])
+            del self.cache[oldest_key]
+            del self.timestamps[oldest_key]
+        
+        self.cache[key] = value
+        self.timestamps[key] = time.time()
+
+@dataclass  
+class RateLimiter:
+    """Rate limiter for AI requests"""
+    requests: List[float]
+    max_requests: int = 60  # per minute
+    window: float = 60.0  # 1 minute window
+    
+    def __init__(self):
+        self.requests = []
+        self._lock = threading.Lock()
+    
+    def can_make_request(self) -> bool:
+        """Check if we can make a request without hitting rate limits"""
+        with self._lock:
+            now = time.time()
+            # Remove old requests outside window
+            self.requests = [req_time for req_time in self.requests if now - req_time < self.window]
+            return len(self.requests) < self.max_requests
+    
+    def record_request(self):
+        """Record a new request"""
+        with self._lock:
+            self.requests.append(time.time())
 
 class AIHelper:
     def __init__(self, config: AIProviderConfig, profile_manager=None, topic_manager=None, config_manager=None):
@@ -16,12 +79,30 @@ class AIHelper:
         self.assistant_config = None
         self.custom_prompt_rules = ""
         
+        # Performance optimizations
+        self.request_cache = RequestCache()
+        self.rate_limiter = RateLimiter()
+        self.connection_pool_size = 3
+        self.clients_pool = []
+        self.pool_lock = threading.Lock()
+        
+        # Performance metrics
+        self.request_metrics = {
+            'total_requests': 0,
+            'cache_hits': 0,
+            'cache_misses': 0,
+            'rate_limited': 0,
+            'avg_response_time': 0.0,
+            'last_response_times': []
+        }
+        
         # Load assistant configuration
         if config_manager:
             self.assistant_config = config_manager.get_assistant_config()
             self.custom_prompt_rules = config_manager.load_prompt_rules()
         
         self._setup_client()
+        self._initialize_connection_pool()
     
     def _setup_client(self):
         """Initialize the appropriate AI client based on configuration"""
@@ -41,23 +122,110 @@ class AIHelper:
         else:
             raise ValueError(f"Unsupported AI provider: {self.config.type}")
     
+    def _initialize_connection_pool(self):
+        """Initialize a pool of connections for better performance"""
+        with self.pool_lock:
+            for _ in range(self.connection_pool_size):
+                if self.config.type == "azure_openai":
+                    client = AzureOpenAI(
+                        api_key=self.config.azure_openai['api_key'],
+                        api_version=self.config.azure_openai['api_version'],
+                        azure_endpoint=self.config.azure_openai['endpoint']
+                    )
+                    self.clients_pool.append(client)
+    
+    def _get_client(self):
+        """Get a client from the pool"""
+        with self.pool_lock:
+            if self.clients_pool:
+                return self.clients_pool.pop()
+            else:
+                # Create new client if pool is empty
+                if self.config.type == "azure_openai":
+                    return AzureOpenAI(
+                        api_key=self.config.azure_openai['api_key'],
+                        api_version=self.config.azure_openai['api_version'],
+                        azure_endpoint=self.config.azure_openai['endpoint']
+                    )
+                return self.client
+    
+    def _return_client(self, client):
+        """Return client to pool"""
+        with self.pool_lock:
+            if len(self.clients_pool) < self.connection_pool_size:
+                self.clients_pool.append(client)
+    
+    def _generate_cache_key(self, prompt: str, config: Dict[str, Any]) -> str:
+        """Generate cache key for request"""
+        cache_data = {
+            'prompt': prompt[:200],  # First 200 chars to avoid huge keys
+            'model': self.config.model,
+            'temperature': config.get('temperature', 0.7),
+            'max_tokens': config.get('max_tokens', 500)
+        }
+        return hashlib.md5(json.dumps(cache_data, sort_keys=True).encode()).hexdigest()
+    
     async def analyze_context_stream(self, 
                                    transcript: List[str], 
                                    screen_context: str,
                                    clipboard_content: str = None,
                                    context_type: str = "general") -> AsyncGenerator[str, None]:
-        """Stream real-time AI analysis of context with enhanced dual-stream support"""
+        """Stream real-time AI analysis of context with enhanced dual-stream support and caching"""
+        
+        # Check rate limiting
+        if not self.rate_limiter.can_make_request():
+            self.request_metrics['rate_limited'] += 1
+            yield "Rate limit reached. Please wait before making another request."
+            return
+        
         context_prompt = self._build_context_prompt(
             transcript, screen_context, clipboard_content, context_type
         )
         
+        # Check cache first for non-streaming requests
+        cache_key = self._generate_cache_key(context_prompt, {
+            'temperature': self._get_temperature(),
+            'max_tokens': self._get_max_tokens()
+        })
+        
+        cached_response = self.request_cache.get(cache_key)
+        if cached_response:
+            self.request_metrics['cache_hits'] += 1
+            # Stream cached response
+            for chunk in cached_response:
+                yield chunk
+                await asyncio.sleep(0.01)
+            return
+        
+        self.request_metrics['cache_misses'] += 1
+        self.rate_limiter.record_request()
+        self.request_metrics['total_requests'] += 1
+        
+        start_time = time.time()
+        response_chunks = []
+        
         try:
             if self.config.type == "azure_openai":
                 async for chunk in self._stream_azure_openai(context_prompt):
+                    response_chunks.append(chunk)
                     yield chunk
             elif self.config.type == "google_gemini":
                 async for chunk in self._stream_google_gemini(context_prompt):
+                    response_chunks.append(chunk)
                     yield chunk
+            
+            # Cache the response
+            self.request_cache.set(cache_key, response_chunks)
+            
+            # Update performance metrics
+            response_time = time.time() - start_time
+            self.request_metrics['last_response_times'].append(response_time)
+            if len(self.request_metrics['last_response_times']) > 10:
+                self.request_metrics['last_response_times'].pop(0)
+            
+            self.request_metrics['avg_response_time'] = sum(
+                self.request_metrics['last_response_times']
+            ) / len(self.request_metrics['last_response_times'])
                     
         except Exception as e:
             yield f"Error: AI analysis failed - {e}"
