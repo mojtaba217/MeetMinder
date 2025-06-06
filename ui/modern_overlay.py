@@ -6,11 +6,11 @@ import psutil
 import os
 from typing import Dict, Any, Optional, Callable
 from PyQt5 import QtWidgets, QtCore, QtGui
-from PyQt5.QtCore import QTimer, pyqtSignal, QThread, QPropertyAnimation, QEasingCurve, pyqtSlot
+from PyQt5.QtCore import QTimer, pyqtSignal, QThread, QPropertyAnimation, QEasingCurve, pyqtSlot, QRect, QPoint, QSize
 from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
                            QTextEdit, QFrame, QSizePolicy, QGraphicsDropShadowEffect,
-                           QScrollArea, QApplication)
-from PyQt5.QtGui import QFont, QPalette, QColor, QIcon
+                           QScrollArea, QApplication, QGraphicsBlurEffect, QDesktopWidget)
+from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPainter, QBrush, QLinearGradient
 
 # Windows API constants for screen capture protection
 WDA_NONE = 0x00000000
@@ -22,6 +22,148 @@ try:
 except:
     HAS_WINDOWS_API = False
 
+class ResponsiveWidthMonitor(QThread):
+    """Monitor screen width changes and content to adjust UI dynamically"""
+    width_changed = pyqtSignal(int, int)  # new_width, new_height
+    content_changed = pyqtSignal(int)     # content_length
+    
+    def __init__(self):
+        super().__init__()
+        self.is_running = False
+        self.current_screen_width = 0
+        self.current_screen_height = 0
+        self.current_content_length = 0
+        self.check_interval = 500  # ms
+        
+    def run(self):
+        """Monitor screen dimensions and content changes"""
+        self.is_running = True
+        while self.is_running:
+            try:
+                # Get current screen dimensions
+                desktop = QApplication.desktop()
+                screen_rect = desktop.screenGeometry()
+                width = screen_rect.width()
+                height = screen_rect.height()
+                
+                # Check if screen dimensions changed
+                if width != self.current_screen_width or height != self.current_screen_height:
+                    print(f"🖥️ Screen dimensions changed: {width}x{height}")
+                    self.current_screen_width = width
+                    self.current_screen_height = height
+                    self.width_changed.emit(width, height)
+                
+                self.msleep(self.check_interval)
+                
+            except Exception as e:
+                print(f"❌ Error in width monitoring: {e}")
+                self.msleep(1000)
+    
+    def update_content_length(self, length: int):
+        """Update content length for adaptive sizing"""
+        if length != self.current_content_length:
+            self.current_content_length = length
+            self.content_changed.emit(length)
+    
+    def stop_monitoring(self):
+        """Stop monitoring"""
+        self.is_running = False
+
+class BlurredBackgroundWidget(QWidget):
+    """Widget with enhanced transparency and blur effects"""
+    
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.background_opacity = 0.15
+        self.blur_radius = 20
+        self.gradient_intensity = 0.3
+        
+    def set_background_opacity(self, opacity: float):
+        """Set background opacity (0.0 to 1.0)"""
+        self.background_opacity = max(0.0, min(1.0, opacity))
+        self.update()
+    
+    def set_blur_radius(self, radius: int):
+        """Set blur radius"""
+        self.blur_radius = max(0, radius)
+        self.update()
+    
+    def paintEvent(self, event):
+        """Custom paint event for enhanced transparency"""
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.Antialiasing)
+        
+        # Create gradient background
+        gradient = QLinearGradient(0, 0, 0, self.height())
+        gradient.setColorAt(0, QColor(20, 20, 20, int(255 * self.background_opacity * 0.8)))
+        gradient.setColorAt(0.5, QColor(30, 30, 30, int(255 * self.background_opacity)))
+        gradient.setColorAt(1, QColor(20, 20, 20, int(255 * self.background_opacity * 0.6)))
+        
+        # Draw rounded rectangle with gradient
+        painter.setBrush(QBrush(gradient))
+        painter.setPen(QColor(100, 100, 100, int(255 * self.background_opacity * 2)))
+        painter.drawRoundedRect(self.rect(), 12, 12)
+        
+        super().paintEvent(event)
+
+class SmoothAnimationManager:
+    """Manages smooth animations for professional UI transitions"""
+    
+    def __init__(self, widget):
+        self.widget = widget
+        self.animations = {}
+        
+    def fade_in(self, duration=300, target_opacity=1.0):
+        """Smooth fade in animation"""
+        if 'fade' in self.animations:
+            self.animations['fade'].stop()
+        
+        self.animations['fade'] = QPropertyAnimation(self.widget, b"windowOpacity")
+        self.animations['fade'].setDuration(duration)
+        self.animations['fade'].setStartValue(0.0)
+        self.animations['fade'].setEndValue(target_opacity)
+        self.animations['fade'].setEasingCurve(QEasingCurve.OutCubic)
+        self.animations['fade'].start()
+        
+    def fade_out(self, duration=200, target_opacity=0.0):
+        """Smooth fade out animation"""
+        if 'fade' in self.animations:
+            self.animations['fade'].stop()
+        
+        self.animations['fade'] = QPropertyAnimation(self.widget, b"windowOpacity")
+        self.animations['fade'].setDuration(duration)
+        self.animations['fade'].setStartValue(self.widget.windowOpacity())
+        self.animations['fade'].setEndValue(target_opacity)
+        self.animations['fade'].setEasingCurve(QEasingCurve.InCubic)
+        self.animations['fade'].start()
+    
+    def slide_expand(self, duration=400, target_height=None):
+        """Smooth height expansion animation"""
+        if 'expand' in self.animations:
+            self.animations['expand'].stop()
+        
+        if target_height is None:
+            target_height = self.widget.sizeHint().height()
+        
+        self.animations['expand'] = QPropertyAnimation(self.widget, b"maximumHeight")
+        self.animations['expand'].setDuration(duration)
+        self.animations['expand'].setStartValue(self.widget.height())
+        self.animations['expand'].setEndValue(target_height)
+        self.animations['expand'].setEasingCurve(QEasingCurve.OutQuart)
+        self.animations['expand'].start()
+    
+    def slide_collapse(self, duration=300, target_height=60):
+        """Smooth height collapse animation"""
+        if 'expand' in self.animations:
+            self.animations['expand'].stop()
+        
+        self.animations['expand'] = QPropertyAnimation(self.widget, b"maximumHeight")
+        self.animations['expand'].setDuration(duration)
+        self.animations['expand'].setStartValue(self.widget.height())
+        self.animations['expand'].setEndValue(target_height)
+        self.animations['expand'].setEasingCurve(QEasingCurve.InQuart)
+        self.animations['expand'].start()
+
 class PerformanceOptimizer:
     """Performance optimization utilities for UI"""
     
@@ -30,7 +172,8 @@ class PerformanceOptimizer:
         self.debounce_delays = {
             'transcript_update': 100,  # ms
             'ai_response_update': 50,
-            'metrics_update': 500
+            'metrics_update': 500,
+            'width_update': 200
         }
     
     def debounce_update(self, key: str, callback: Callable, delay_ms: int = None):
@@ -255,9 +398,28 @@ class ModernOverlay(QWidget):
         
         print(f"🖥️ Screen: {screen.width()}x{screen.height()}, Overlay Scale: {self.screen_scale:.2f}x")
         
+        # Enhanced features
+        self.background_opacity = config.get('background_opacity', 0.15)
+        self.blur_enabled = config.get('blur_enabled', True)
+        self.smooth_animations = config.get('smooth_animations', True)
+        
+        # Initialize enhanced components
+        self.width_monitor = ResponsiveWidthMonitor()
+        self.width_monitor.width_changed.connect(self.on_screen_dimensions_changed)
+        self.width_monitor.content_changed.connect(self.on_content_length_changed)
+        
+        self.performance_optimizer = PerformanceOptimizer()
+        self.animation_manager = None  # Will be set in setup_ui
+        
+        # Dynamic sizing based on content
+        self.min_width = int(600 * self.screen_scale)
+        self.max_width = int(1200 * self.screen_scale)  # Reduced max width to avoid geometry issues
+        self.adaptive_width = self.min_width
+        
         # Debug transcript configuration
         print(f"🔍 DEBUG: Overlay config keys: {list(config.keys())}")
         print(f"🔍 DEBUG: show_transcript setting: {self.show_transcript}")
+        print(f"🎨 Enhanced UI: opacity={self.background_opacity}, blur={self.blur_enabled}, animations={self.smooth_animations}")
         
         # Get size multiplier from config and apply screen scaling
         base_size_multiplier = config.get('size_multiplier', 1.0)
@@ -319,7 +481,7 @@ class ModernOverlay(QWidget):
         return int(size * self.size_multiplier)
         
     def setup_ui(self):
-        """Setup the horizontal bar UI"""
+        """Setup the horizontal bar UI with enhanced features"""
         # Window properties
         self.setWindowFlags(
             QtCore.Qt.FramelessWindowHint |
@@ -333,10 +495,22 @@ class ModernOverlay(QWidget):
         if os.path.exists("MeetMinderIcon.ico"):
             self.setWindowIcon(QtGui.QIcon("MeetMinderIcon.ico"))
         
-        # Main layout - vertical to stack bar and expandable content
-        main_layout = QVBoxLayout()
+        # Initialize animation manager
+        self.animation_manager = SmoothAnimationManager(self)
+        
+        # Always use standard layout to avoid conflicts - blur effects will be applied via stylesheets
+        main_layout = QVBoxLayout(self)
         main_layout.setContentsMargins(0, 0, 0, 0)
         main_layout.setSpacing(0)
+        
+        # Apply enhanced background styling if blur is enabled
+        if self.blur_enabled:
+            self.setStyleSheet(f"""
+                ModernOverlay {{
+                    background: rgba({int(20 * self.background_opacity)}, {int(20 * self.background_opacity)}, {int(20 * self.background_opacity)}, {self.background_opacity});
+                    border-radius: 16px;
+                }}
+            """)
         
         # Top horizontal bar (always visible when shown)
         self.setup_horizontal_bar(main_layout)
@@ -344,17 +518,28 @@ class ModernOverlay(QWidget):
         # Expandable content area (hidden by default)
         self.setup_expandable_content(main_layout)
         
+        # Set main layout (always set since we're using standard layout now)
         self.setLayout(main_layout)
         
-        # Set initial size - horizontal bar only
-        self.resize(self.scale(1000), self.scale(60))  # Wide horizontal bar
+        # Set initial adaptive size
+        self.resize(self.adaptive_width, self.scale(70))
         self.position_window()
         
-        # Start visible and ensure it's shown  
-        self.setWindowOpacity(1.0)  # Start fully visible
-        self.is_visible = True      # Set visible state
-        self.show()                 # Show immediately
-        print("✅ Overlay initialized and shown")
+        # Start width monitoring
+        self.width_monitor.start()
+        print("🖥️ Width monitoring started")
+        
+        # Start visible with smooth animation if enabled
+        if self.smooth_animations:
+            self.setWindowOpacity(0.0)
+            self.show()
+            self.animation_manager.fade_in(duration=500, target_opacity=0.9)
+        else:
+            self.setWindowOpacity(0.9)  # Professional semi-transparency
+            self.show()
+            
+        self.is_visible = True
+        print("✅ Enhanced overlay initialized and shown")
     
     def setup_horizontal_bar(self, parent_layout):
         """Setup the main horizontal bar"""
@@ -1129,15 +1314,22 @@ class ModernOverlay(QWidget):
     # UI update methods - thread-safe slots
     @pyqtSlot(str)
     def update_ai_response(self, text: str):
-        """Update AI response area"""
+        """Update AI response area with enhanced content tracking"""
         self.ai_response_area.setPlainText(text)
         # Auto-expand when AI response is updated
         if not self.is_expanded and text.strip():
             self.expand_content()
+        
+        # Update content metrics for adaptive sizing
+        self.performance_optimizer.debounce_update(
+            'content_metrics',
+            self.update_content_metrics,
+            delay_ms=100
+        )
     
     @pyqtSlot(str)
     def append_ai_response(self, text: str):
-        """Append to AI response area"""
+        """Append to AI response area with enhanced content tracking"""
         current_text = self.ai_response_area.toPlainText()
         self.ai_response_area.setPlainText(current_text + text)
         
@@ -1148,6 +1340,13 @@ class ModernOverlay(QWidget):
         # Auto-expand when content is being added
         if not self.is_expanded:
             self.expand_content()
+            
+        # Update content metrics for adaptive sizing
+        self.performance_optimizer.debounce_update(
+            'content_metrics',
+            self.update_content_metrics,
+            delay_ms=100
+        )
     
     @pyqtSlot(str)
     def update_topic_path(self, path: str):
@@ -1373,4 +1572,150 @@ class ModernOverlay(QWidget):
             except Exception as e:
                 print(f"⚠ Could not enable screen protection: {e}")
         else:
-            print("⚠ Screen protection not available (Windows API not found)") 
+            print("⚠ Screen protection not available (Windows API not found)")
+    
+    def on_screen_dimensions_changed(self, width: int, height: int):
+        """Handle screen dimension changes for responsive design"""
+        print(f"🖥️ Screen dimensions changed to: {width}x{height}")
+        
+        # Recalculate screen scale
+        old_scale = self.screen_scale
+        self.screen_scale = min(width / 1920, height / 1080)
+        self.screen_scale = max(0.8, min(2.0, self.screen_scale))
+        
+        if abs(old_scale - self.screen_scale) > 0.1:  # Significant change
+            print(f"🎨 Scale factor changed: {old_scale:.2f} → {self.screen_scale:.2f}")
+            
+            # Update size multiplier
+            base_size_multiplier = self.config.get('size_multiplier', 1.0)
+            self.size_multiplier = base_size_multiplier * self.screen_scale
+            
+            # Update adaptive width limits
+            self.min_width = int(600 * self.screen_scale)
+            self.max_width = int(1400 * self.screen_scale)
+            
+            # Debounce the UI update to avoid excessive redraws
+            self.performance_optimizer.debounce_update(
+                'scale_update', 
+                self.update_ui_scaling,
+                delay_ms=300
+            )
+    
+    def on_content_length_changed(self, content_length: int):
+        """Handle content length changes for adaptive width"""
+        # Calculate optimal width based on content
+        base_width = self.min_width
+        content_factor = min(content_length / 1000, 1.0)  # Scale factor based on content
+        optimal_width = int(base_width + (self.max_width - base_width) * content_factor)
+        
+        # Update adaptive width if changed significantly
+        if abs(optimal_width - self.adaptive_width) > 50:
+            print(f"📏 Adaptive width: {self.adaptive_width} → {optimal_width} (content: {content_length})")
+            self.adaptive_width = optimal_width
+            
+            # Debounce the resize operation
+            self.performance_optimizer.debounce_update(
+                'width_update',
+                lambda: self.resize_smoothly(self.adaptive_width),
+                delay_ms=200
+            )
+    
+    def update_ui_scaling(self):
+        """Update UI scaling after screen changes"""
+        try:
+            # Resize with new scaling
+            current_width = max(self.adaptive_width, self.min_width)
+            self.resize(current_width, self.height())
+            
+            # Reposition on screen
+            self.position_window()
+            
+            print(f"🎨 UI scaling updated: width={current_width}")
+            
+        except Exception as e:
+            print(f"❌ Error updating UI scaling: {e}")
+    
+    def resize_smoothly(self, target_width: int):
+        """Smoothly resize the overlay to target width"""
+        try:
+            # Get screen dimensions for bounds checking
+            screen = QApplication.primaryScreen().availableGeometry()
+            max_safe_width = min(self.max_width, screen.width() - 100)  # Leave margin
+            
+            target_width = max(self.min_width, min(target_width, max_safe_width))
+            
+            # Don't resize if change is too small to avoid excessive updates
+            if abs(target_width - self.width()) < 20:
+                return
+                
+            if self.smooth_animations and hasattr(self, 'animation_manager'):
+                # Create smooth width animation
+                width_animation = QPropertyAnimation(self, b"size")
+                width_animation.setDuration(300)
+                width_animation.setStartValue(self.size())
+                width_animation.setEndValue(QSize(target_width, self.height()))
+                width_animation.setEasingCurve(QEasingCurve.OutCubic)
+                width_animation.start()
+                
+                # Store animation to prevent garbage collection
+                if not hasattr(self, '_width_animations'):
+                    self._width_animations = []
+                self._width_animations.append(width_animation)
+                
+                # Clean up old animations
+                if len(self._width_animations) > 3:
+                    self._width_animations.pop(0)
+            else:
+                # Direct resize
+                self.resize(target_width, self.height())
+                
+            # Reposition to keep centered
+            self.position_window()
+            
+        except Exception as e:
+            print(f"❌ Error in smooth resize: {e}")
+    
+    def update_content_metrics(self):
+        """Update content metrics for adaptive sizing"""
+        try:
+            total_content = 0
+            
+            # Count AI response content
+            if hasattr(self, 'ai_response_area'):
+                total_content += len(self.ai_response_area.toPlainText())
+            
+            # Count transcript content
+            if hasattr(self, 'transcript_area'):
+                total_content += len(self.transcript_area.toPlainText())
+            
+            # Update width monitor with new content length
+            self.width_monitor.update_content_length(total_content)
+            
+        except Exception as e:
+            print(f"❌ Error updating content metrics: {e}")
+    
+    def enhanced_closeEvent(self, event):
+        """Enhanced cleanup when overlay is closed"""
+        try:
+            # Stop width monitoring
+            if hasattr(self, 'width_monitor'):
+                self.width_monitor.stop_monitoring()
+                if self.width_monitor.isRunning():
+                    self.width_monitor.wait(2000)  # Wait up to 2 seconds
+            
+            # Stop existing processes
+            if hasattr(self, 'mic_timer'):
+                self.mic_timer.stop_timer()
+            
+            if hasattr(self, 'screen_sharing_detector') and self.screen_sharing_detector:
+                self.screen_sharing_detector.stop_detection()
+                if self.screen_sharing_detector.isRunning():
+                    self.screen_sharing_detector.wait(1000)
+            
+            print("🧹 Enhanced overlay cleanup completed")
+            
+        except Exception as e:
+            print(f"❌ Error in enhanced cleanup: {e}")
+        
+        # Call original close event
+        super().closeEvent(event) 

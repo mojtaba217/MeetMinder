@@ -28,6 +28,8 @@ from ui.modern_overlay import ModernOverlay
 from ui.settings_dialog import ModernSettingsDialog
 from screen.capture import ScreenCapture
 from utils.hotkeys import AsyncHotkeyManager
+from utils.resource_monitor import global_resource_monitor
+from utils.error_handler import global_error_handler, handle_errors, ErrorSeverity
 
 # PyQt5 imports for the app
 from PyQt5.QtWidgets import QApplication, QSplashScreen, QLabel
@@ -207,6 +209,12 @@ class AIAssistant:
         self.is_running = False
         self.current_context_type = "general"
         
+        self.splash.showMessage("🔍 Initializing monitoring systems...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.app.processEvents()
+        
+        # Initialize resource monitoring
+        self._setup_resource_monitoring()
+        
         self.splash.showMessage("⚙️ Finalizing setup...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
         self.app.processEvents()
         
@@ -237,6 +245,85 @@ class AIAssistant:
         self.hotkey_manager.register_callback('move_up', lambda: self._move_overlay_threadsafe('up'))
         self.hotkey_manager.register_callback('move_down', lambda: self._move_overlay_threadsafe('down'))
         self.hotkey_manager.register_callback('emergency_reset', self._emergency_reset_threadsafe)
+    
+    def _setup_resource_monitoring(self):
+        """Setup resource monitoring and cleanup systems"""
+        try:
+            print("🔍 Setting up resource monitoring...")
+            
+            # Register cleanup callbacks for our components
+            global_resource_monitor.register_cleanup_callback(
+                "audio_contextualizer", 
+                lambda: self._cleanup_audio_resources()
+            )
+            
+            global_resource_monitor.register_cleanup_callback(
+                "ai_helper", 
+                lambda: self._cleanup_ai_resources()
+            )
+            
+            global_resource_monitor.register_cleanup_callback(
+                "overlay_ui", 
+                lambda: self._cleanup_ui_resources()
+            )
+            
+            # Connect resource warning signals
+            global_resource_monitor.memory_warning.connect(self._on_memory_warning)
+            global_resource_monitor.cpu_warning.connect(self._on_cpu_warning)
+            global_resource_monitor.cleanup_triggered.connect(self._on_cleanup_triggered)
+            
+            # Start monitoring
+            global_resource_monitor.start_monitoring()
+            print("✅ Resource monitoring active")
+            
+        except Exception as e:
+            print(f"❌ Error setting up resource monitoring: {e}")
+    
+    def _cleanup_audio_resources(self):
+        """Cleanup audio processing resources"""
+        try:
+            if hasattr(self.audio_contextualizer, 'clear_buffers'):
+                self.audio_contextualizer.clear_buffers()
+            print("🧹 Audio resources cleaned")
+        except Exception as e:
+            print(f"❌ Error cleaning audio resources: {e}")
+    
+    def _cleanup_ai_resources(self):
+        """Cleanup AI helper resources"""
+        try:
+            if hasattr(self.ai_helper, 'request_cache'):
+                self.ai_helper.request_cache.cache.clear()
+                self.ai_helper.request_cache.timestamps.clear()
+            print("🧹 AI resources cleaned")
+        except Exception as e:
+            print(f"❌ Error cleaning AI resources: {e}")
+    
+    def _cleanup_ui_resources(self):
+        """Cleanup UI resources"""
+        try:
+            if hasattr(self.overlay, 'clear_all_content'):
+                self.overlay.clear_all_content()
+            print("🧹 UI resources cleaned")
+        except Exception as e:
+            print(f"❌ Error cleaning UI resources: {e}")
+    
+    def _on_memory_warning(self, memory_percent: float):
+        """Handle memory warning"""
+        print(f"⚠️ Memory warning: {memory_percent:.1f}% usage")
+        # Update overlay with warning if needed
+        if hasattr(self.overlay, 'show_warning'):
+            self.overlay.show_warning(f"High memory usage: {memory_percent:.1f}%")
+    
+    def _on_cpu_warning(self, cpu_percent: float):
+        """Handle CPU warning"""
+        print(f"⚠️ CPU warning: {cpu_percent:.1f}% usage")
+    
+    def _on_cleanup_triggered(self, reason: str):
+        """Handle cleanup trigger"""
+        print(f"🧹 Cleanup triggered: {reason}")
+        # Force garbage collection
+        import gc
+        gc.collect()
     
     def _close_application(self):
         """Close the entire application"""
@@ -311,15 +398,23 @@ class AIAssistant:
         print("🛑 Stopping MeetMinder...")
         
         try:
+            # Stop resource monitoring
+            global_resource_monitor.stop_monitoring()
+            
             # Stop components
             self.audio_contextualizer.stop()
             await self.hotkey_manager.stop_listening()
+            
+            # Cleanup thread pool
+            if hasattr(self, 'thread_pool'):
+                self.thread_pool.shutdown(wait=False)
             
             print("✅ MeetMinder stopped successfully")
             
         except Exception as e:
             print(f"❌ Error stopping MeetMinder: {e}")
     
+    @handle_errors(severity=ErrorSeverity.MEDIUM, recover=True, context="trigger_assistance")
     async def _trigger_assistance(self):
         """Trigger AI assistance based on current context"""
         try:
@@ -357,6 +452,7 @@ class AIAssistant:
             print(f"❌ Error triggering assistance: {e}")
             self.overlay.update_ai_response(f"Error: {e}")
     
+    @handle_errors(severity=ErrorSeverity.MEDIUM, recover=True, context="trigger_assistance_background")
     def _trigger_assistance_background(self):
         """Background-safe AI assistance that uses signal-based UI updates"""
         try:

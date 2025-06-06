@@ -899,8 +899,58 @@ class ModernSettingsDialog(QDialog):
         self.enable_screen_sharing_detection.setToolTip("Automatically hide overlay when screen sharing apps are detected")
         appearance_layout.addRow("", self.enable_screen_sharing_detection)
         
+        # Enhanced UI Features Group
+        enhanced_group = QGroupBox("🚀 Enhanced Features")
+        enhanced_group.setMinimumHeight(self.scale(350))
+        enhanced_layout = QFormLayout()
+        enhanced_layout.setSpacing(self.scale(20))
+        enhanced_layout.setLabelAlignment(Qt.AlignLeft)
+        
+        # Background opacity slider
+        self.background_opacity = QSlider(Qt.Horizontal)
+        self.background_opacity.setRange(5, 50)  # 0.05 to 0.5 opacity
+        self.background_opacity.setValue(15)  # Default 0.15
+        self.background_opacity.setMinimumHeight(self.scale(40))
+        self.opacity_label = QLabel("0.15")
+        self.opacity_label.setMinimumWidth(self.scale(60))
+        self.background_opacity.valueChanged.connect(
+            lambda v: self.opacity_label.setText(f"{v/100:.2f}")
+        )
+        
+        opacity_layout = QHBoxLayout()
+        opacity_layout.addWidget(self.background_opacity)
+        opacity_layout.addWidget(self.opacity_label)
+        enhanced_layout.addRow("Background Opacity:", opacity_layout)
+        
+        # Blur effects
+        self.enable_blur_effects = QCheckBox("Enable blur effects")
+        self.enable_blur_effects.setMinimumHeight(self.scale(32))
+        self.enable_blur_effects.setToolTip("Apply blur effects to background for professional look")
+        enhanced_layout.addRow("", self.enable_blur_effects)
+        
+        # Smooth animations
+        self.enable_smooth_animations = QCheckBox("Enable smooth animations")
+        self.enable_smooth_animations.setMinimumHeight(self.scale(32))
+        self.enable_smooth_animations.setToolTip("Use smooth animations for transitions and resizing")
+        enhanced_layout.addRow("", self.enable_smooth_animations)
+        
+        # Auto-width adjustment
+        self.enable_auto_width = QCheckBox("Enable auto-width adjustment")
+        self.enable_auto_width.setMinimumHeight(self.scale(32))
+        self.enable_auto_width.setToolTip("Automatically adjust overlay width based on content")
+        enhanced_layout.addRow("", self.enable_auto_width)
+        
+        # Dynamic transparency
+        self.enable_dynamic_transparency = QCheckBox("Enable dynamic transparency")
+        self.enable_dynamic_transparency.setMinimumHeight(self.scale(32))
+        self.enable_dynamic_transparency.setToolTip("Adjust transparency based on activity and context")
+        enhanced_layout.addRow("", self.enable_dynamic_transparency)
+        
+        enhanced_group.setLayout(enhanced_layout)
+        
         appearance_group.setLayout(appearance_layout)
         layout.addWidget(appearance_group)
+        layout.addWidget(enhanced_group)
         
         layout.addStretch()
         
@@ -1550,6 +1600,14 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         screen_sharing = self.current_config.get('screen_sharing_detection', {})
         self.enable_screen_sharing_detection.setChecked(screen_sharing.get('enabled', False))
         
+        # Enhanced UI Features
+        enhanced_ui = ui.get('enhanced', {})
+        self.background_opacity.setValue(int(enhanced_ui.get('background_opacity', 0.15) * 100))
+        self.enable_blur_effects.setChecked(enhanced_ui.get('blur_enabled', True))
+        self.enable_smooth_animations.setChecked(enhanced_ui.get('smooth_animations', True))
+        self.enable_auto_width.setChecked(enhanced_ui.get('auto_width', True))
+        self.enable_dynamic_transparency.setChecked(enhanced_ui.get('dynamic_transparency', False))
+        
         # Assistant
         assistant = self.current_config.get('assistant', {})
         self.activation_mode.setCurrentText(assistant.get('activation_mode', 'manual'))
@@ -1662,7 +1720,14 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                     'size_multiplier': self.size_multiplier.value() / 10.0,
                     'show_transcript': self.show_transcript.isChecked(),
                     'hide_from_sharing': self.hide_from_sharing.isChecked(),
-                    'auto_hide_seconds': self.auto_hide_seconds.value()
+                    'auto_hide_seconds': self.auto_hide_seconds.value(),
+                    'enhanced': {
+                        'background_opacity': self.background_opacity.value() / 100.0,
+                        'blur_enabled': self.enable_blur_effects.isChecked(),
+                        'smooth_animations': self.enable_smooth_animations.isChecked(),
+                        'auto_width': self.enable_auto_width.isChecked(),
+                        'dynamic_transparency': self.enable_dynamic_transparency.isChecked()
+                    }
                 }
             },
             'screen_sharing_detection': {

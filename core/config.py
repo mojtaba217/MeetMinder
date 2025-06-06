@@ -1,8 +1,11 @@
 import yaml
 import os
-from typing import Dict, Any, Optional
-from dataclasses import dataclass
+from typing import Dict, Any, Optional, Union
+from dataclasses import dataclass, field
 from pathlib import Path
+import json
+import hashlib
+from functools import lru_cache
 
 @dataclass
 class TranscriptionConfig:
@@ -13,6 +16,14 @@ class TranscriptionConfig:
     google_credentials_path: Optional[str] = None
     azure_subscription_key: Optional[str] = None
     azure_service_region: Optional[str] = None
+    
+    def __post_init__(self):
+        """Validate configuration after initialization"""
+        if self.provider not in ["local_whisper", "google_speech", "azure_speech"]:
+            raise ValueError(f"Invalid transcription provider: {self.provider}")
+        
+        if self.whisper_model_size not in ["tiny", "base", "small", "medium", "large"]:
+            raise ValueError(f"Invalid Whisper model size: {self.whisper_model_size}")
 
 @dataclass
 class AIProviderConfig:
@@ -21,6 +32,12 @@ class AIProviderConfig:
     azure_openai: Optional[Dict[str, str]] = None
     openai: Optional[Dict[str, str]] = None
     google_gemini: Optional[Dict[str, str]] = None
+    
+    def __post_init__(self):
+        """Validate AI provider configuration"""
+        valid_types = ["azure_openai", "openai", "google_gemini"]
+        if self.type not in valid_types:
+            raise ValueError(f"Invalid AI provider type: {self.type}")
 
 @dataclass
 class AudioConfig:
@@ -32,6 +49,18 @@ class AudioConfig:
     transcript_segments_max: int = 50
     silence_threshold_seconds: int = 30
     processing_interval_seconds: float = 1.6
+    max_queue_size: int = 100  # Added for memory management
+    
+    def __post_init__(self):
+        """Validate audio configuration"""
+        if self.mode not in ["dual_stream", "single_stream"]:
+            raise ValueError(f"Invalid audio mode: {self.mode}")
+        
+        if self.sample_rate not in [22050, 44100, 48000]:
+            raise ValueError(f"Unsupported sample rate: {self.sample_rate}")
+        
+        if self.chunk_size not in [512, 1024, 2048, 4096]:
+            raise ValueError(f"Invalid chunk size: {self.chunk_size}")
 
 @dataclass
 class DebugConfig:
@@ -41,6 +70,7 @@ class DebugConfig:
     verbose_logging: bool = False
     audio_chunk_format: str = "wav"  # wav or raw
     max_debug_files: int = 100  # Limit number of debug files
+    performance_monitoring: bool = False  # Added for performance tracking
 
 @dataclass
 class AssistantConfig:
@@ -197,7 +227,8 @@ class ConfigManager:
             save_transcriptions=debug_config.get('save_transcriptions', False),
             verbose_logging=debug_config.get('verbose_logging', False),
             audio_chunk_format=debug_config.get('audio_chunk_format', 'wav'),
-            max_debug_files=debug_config.get('max_debug_files', 100)
+            max_debug_files=debug_config.get('max_debug_files', 100),
+            performance_monitoring=debug_config.get('performance_monitoring', False)
         )
     
     def get_hotkeys_config(self) -> HotkeysConfig:
