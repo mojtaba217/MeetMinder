@@ -9,12 +9,17 @@ import time
 import sys
 import os
 from pathlib import Path
+from typing import Optional, Dict, Any, List
 import whisper
 from concurrent.futures import ThreadPoolExecutor
 import functools
 
 # Add the current directory to Python path
 sys.path.insert(0, str(Path(__file__).parent))
+
+# Import new logging and error handling
+from utils.app_logger import logger
+from utils.error_handler import handle_errors, MeetMinderError, AIServiceError, AudioError
 
 from core.config import ConfigManager
 from profile.user_profile import UserProfileManager
@@ -29,7 +34,6 @@ from ui.settings_dialog import ModernSettingsDialog
 from screen.capture import ScreenCapture
 from utils.hotkeys import AsyncHotkeyManager
 from utils.resource_monitor import global_resource_monitor
-from utils.error_handler import global_error_handler, handle_errors, ErrorSeverity
 
 # PyQt5 imports for the app
 from PyQt5.QtWidgets import QApplication, QSplashScreen, QLabel
@@ -37,11 +41,13 @@ from PyQt5.QtCore import QTimer, QMetaObject, Qt
 from PyQt5.QtGui import QIcon, QPixmap, QFont
 
 class AIAssistant:
+    """Main MeetMinder application class with enhanced error handling and logging."""
+    
     def __init__(self):
-        print("🚀 Initializing MeetMinder...")
+        logger.info("🚀 Initializing MeetMinder...")
         
         # Initialize PyQt5 Application first
-        self.app = QApplication(sys.argv)
+        self.app: QApplication = QApplication(sys.argv)
         self.app.setQuitOnLastWindowClosed(False)  # Keep app running even when window is hidden
         
         # Thread pool for background tasks (improved resource management)
@@ -60,7 +66,7 @@ class AIAssistant:
         # Set application icon
         if os.path.exists("MeetMinderIcon.ico"):
             self.app.setWindowIcon(QIcon("MeetMinderIcon.ico"))
-            print("✅ MeetMinder icon loaded")
+            logger.info("✅ MeetMinder icon loaded")
         
         # Show loading screen
         self.splash = self._create_loading_screen()
@@ -73,8 +79,8 @@ class AIAssistant:
         # Hide loading screen
         self.splash.finish(None)
         
-        print("✓ MeetMinder initialized successfully")
-        print("�� Ready to start!")
+        logger.info("✓ MeetMinder initialized successfully")
+        logger.info("🚀 Ready to start!")
     
     def _create_loading_screen(self):
         """Create a simple loading screen"""
@@ -109,16 +115,16 @@ class AIAssistant:
         self.app.processEvents()
         
         # Initialize transcription engine
-        print("🎤 Initializing transcription engine...")
+        logger.info("🎤 Initializing transcription engine...")
         self.transcription_config = self.config.get_transcription_config()
         self.transcription_engine = TranscriptionEngineFactory.create_engine(self.transcription_config)
         
         if self.transcription_engine.is_available():
             engine_info = self.transcription_engine.get_info()
-            print(f"✅ Transcription engine ready: {engine_info['engine']}")
+            logger.info(f"✅ Transcription engine ready: {engine_info['engine']}")
         else:
-            print("❌ Transcription engine not available")
-            print("   Falling back to local Whisper...")
+            logger.info("❌ Transcription engine not available")
+            logger.info("   Falling back to local Whisper...")
             # Fallback to local Whisper
             from core.config import TranscriptionConfig
             fallback_config = TranscriptionConfig(provider="local_whisper")
@@ -132,22 +138,22 @@ class AIAssistant:
         self.whisper_language = "en"
         
         if self.transcription_config.provider == "local_whisper":
-            print("📥 Loading Whisper model...")
+            logger.info("📥 Loading Whisper model...")
             try:
                 model_size = self.transcription_config.whisper_model_size
-                print(f"   Model size: {model_size}")
+                logger.info(f"   Model size: {model_size}")
                 
                 # Load the model
                 self.whisper_model = whisper.load_model(model_size)
-                print("✓ Whisper model loaded successfully")
+                logger.info("✓ Whisper model loaded successfully")
                 
                 # Set language to English
                 self.whisper_language = "en"
-                print(f"✓ Language set to: English")
+                logger.info(f"✓ Language set to: English")
                 
             except Exception as e:
-                print(f"❌ Failed to load Whisper model: {e}")
-                print("   Please ensure Whisper is installed: pip install openai-whisper")
+                logger.info(f"❌ Failed to load Whisper model: {e}")
+                logger.info("   Please ensure Whisper is installed: pip install openai-whisper")
                 sys.exit(1)
         
         self.splash.showMessage("🧠 Initializing AI components...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
@@ -175,7 +181,7 @@ class AIAssistant:
         # Choose audio contextualizer based on configuration
         audio_config = self.config.get_audio_config()
         if audio_config.mode == 'dual_stream':
-            print("🎤 Using dual-stream audio (microphone + system audio)")
+            logger.info("🎤 Using dual-stream audio (microphone + system audio)")
             self.audio_contextualizer = DualStreamAudioContextualizer(
                 audio_config,
                 self.topic_manager,
@@ -183,7 +189,7 @@ class AIAssistant:
                 whisper_language=self.whisper_language
             )
         else:
-            print("🎤 Using single-stream audio (microphone only)")
+            logger.info("🎤 Using single-stream audio (microphone only)")
             self.audio_contextualizer = AudioContextualizer(
                 audio_config,
                 self.topic_manager,
@@ -249,7 +255,7 @@ class AIAssistant:
     def _setup_resource_monitoring(self):
         """Setup resource monitoring and cleanup systems"""
         try:
-            print("🔍 Setting up resource monitoring...")
+            logger.info("🔍 Setting up resource monitoring...")
             
             # Register cleanup callbacks for our components
             global_resource_monitor.register_cleanup_callback(
@@ -274,19 +280,19 @@ class AIAssistant:
             
             # Start monitoring
             global_resource_monitor.start_monitoring()
-            print("✅ Resource monitoring active")
+            logger.info("✅ Resource monitoring active")
             
         except Exception as e:
-            print(f"❌ Error setting up resource monitoring: {e}")
+            logger.info(f"❌ Error setting up resource monitoring: {e}")
     
     def _cleanup_audio_resources(self):
         """Cleanup audio processing resources"""
         try:
             if hasattr(self.audio_contextualizer, 'clear_buffers'):
                 self.audio_contextualizer.clear_buffers()
-            print("🧹 Audio resources cleaned")
+            logger.info("🧹 Audio resources cleaned")
         except Exception as e:
-            print(f"❌ Error cleaning audio resources: {e}")
+            logger.info(f"❌ Error cleaning audio resources: {e}")
     
     def _cleanup_ai_resources(self):
         """Cleanup AI helper resources"""
@@ -294,40 +300,40 @@ class AIAssistant:
             if hasattr(self.ai_helper, 'request_cache'):
                 self.ai_helper.request_cache.cache.clear()
                 self.ai_helper.request_cache.timestamps.clear()
-            print("🧹 AI resources cleaned")
+            logger.info("🧹 AI resources cleaned")
         except Exception as e:
-            print(f"❌ Error cleaning AI resources: {e}")
+            logger.info(f"❌ Error cleaning AI resources: {e}")
     
     def _cleanup_ui_resources(self):
         """Cleanup UI resources"""
         try:
             if hasattr(self.overlay, 'clear_all_content'):
                 self.overlay.clear_all_content()
-            print("🧹 UI resources cleaned")
+            logger.info("🧹 UI resources cleaned")
         except Exception as e:
-            print(f"❌ Error cleaning UI resources: {e}")
+            logger.info(f"❌ Error cleaning UI resources: {e}")
     
     def _on_memory_warning(self, memory_percent: float):
         """Handle memory warning"""
-        print(f"⚠️ Memory warning: {memory_percent:.1f}% usage")
+        logger.info(f"⚠️ Memory warning: {memory_percent:.1f}% usage")
         # Update overlay with warning if needed
         if hasattr(self.overlay, 'show_warning'):
             self.overlay.show_warning(f"High memory usage: {memory_percent:.1f}%")
     
     def _on_cpu_warning(self, cpu_percent: float):
         """Handle CPU warning"""
-        print(f"⚠️ CPU warning: {cpu_percent:.1f}% usage")
+        logger.info(f"⚠️ CPU warning: {cpu_percent:.1f}% usage")
     
     def _on_cleanup_triggered(self, reason: str):
         """Handle cleanup trigger"""
-        print(f"🧹 Cleanup triggered: {reason}")
+        logger.info(f"🧹 Cleanup triggered: {reason}")
         # Force garbage collection
         import gc
         gc.collect()
     
     def _close_application(self):
         """Close the entire application"""
-        print("🚪 Closing MeetMinder...")
+        logger.info("🚪 Closing MeetMinder...")
         self.stop()
         self.app.quit()
     
@@ -347,11 +353,11 @@ class AIAssistant:
     def _move_overlay_threadsafe(self, direction: str):
         """Thread-safe wrapper for move overlay"""
         # For now, just print since moving isn't implemented in modern UI
-        print(f"📱 Moving overlay {direction} (not yet implemented in modern UI)")
+        logger.info(f"📱 Moving overlay {direction} (not yet implemented in modern UI)")
     
     def _emergency_reset_threadsafe(self):
         """Thread-safe wrapper for emergency reset"""
-        print("🚨 Emergency reset triggered from hotkey!")
+        logger.info("🚨 Emergency reset triggered from hotkey!")
         # For emergency reset, we can restart the application
         self.app.quit()
     
@@ -361,7 +367,7 @@ class AIAssistant:
             return
             
         self.is_running = True
-        print("🎯 Starting MeetMinder...")
+        logger.info("🎯 Starting MeetMinder...")
         
         try:
             # Start audio processing
@@ -373,20 +379,20 @@ class AIAssistant:
             # Update topic analysis in overlay
             await self._update_overlay_topic_analysis()
             
-            print("✅ MeetMinder is now running!")
-            print("💡 Press Ctrl+Space to trigger assistance")
-            print("💡 Press Ctrl+B to toggle overlay")
-            print("💡 Press Ctrl+Shift+R for emergency reset")
+            logger.info("✅ MeetMinder is now running!")
+            logger.info("💡 Press Ctrl+Space to trigger assistance")
+            logger.info("💡 Press Ctrl+B to toggle overlay")
+            logger.info("💡 Press Ctrl+Shift+R for emergency reset")
             
             # Keep the main loop running
             while self.is_running:
                 await asyncio.sleep(1)
                 
         except KeyboardInterrupt:
-            print("\n🛑 Shutting down MeetMinder...")
+            logger.info("\n🛑 Shutting down MeetMinder...")
             await self.stop()
         except Exception as e:
-            print(f"❌ Error running MeetMinder: {e}")
+            logger.info(f"❌ Error running MeetMinder: {e}")
             await self.stop()
     
     async def stop(self):
@@ -395,7 +401,7 @@ class AIAssistant:
             return
             
         self.is_running = False
-        print("🛑 Stopping MeetMinder...")
+        logger.info("🛑 Stopping MeetMinder...")
         
         try:
             # Stop resource monitoring
@@ -409,16 +415,16 @@ class AIAssistant:
             if hasattr(self, 'thread_pool'):
                 self.thread_pool.shutdown(wait=False)
             
-            print("✅ MeetMinder stopped successfully")
+            logger.info("✅ MeetMinder stopped successfully")
             
         except Exception as e:
-            print(f"❌ Error stopping MeetMinder: {e}")
+            logger.info(f"❌ Error stopping MeetMinder: {e}")
     
-    @handle_errors(severity=ErrorSeverity.MEDIUM, recover=True, context="trigger_assistance")
+    @handle_errors(show_user_message=False)
     async def _trigger_assistance(self):
         """Trigger AI assistance based on current context"""
         try:
-            print("🤖 Triggering AI assistance...")
+            logger.info("🤖 Triggering AI assistance...")
             
             # Get current context
             screen_context = self.screen_capture.get_screen_context()
@@ -449,14 +455,14 @@ class AIAssistant:
                 self.overlay.append_ai_response(chunk)
                 
         except Exception as e:
-            print(f"❌ Error triggering assistance: {e}")
+            logger.info(f"❌ Error triggering assistance: {e}")
             self.overlay.update_ai_response(f"Error: {e}")
     
-    @handle_errors(severity=ErrorSeverity.MEDIUM, recover=True, context="trigger_assistance_background")
+    @handle_errors(show_user_message=False)
     def _trigger_assistance_background(self):
         """Background-safe AI assistance that uses signal-based UI updates"""
         try:
-            print("🤖 Running AI assistance in background thread...")
+            logger.info("🤖 Running AI assistance in background thread...")
             
             # Get current context
             screen_context = self.screen_capture.get_screen_context()
@@ -473,7 +479,7 @@ class AIAssistant:
                     daemon=True
                 ).start()
             except Exception as e:
-                print(f"❌ Error updating topic analysis: {e}")
+                logger.info(f"❌ Error updating topic analysis: {e}")
             
             # Clear previous AI response using thread-safe method
             self.overlay.update_ai_response_threadsafe("🤔 Analyzing context...")
@@ -503,7 +509,7 @@ class AIAssistant:
                 loop.close()
                 
         except Exception as e:
-            print(f"❌ Error in background AI assistance: {e}")
+            logger.info(f"❌ Error in background AI assistance: {e}")
             self.overlay.update_ai_response_threadsafe(f"Error: {e}")
     
     def _trigger_assistance_sync(self):
@@ -516,34 +522,34 @@ class AIAssistant:
     
     def _on_mic_toggle(self, is_recording: bool):
         """Handle microphone toggle from UI"""
-        print(f"🎤 Microphone {'started' if is_recording else 'stopped'} recording")
+        logger.info(f"🎤 Microphone {'started' if is_recording else 'stopped'} recording")
         
         if is_recording:
             # Start audio capture if not already running
             if not hasattr(self.audio_contextualizer, '_is_capturing') or not self.audio_contextualizer._is_capturing:
-                print("🎤 Starting audio capture...")
+                logger.info("🎤 Starting audio capture...")
                 self.audio_contextualizer.start_continuous_capture()
             
             # Enable transcript display automatically when recording starts
             if hasattr(self.overlay, 'toggle_transcript_visibility'):
-                print("📝 Enabling transcript display for recording...")
+                logger.info("📝 Enabling transcript display for recording...")
                 self.overlay.toggle_transcript_visibility(True)
                 
         else:
             # Optionally stop audio capture when recording is manually stopped
             # (Usually we want to keep it running for background analysis)
-            print("🎤 Recording stopped (audio capture continues in background)")
+            logger.info("🎤 Recording stopped (audio capture continues in background)")
             
         # Update UI to reflect recording state
         try:
             if hasattr(self.overlay, 'is_recording'):
                 self.overlay.is_recording = is_recording
         except Exception as e:
-            print(f"❌ Error updating recording state: {e}")
+            logger.info(f"❌ Error updating recording state: {e}")
     
     def _open_settings(self):
         """Open settings dialog"""
-        print("⚙️ Opening settings...")
+        logger.info("⚙️ Opening settings...")
         try:
             # Get current configuration from the config manager
             current_config = {
@@ -599,9 +605,9 @@ class AIAssistant:
                 }
             }
             
-            print(f"🔧 Current UI size multiplier: {current_config['ui']['overlay']['size_multiplier']}x")
-            print(f"🤖 Current AI settings: {current_config['assistant']}")
-            print(f"🎤 Current transcription: {current_config['transcription']['provider']}")
+            logger.info(f"🔧 Current UI size multiplier: {current_config['ui']['overlay']['size_multiplier']}x")
+            logger.info(f"🤖 Current AI settings: {current_config['assistant']}")
+            logger.info(f"🎤 Current transcription: {current_config['transcription']['provider']}")
             
             # Create and show settings dialog
             settings_dialog = ModernSettingsDialog(current_config, self.overlay)
@@ -609,13 +615,13 @@ class AIAssistant:
             settings_dialog.exec_()
             
         except Exception as e:
-            print(f"❌ Error opening settings: {e}")
+            logger.info(f"❌ Error opening settings: {e}")
             import traceback
             traceback.print_exc()
     
     def _on_settings_changed(self, new_config):
         """Handle settings changes"""
-        print("💾 Applying settings changes...")
+        logger.info("💾 Applying settings changes...")
         try:
             # Update the configuration manager
             self.config.update_config(new_config)
@@ -631,7 +637,7 @@ class AIAssistant:
             new_multiplier = ui_config.get('size_multiplier', current_multiplier)
             
             if new_multiplier != current_multiplier:
-                print(f"🎨 UI Size changing from {current_multiplier}x to {new_multiplier}x")
+                logger.info(f"🎨 UI Size changing from {current_multiplier}x to {new_multiplier}x")
                 # Recreate the overlay with new size
                 self.overlay.hide()
                 self.overlay.screen_sharing_detector.stop_detection()
@@ -651,14 +657,14 @@ class AIAssistant:
                 # Update with current topic analysis
                 self._update_overlay_topic_analysis_sync()
                 
-                print(f"✅ UI resized to {new_multiplier}x successfully!")
+                logger.info(f"✅ UI resized to {new_multiplier}x successfully!")
             
             # Check if transcript visibility changed
             current_transcript = getattr(self.overlay, 'show_transcript', False)
             new_transcript = ui_config.get('show_transcript', current_transcript)
             
             if new_transcript != current_transcript:
-                print(f"📝 Transcript visibility changing from {current_transcript} to {new_transcript}")
+                logger.info(f"📝 Transcript visibility changing from {current_transcript} to {new_transcript}")
                 # Recreate the overlay with new transcript setting
                 self.overlay.hide()
                 self.overlay.screen_sharing_detector.stop_detection()
@@ -678,12 +684,12 @@ class AIAssistant:
                 # Update with current topic analysis
                 self._update_overlay_topic_analysis_sync()
                 
-                print(f"✅ Transcript visibility updated to {'shown' if new_transcript else 'hidden'} successfully!")
+                logger.info(f"✅ Transcript visibility updated to {'shown' if new_transcript else 'hidden'} successfully!")
             
             # Apply assistant configuration changes
             if 'assistant' in new_config:
                 assistant_changes = new_config['assistant']
-                print(f"🤖 Assistant settings updated: {list(assistant_changes.keys())}")
+                logger.info(f"🤖 Assistant settings updated: {list(assistant_changes.keys())}")
                 
                 # Update AI helper with new assistant config
                 assistant_config = self.config.get_assistant_config()
@@ -692,43 +698,43 @@ class AIAssistant:
             # Apply transcription engine changes
             if 'transcription' in new_config:
                 transcription_changes = new_config['transcription']
-                print(f"🎤 Transcription settings updated: {list(transcription_changes.keys())}")
-                print("⚠️  Transcription changes will take effect after restart")
+                logger.info(f"🎤 Transcription settings updated: {list(transcription_changes.keys())}")
+                logger.info("⚠️  Transcription changes will take effect after restart")
             
             # Apply other immediate changes
             if 'audio' in new_config:
                 audio_changes = new_config['audio']
-                print(f"🎤 Audio settings updated: {list(audio_changes.keys())}")
-                print("⚠️  Audio changes will take effect after restart")
+                logger.info(f"🎤 Audio settings updated: {list(audio_changes.keys())}")
+                logger.info("⚠️  Audio changes will take effect after restart")
             
             if 'hotkeys' in new_config:
                 hotkey_changes = new_config['hotkeys'] 
-                print(f"⌨️  Hotkey settings updated: {list(hotkey_changes.keys())}")
-                print("⚠️  Hotkey changes will take effect after restart")
+                logger.info(f"⌨️  Hotkey settings updated: {list(hotkey_changes.keys())}")
+                logger.info("⚠️  Hotkey changes will take effect after restart")
             
             # Apply debug settings immediately
             if 'debug' in new_config:
                 debug_changes = new_config['debug']
-                print(f"🐞 Debug settings updated: {list(debug_changes.keys())}")
+                logger.info(f"🐞 Debug settings updated: {list(debug_changes.keys())}")
                 
                 # Update audio contextualizer debug settings
                 if hasattr(self.audio_contextualizer, 'update_debug_config'):
                     self.audio_contextualizer.update_debug_config(debug_changes)
-                    print("✅ Debug settings applied to audio contextualizer")
+                    logger.info("✅ Debug settings applied to audio contextualizer")
                 else:
-                    print("⚠️  Debug settings will take effect after restart")
+                    logger.info("⚠️  Debug settings will take effect after restart")
             
-            print("✅ Settings saved and applied successfully!")
+            logger.info("✅ Settings saved and applied successfully!")
             
         except Exception as e:
-            print(f"❌ Error applying settings: {e}")
+            logger.info(f"❌ Error applying settings: {e}")
             import traceback
             traceback.print_exc()
     
     async def _take_screenshot(self):
         """Take a screenshot and provide context"""
         try:
-            print("📸 Taking screenshot...")
+            logger.info("📸 Taking screenshot...")
             screenshot = self.screen_capture.take_screenshot()
             if screenshot:
                 # Save screenshot with timestamp
@@ -736,46 +742,46 @@ class AIAssistant:
                 screenshot_path = f"logs/screenshot_{timestamp}.png"
                 os.makedirs("logs", exist_ok=True)
                 screenshot.save(screenshot_path)
-                print(f"✅ Screenshot saved: {screenshot_path}")
+                logger.info(f"✅ Screenshot saved: {screenshot_path}")
                 
                 # Show brief notification in overlay
                 self.overlay.show_overlay()
                 self.overlay.update_ai_response(f"📸 Screenshot saved: {screenshot_path}")
             else:
-                print("❌ Failed to take screenshot")
+                logger.info("❌ Failed to take screenshot")
                 
         except Exception as e:
-            print(f"❌ Error taking screenshot: {e}")
+            logger.info(f"❌ Error taking screenshot: {e}")
     
     def _toggle_overlay(self):
         """Toggle overlay visibility"""
         try:
             self.overlay.toggle_visibility()
         except Exception as e:
-            print(f"❌ Error toggling overlay: {e}")
+            logger.info(f"❌ Error toggling overlay: {e}")
     
     def _move_overlay(self, direction: str):
         """Move overlay in specified direction (placeholder for modern UI)"""
         try:
-            print(f"📱 Moving overlay {direction}")
+            logger.info(f"📱 Moving overlay {direction}")
             # TODO: Implement overlay positioning for modern UI
         except Exception as e:
-            print(f"❌ Error moving overlay: {e}")
+            logger.info(f"❌ Error moving overlay: {e}")
     
     async def _emergency_reset(self):
         """Emergency reset - stop and restart"""
         try:
-            print("🚨 Emergency reset triggered!")
+            logger.info("🚨 Emergency reset triggered!")
             await self.stop()
             await asyncio.sleep(2)
             await self.start()
         except Exception as e:
-            print(f"❌ Error during emergency reset: {e}")
+            logger.info(f"❌ Error during emergency reset: {e}")
     
     def _on_audio_context_change(self, change_info: str):
         """Handle audio context changes"""
         try:
-            print(f"🎵 Audio context change: {change_info}")
+            logger.info(f"🎵 Audio context change: {change_info}")
             
             # Update topic analysis when audio context changes
             if "system_audio:" in change_info or "user_voice:" in change_info:
@@ -795,11 +801,11 @@ class AIAssistant:
                 timestamp = time.strftime("%H:%M:%S")
                 
                 # Detailed logging for system audio
-                print(f"🔊 [SYSTEM] [{timestamp}] {transcript}")
-                print(f"🔍 DEBUG: System audio transcription detected")
-                print(f"    📝 Text: '{transcript}'")
-                print(f"    📏 Length: {len(transcript)} characters")
-                print(f"    🎯 Words: {len(transcript.split())} words")
+                logger.info(f"🔊 [SYSTEM] [{timestamp}] {transcript}")
+                logger.info(f"🔍 DEBUG: System audio transcription detected")
+                logger.info(f"    📝 Text: '{transcript}'")
+                logger.info(f"    📏 Length: {len(transcript)} characters")
+                logger.info(f"    🎯 Words: {len(transcript.split())} words")
                 
                 # Save to debug log
                 os.makedirs("debug_logs", exist_ok=True)
@@ -810,24 +816,24 @@ class AIAssistant:
                 # Check if this looks like real content vs noise
                 suspicious_indicators = ['醒', 'кра', 'Fugiao', 'forady']
                 if any(indicator in transcript for indicator in suspicious_indicators):
-                    print(f"⚠️  SUSPICIOUS: Transcript contains non-English characters or gibberish")
-                    print(f"    💡 This suggests audio capture issue or wrong source")
+                    logger.info(f"⚠️  SUSPICIOUS: Transcript contains non-English characters or gibberish")
+                    logger.info(f"    💡 This suggests audio capture issue or wrong source")
                 
                 # Update overlay transcript if enabled
                 try:
                     self.overlay.update_transcript_threadsafe(f"[SYSTEM] {transcript}")
                 except Exception as e:
-                    print(f"❌ Error updating overlay transcript: {e}")
+                    logger.info(f"❌ Error updating overlay transcript: {e}")
                 
             elif "user_voice:" in change_info:
                 transcript = change_info.split("user_voice: ", 1)[1]
                 timestamp = time.strftime("%H:%M:%S")
                 
                 # Detailed logging for microphone
-                print(f"🗣️  [USER] [{timestamp}] {transcript}")
-                print(f"🔍 DEBUG: Microphone transcription detected")
-                print(f"    📝 Text: '{transcript}'")
-                print(f"    📏 Length: {len(transcript)} characters")
+                logger.info(f"🗣️  [USER] [{timestamp}] {transcript}")
+                logger.info(f"🔍 DEBUG: Microphone transcription detected")
+                logger.info(f"    📝 Text: '{transcript}'")
+                logger.info(f"    📏 Length: {len(transcript)} characters")
                 
                 # Save to debug log
                 debug_log_file = f"debug_logs/mic_transcriptions_{time.strftime('%Y%m%d')}.txt"
@@ -838,30 +844,30 @@ class AIAssistant:
             if hasattr(self.audio_contextualizer, 'system_audio_capture'):
                 if self.audio_contextualizer.system_audio_capture:
                     device_info = self.audio_contextualizer.system_audio_capture.get_device_info()
-                    print(f"🎤 DEVICE INFO: {device_info['name']} at {device_info['defaultSampleRate']}Hz")
+                    logger.info(f"🎤 DEVICE INFO: {device_info['name']} at {device_info['defaultSampleRate']}Hz")
             
             if "solo_mode_activated" in change_info:
                 self.current_context_type = "general"
-                print("🔇 Solo mode activated - switching to screen-only context")
+                logger.info("🔇 Solo mode activated - switching to screen-only context")
             elif "topic_detected" in change_info:
                 topic = change_info.split(": ", 1)[1]
-                print(f"🎯 Topic detected: {topic}")
+                logger.info(f"🎯 Topic detected: {topic}")
             elif "content_consumption_mode" in change_info:
                 self.current_context_type = "learning"
-                print("📺 Content consumption mode - you're listening to something")
-                print("🔍 DEBUG: System detected audio consumption (YouTube, etc.)")
+                logger.info("📺 Content consumption mode - you're listening to something")
+                logger.info("🔍 DEBUG: System detected audio consumption (YouTube, etc.)")
                 self._display_recent_transcript("system")
             elif "meeting_mode_active" in change_info:
                 self.current_context_type = "meeting"
-                print("🎪 Meeting mode - active conversation detected")
+                logger.info("🎪 Meeting mode - active conversation detected")
                 self._display_recent_transcript("both")
             elif "solo_recording_mode" in change_info:
                 self.current_context_type = "dictation"
-                print("🎤 Solo recording mode - you're speaking")
+                logger.info("🎤 Solo recording mode - you're speaking")
                 self._display_recent_transcript("microphone")
                 
         except Exception as e:
-            print(f"❌ Error handling audio context change: {e}")
+            logger.info(f"❌ Error handling audio context change: {e}")
             import traceback
             traceback.print_exc()
     
@@ -881,14 +887,14 @@ class AIAssistant:
                 recent_transcript = transcript_data.get('transcript', [])
             
             if recent_transcript:
-                print("📝 Recent transcript:")
+                logger.info("📝 Recent transcript:")
                 for line in recent_transcript[-3:]:  # Show last 3 lines
-                    print(f"   {line}")
+                    logger.info(f"   {line}")
             else:
-                print("📝 No recent transcript available")
+                logger.info("📝 No recent transcript available")
                 
         except Exception as e:
-            print(f"❌ Error displaying transcript: {e}")
+            logger.info(f"❌ Error displaying transcript: {e}")
     
     async def _update_overlay_topic_analysis(self, transcript: list = None):
         """Update overlay with current topic analysis"""
@@ -915,7 +921,7 @@ class AIAssistant:
             self.overlay.update_conversation_flow(analysis['conversation_flow'])
             
         except Exception as e:
-            print(f"❌ Error updating topic analysis: {e}")
+            logger.info(f"❌ Error updating topic analysis: {e}")
     
     def _update_overlay_topic_analysis_sync(self, transcript: list = None):
         """Synchronous wrapper for updating topic analysis"""
@@ -929,11 +935,11 @@ class AIAssistant:
             finally:
                 loop.close()
         except Exception as e:
-            print(f"❌ Error in sync topic analysis update: {e}")
+            logger.info(f"❌ Error in sync topic analysis update: {e}")
     
     def run(self):
         """Run MeetMinder with PyQt5 event loop"""
-        print("🎯 Starting MeetMinder...")
+        logger.info("🎯 Starting MeetMinder...")
         
         try:
             # Start audio processing
@@ -949,11 +955,11 @@ class AIAssistant:
             # Update topic analysis in overlay
             self._update_overlay_topic_analysis_sync()
             
-            print("✅ MeetMinder is now running!")
-            print("💡 Press Ctrl+Space to trigger assistance")
-            print("💡 Press Ctrl+B to toggle overlay")
-            print("💡 Press Ctrl+Shift+R for emergency reset")
-            print("💡 Click the ✕ button to close the application")
+            logger.info("✅ MeetMinder is now running!")
+            logger.info("💡 Press Ctrl+Space to trigger assistance")
+            logger.info("💡 Press Ctrl+B to toggle overlay")
+            logger.info("💡 Press Ctrl+Shift+R for emergency reset")
+            logger.info("💡 Click the ✕ button to close the application")
             
             # Show overlay initially
             self.overlay.show_overlay()
@@ -962,31 +968,31 @@ class AIAssistant:
             sys.exit(self.app.exec_())
             
         except KeyboardInterrupt:
-            print("\n🛑 Shutting down MeetMinder...")
+            logger.info("\n🛑 Shutting down MeetMinder...")
             self.stop()
         except Exception as e:
-            print(f"❌ Error running MeetMinder: {e}")
+            logger.info(f"❌ Error running MeetMinder: {e}")
             self.stop()
     
     def stop(self):
         """Stop MeetMinder"""
-        print("🛑 Stopping MeetMinder...")
+        logger.info("🛑 Stopping MeetMinder...")
         
         try:
             # Stop components
             self.audio_contextualizer.stop()
             
-            print("✅ MeetMinder stopped successfully")
+            logger.info("✅ MeetMinder stopped successfully")
             
         except Exception as e:
-            print(f"❌ Error stopping MeetMinder: {e}")
+            logger.info(f"❌ Error stopping MeetMinder: {e}")
         finally:
             self.app.quit()
 
 def main():
     """Main entry point"""
-    print("🎯 MeetMinder - Real-time AI Meeting Assistant")
-    print("=" * 50)
+    logger.info("🎯 MeetMinder - Real-time AI Meeting Assistant")
+    logger.info("=" * 50)
     
     # Create and run the assistant
     assistant = AIAssistant()

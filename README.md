@@ -68,49 +68,52 @@ MeetMinder displays as a horizontal bar at the top-center of your screen:
 - **✕ Close**: Exit application
 
 ### Global Hotkeys
+- **Ctrl+Space**: Trigger AI assistance
+- **Ctrl+B**: Toggle overlay visibility
+- **Ctrl+H**: Take screenshot
+- **Alt+Arrow Keys**: Move overlay position
+- **Ctrl+Shift+R**: Emergency reset
 
-- `Ctrl+Space` - Trigger AI assistance
-- `Ctrl+B` - Toggle overlay visibility
-- `Ctrl+H` - Take screenshot
-- `Ctrl+Shift+R` - Emergency reset
+### Use Cases
 
-### Settings
+#### 1. Meeting Assistant
+- Automatically detects meeting applications (Zoom, Teams, etc.)
+- Provides real-time objection handling suggestions
+- Summarizes key discussion points
+- Suggests relevant questions based on your expertise
 
-Access comprehensive settings through the ⚙️ button:
+#### 2. Coding Assistant
+- Detects coding environments (VS Code, PyCharm, etc.)
+- Analyzes clipboard content and active files
+- Provides debugging suggestions tailored to your skill level
+- Recommends best practices based on your experience
 
-- **Audio Settings**: Configure transcription and recording
-- **AI Settings**: Choose provider, model, and behavior
-- **UI Settings**: Customize appearance and layout
-- **Hotkeys**: Modify keyboard shortcuts
-- **Prompts**: Edit AI behavior instructions
-- **Knowledge Graph**: Manage topic understanding
+#### 3. General Work Assistant
+- Monitors screen context and clipboard
+- Provides task-specific guidance
+- Adapts suggestions to your professional background
+- Offers relevant tips and next steps
 
-## 🔧 Configuration
+## ⚙️ Configuration
 
-### Main Configuration File
-
-All settings are managed through `config.yaml`:
-
+### Main Configuration (`config.yaml`)
 ```yaml
-# AI Provider Configuration
+# AI Provider
 ai_provider:
-  type: "azure_openai"
-  azure_openai:
-    api_key: "your-key"
-    endpoint: "your-endpoint"
-    model: "gpt-4"
+  type: "azure_openai"  # or "google_gemini"
 
-# Audio Processing
+# Audio Settings
 audio:
-  mode: "dual_stream"  # microphone + system audio
-  buffer_duration_minutes: 5
+  sample_rate: 16000
   processing_interval_seconds: 1.6
+  silence_threshold_seconds: 30
 
-# User Interface
+# UI Settings
 ui:
   overlay:
-    size_multiplier: 1.0
-    show_transcript: true
+    width: 350
+    height: 200
+    position: "top_right"
     auto_hide_seconds: 5
 
 # Hotkeys
@@ -119,17 +122,41 @@ hotkeys:
   toggle_overlay: "ctrl+b"
 ```
 
-### AI Providers
+### User Profile (`data/resume.md`)
+- Supports markdown format
+- Automatically extracts education, skills, experience
+- Updates AI responses with personalized context
 
-#### Azure OpenAI
-```yaml
-ai_provider:
-  type: "azure_openai"
-  azure_openai:
-    api_key: "your-azure-openai-key"
-    endpoint: "https://your-resource.openai.azure.com/"
-    api_version: "2024-02-01"
-    model: "gpt-4"
+### Topic Graph (`data/topic_graph.txt`)
+- Define topic hierarchies and relationships
+- Add custom suggestions for each topic
+- Format: `Parent -> Child (suggestion: "Your suggestion")`
+
+## 🏗️ Architecture
+
+### Core Components
+- **ConfigManager**: YAML configuration with environment variable support
+- **UserProfileManager**: Resume parsing and profile management
+- **TopicGraphManager**: Topic matching and suggestion system
+- **AIHelper**: Multi-provider AI integration with streaming
+- **AudioContextualizer**: Continuous audio processing with Whisper
+- **EnhancedOverlay**: Stealth UI with profile and topic sections
+- **ScreenCapture**: Cross-platform screen and window analysis
+- **HotkeyManager**: Global hotkey handling with async support
+
+### Data Flow
+1. **Audio Capture** → Whisper transcription → Topic matching
+2. **Screen Analysis** → Context detection → Application identification
+3. **Profile Integration** → Skill matching → Personalized prompts
+4. **AI Processing** → Streaming responses → Overlay display
+
+## 🔧 Advanced Configuration
+
+### Custom AI Providers
+Extend `ai/ai_helper.py` to add new AI providers:
+```python
+elif self.config.type == "custom_provider":
+    # Your custom implementation
 ```
 
 #### OpenAI

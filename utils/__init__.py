@@ -1,1 +1,1 @@
-# Utils module for hotkeys and utilities 
+# Utils package for MeetMinder 
