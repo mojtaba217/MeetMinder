@@ -12,6 +12,14 @@ from PyQt5.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, QPushBut
                            QScrollArea, QApplication, QGraphicsBlurEffect, QDesktopWidget)
 from PyQt5.QtGui import QFont, QPalette, QColor, QIcon, QPainter, QBrush, QLinearGradient
 
+# Import theme system
+try:
+    from ui.themes import ThemeManager, ThemeColors
+    THEMES_AVAILABLE = True
+except ImportError:
+    THEMES_AVAILABLE = False
+    print("⚠️ Theme system not available, using default dark theme")
+
 # Windows API constants for screen capture protection
 WDA_NONE = 0x00000000
 WDA_MONITOR = 0x00000001
@@ -391,6 +399,18 @@ class ModernOverlay(QWidget):
         self.was_visible_before_sharing = False
         self.show_transcript = config.get('show_transcript', True)  # Temporarily True for testing
         
+        # Theme support
+        self.current_theme_name = config.get('theme', 'dark')
+        try:
+            from ui.themes import ThemeManager
+            self.current_theme = ThemeManager.get_theme(self.current_theme_name)
+            self.themes_available = True
+            print(f"🎨 Using {self.current_theme_name} theme")
+        except ImportError:
+            self.themes_available = False
+            self.current_theme = None
+            print("⚠️ Theme system not available, using default styling")
+        
         # Get screen resolution for responsive sizing
         screen = QApplication.desktop().screenGeometry()
         self.screen_scale = min(screen.width() / 1920, screen.height() / 1080)
@@ -479,7 +499,62 @@ class ModernOverlay(QWidget):
     def scale_font(self, size: int) -> int:
         """Scale a font size by the size multiplier"""
         return int(size * self.size_multiplier)
+    
+    def apply_theme(self, theme_name: str = None):
+        """Apply theme to the overlay"""
+        if not self.themes_available:
+            return
         
+        if theme_name:
+            self.current_theme_name = theme_name
+            
+        try:
+            from ui.themes import ThemeManager
+            self.current_theme = ThemeManager.get_theme(self.current_theme_name)
+            
+            # Generate and apply stylesheet
+            stylesheet = ThemeManager.generate_stylesheet(self.current_theme, self.size_multiplier)
+            self.setStyleSheet(stylesheet)
+            
+            # Update theme-specific styling for the main container
+            self.update_container_styling()
+            
+            print(f"✅ Applied {self.current_theme_name} theme to overlay")
+            
+        except Exception as e:
+            print(f"❌ Error applying theme: {e}")
+    
+    def update_container_styling(self):
+        """Update container styling based on current theme"""
+        if not self.themes_available or not hasattr(self, 'bar_container'):
+            return
+        
+        theme = self.current_theme
+        
+        # Update bar container with theme colors
+        if hasattr(self, 'bar_container'):
+            container_style = f"""
+                QFrame#barContainer {{
+                    background: {theme.overlay_background};
+                    border: 2px solid {theme.border};
+                    border-radius: {self.scale(35)}px;
+                    color: {theme.text_primary};
+                }}
+            """
+            self.bar_container.setStyleSheet(container_style)
+        
+        # Update expanded content container if it exists
+        if hasattr(self, 'expanded_container'):
+            content_style = f"""
+                QFrame#expandedContainer {{
+                    background: {theme.background_secondary};
+                    border: 1px solid {theme.border_light};
+                    border-radius: {self.scale(12)}px;
+                    color: {theme.text_primary};
+                }}
+            """
+            self.expanded_container.setStyleSheet(content_style)
+    
     def setup_ui(self):
         """Setup the horizontal bar UI with enhanced features"""
         # Window properties
@@ -528,6 +603,10 @@ class ModernOverlay(QWidget):
         # Start width monitoring
         self.width_monitor.start()
         print("🖥️ Width monitoring started")
+        
+        # Apply theme after UI is fully created
+        if self.themes_available:
+            self.apply_theme()
         
         # Start visible with smooth animation if enabled
         if self.smooth_animations:

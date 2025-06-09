@@ -849,7 +849,7 @@ class ModernSettingsDialog(QDialog):
         
         # Appearance
         appearance_group = QGroupBox("🎨 Appearance")
-        appearance_group.setMinimumHeight(self.scale(400))
+        appearance_group.setMinimumHeight(self.scale(500))  # Increased height for theme option
         appearance_layout = QFormLayout()
         appearance_layout.setSpacing(self.scale(20))
         appearance_layout.setLabelAlignment(Qt.AlignLeft)
@@ -862,6 +862,14 @@ class ModernSettingsDialog(QDialog):
                 color: #ffffff;
             }}
         """)
+        
+        # Theme Selection
+        self.theme_selector = QComboBox()
+        self.theme_selector.addItems(["Dark Mode", "Light Mode"])
+        self.theme_selector.setMinimumHeight(self.scale(40))
+        self.theme_selector.setToolTip("Choose between light and dark theme")
+        self.theme_selector.currentTextChanged.connect(self.on_theme_changed)
+        appearance_layout.addRow("Theme:", self.theme_selector)
         
         self.size_multiplier = QSlider(Qt.Horizontal)
         self.size_multiplier.setRange(10, 40)
@@ -1320,6 +1328,32 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.azure_speech_group.setVisible(provider == "azure_speech")
         self.openai_whisper_group.setVisible(provider == "openai_whisper")
     
+    def on_theme_changed(self, theme_name):
+        """Handle theme change"""
+        print(f"🎨 Theme changed to: {theme_name}")
+        
+        # Apply theme immediately to settings dialog
+        self.apply_theme_to_dialog(theme_name)
+    
+    def apply_theme_to_dialog(self, theme_name):
+        """Apply theme to the settings dialog"""
+        try:
+            from ui.themes import ThemeManager
+            
+            # Convert display name to internal name
+            internal_theme = "light" if "Light" in theme_name else "dark"
+            theme = ThemeManager.get_theme(internal_theme)
+            
+            # Generate and apply stylesheet
+            stylesheet = ThemeManager.generate_settings_stylesheet(theme, self.scale_factor)
+            self.setStyleSheet(stylesheet)
+            
+            print(f"✅ Applied {internal_theme} theme to settings dialog")
+            
+        except Exception as e:
+            print(f"❌ Error applying theme: {e}")
+            # Keep current dark theme as fallback
+    
     def browse_google_json_file(self):
         """Browse for Google Cloud service account JSON file"""
         file_path, _ = QFileDialog.getOpenFileName(
@@ -1608,6 +1642,11 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.enable_auto_width.setChecked(enhanced_ui.get('auto_width', True))
         self.enable_dynamic_transparency.setChecked(enhanced_ui.get('dynamic_transparency', False))
         
+        # Theme selection
+        theme = ui.get('theme', 'dark')
+        theme_display_name = "Light Mode" if theme == 'light' else "Dark Mode"
+        self.theme_selector.setCurrentText(theme_display_name)
+        
         # Assistant
         assistant = self.current_config.get('assistant', {})
         self.activation_mode.setCurrentText(assistant.get('activation_mode', 'manual'))
@@ -1717,6 +1756,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
             },
             'ui': {
                 'overlay': {
+                    'theme': 'light' if 'Light' in self.theme_selector.currentText() else 'dark',
                     'size_multiplier': self.size_multiplier.value() / 10.0,
                     'show_transcript': self.show_transcript.isChecked(),
                     'hide_from_sharing': self.hide_from_sharing.isChecked(),

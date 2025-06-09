@@ -144,6 +144,7 @@ class ConfigManager:
             },
             'ui': {
                 'overlay': {
+                    'theme': 'dark',
                     'size_multiplier': 1.0,
                     'show_transcript': False,
                     'auto_hide_seconds': 5
