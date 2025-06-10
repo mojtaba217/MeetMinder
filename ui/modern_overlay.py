@@ -626,14 +626,7 @@ class ModernOverlay(QWidget):
         self.bar_container = QFrame()
         self.bar_container.setObjectName("barContainer")
         self.bar_container.setFixedHeight(self.scale(70))  # Slightly taller for better visibility
-        self.bar_container.setStyleSheet(f"""
-            QFrame#barContainer {{
-                background: rgba(15, 15, 15, 0.95);
-                border: 2px solid rgba(255, 255, 255, 0.15);
-                border-radius: {self.scale(35)}px;
-                backdrop-filter: blur({self.scale(25)}px);
-            }}
-        """)
+        # Bar container styling handled by theme system
         
         # Add more prominent drop shadow
         shadow = QGraphicsDropShadowEffect()
@@ -668,40 +661,12 @@ class ModernOverlay(QWidget):
         self.mic_button.setFixedSize(self.scale(50), self.scale(50))
         self.mic_button.clicked.connect(self.toggle_recording)
         self.mic_button.setToolTip("Toggle microphone recording (Ctrl+M)")
-        self.mic_button.setStyleSheet(f"""
-            ModernButton {{
-                background: rgba(255, 255, 255, 0.08);
-                border: 2px solid rgba(255, 255, 255, 0.12);
-                border-radius: {self.scale(25)}px;
-                padding: {self.scale(8)}px;
-                qproperty-icon: url(icons/mic-off.png);
-                qproperty-iconSize: {self.scale(24)}px {self.scale(24)}px;
-            }}
-            ModernButton:hover {{
-                background: rgba(255, 255, 255, 0.12);
-                border: 2px solid rgba(255, 255, 255, 0.16);
-            }}
-            ModernButton:pressed {{
-                background: rgba(255, 255, 255, 0.04);
-                border: 2px solid rgba(255, 255, 255, 0.08);
-            }}
-        """)
+        # Mic button styling handled by theme system
         
         # Timer display - modern style
         self.timer_label = QLabel("00:00")
-        self.timer_label.setStyleSheet(f"""
-            QLabel {{
-                color: #ffffff;
-                font-family: 'Segoe UI Variable';
-                font-size: {self.scale_font(16)}px;
-                font-weight: 600;
-                background: rgba(0, 120, 212, 0.15);
-                border: 2px solid rgba(0, 120, 212, 0.25);
-                border-radius: {self.scale(18)}px;
-                padding: {self.scale(8)}px {self.scale(16)}px;
-                min-width: {self.scale(70)}px;
-            }}
-        """)
+        self.timer_label.setObjectName("timerLabel")
+        # Timer label styling handled by theme system
         self.timer_label.setAlignment(QtCore.Qt.AlignCenter)
         
         layout.addWidget(self.mic_button)
@@ -711,56 +676,22 @@ class ModernOverlay(QWidget):
         """Setup main control buttons"""
         # Ask AI button - larger and more prominent
         self.ask_ai_button = ModernButton("🤖 Ask AI", size_multiplier=self.size_multiplier)
+        self.ask_ai_button.setObjectName("askAiButton")
         self.ask_ai_button.setFixedSize(self.scale(120), self.scale(50))
         self.ask_ai_button.clicked.connect(self.trigger_ask_ai)
-        self.ask_ai_button.setStyleSheet(f"""
-            ModernButton {{
-                background: rgba(0, 120, 212, 0.3);
-                border: 2px solid rgba(0, 120, 212, 0.5);
-                color: #87CEEB;
-                font-weight: 600;
-                font-size: {self.scale_font(14)}px;
-                border-radius: {self.scale(25)}px;
-            }}
-            ModernButton:hover {{
-                background: rgba(0, 120, 212, 0.4);
-                border: 2px solid rgba(0, 120, 212, 0.7);
-            }}
-        """)
+        # Ask AI button styling handled by theme system
         
         # Shortcut indicator - larger text
         shortcut_label = QLabel("Ctrl+Space")
-        shortcut_label.setStyleSheet(f"""
-            QLabel {{
-                color: rgba(255, 255, 255, 0.8);
-                font-family: 'Segoe UI Variable';
-                font-size: {self.scale_font(12)}px;
-                background: rgba(255, 255, 255, 0.1);
-                border: 1px solid rgba(255, 255, 255, 0.2);
-                border-radius: {self.scale(12)}px;
-                padding: {self.scale(6)}px {self.scale(12)}px;
-            }}
-        """)
+        shortcut_label.setObjectName("shortcutLabel")
+        # Shortcut label styling handled by theme system
         
         # Expand/collapse button - larger
         self.expand_button = ModernButton("▼", size_multiplier=self.size_multiplier)
         self.expand_button.setFixedSize(self.scale(50), self.scale(50))
         self.expand_button.clicked.connect(self.toggle_expansion)
         self.expand_button.setToolTip("Expand/collapse details")
-        self.expand_button.setStyleSheet(f"""
-            ModernButton {{
-                background: rgba(255, 255, 255, 0.15);
-                border: 2px solid rgba(255, 255, 255, 0.25);
-                color: white;
-                font-weight: bold;
-                font-size: {self.scale_font(16)}px;
-                border-radius: {self.scale(25)}px;
-            }}
-            ModernButton:hover {{
-                background: rgba(255, 255, 255, 0.2);
-                border: 2px solid rgba(255, 255, 255, 0.35);
-            }}
-        """)
+        # Expand button styling handled by theme system
         
         layout.addWidget(self.ask_ai_button)
         layout.addWidget(shortcut_label)
@@ -774,62 +705,21 @@ class ModernOverlay(QWidget):
         settings_button.setFixedSize(self.scale(50), self.scale(50))
         settings_button.clicked.connect(self.trigger_settings)
         settings_button.setToolTip("Open settings (Ctrl+,)")
-        settings_button.setStyleSheet(f"""
-            ModernButton {{
-                background: rgba(255, 255, 255, 0.08);
-                border: 2px solid rgba(255, 255, 255, 0.12);
-                border-radius: {self.scale(25)}px;
-                padding: {self.scale(8)}px;
-                qproperty-icon: url(icons/settings.png);
-                qproperty-iconSize: {self.scale(24)}px {self.scale(24)}px;
-            }}
-            ModernButton:hover {{
-                background: rgba(255, 255, 255, 0.12);
-                border: 2px solid rgba(255, 255, 255, 0.16);
-            }}
-            ModernButton:pressed {{
-                background: rgba(255, 255, 255, 0.04);
-                border: 2px solid rgba(255, 255, 255, 0.08);
-            }}
-        """)
+        # Settings button styling handled by theme system
         
         # Hide/show button - modern style
         self.visibility_button = ModernButton("Hide", size_multiplier=self.size_multiplier)
         self.visibility_button.setFixedSize(self.scale(70), self.scale(50))
         self.visibility_button.clicked.connect(self.toggle_visibility)
-        self.visibility_button.setStyleSheet(f"""
-            ModernButton {{
-                background: rgba(255, 255, 255, 0.08);
-                border: 2px solid rgba(255, 255, 255, 0.12);
-                border-radius: {self.scale(25)}px;
-                color: white;
-                font-weight: 500;
-            }}
-            ModernButton:hover {{
-                background: rgba(255, 255, 255, 0.12);
-                border: 2px solid rgba(255, 255, 255, 0.16);
-            }}
-        """)
+        # Visibility button styling handled by theme system
         
         # Close button - modern style
         self.close_button = ModernButton("✕", size_multiplier=self.size_multiplier)
+        self.close_button.setObjectName("closeButton")
         self.close_button.setFixedSize(self.scale(50), self.scale(50))
         self.close_button.clicked.connect(self.close_application)
         self.close_button.setToolTip("Close application")
-        self.close_button.setStyleSheet(f"""
-            ModernButton {{
-                background: rgba(255, 59, 48, 0.1);
-                border: 2px solid rgba(255, 59, 48, 0.2);
-                border-radius: {self.scale(25)}px;
-                color: #ff3b30;
-                font-weight: bold;
-                font-size: {self.scale_font(18)}px;
-            }}
-            ModernButton:hover {{
-                background: rgba(255, 59, 48, 0.15);
-                border: 2px solid rgba(255, 59, 48, 0.3);
-            }}
-        """)
+        # Close button styling handled by theme system
         
         layout.addWidget(settings_button)
         layout.addWidget(self.visibility_button)
@@ -1248,35 +1138,10 @@ class ModernOverlay(QWidget):
         self.mic_timer.start_recording()
         
         # Update button style for active state
-        self.mic_button.setStyleSheet(f"""
-            ModernButton {{
-                background: rgba(255, 59, 48, 0.15);
-                border: 2px solid rgba(255, 59, 48, 0.25);
-                border-radius: {self.scale(25)}px;
-                padding: {self.scale(8)}px;
-                qproperty-icon: url(icons/mic-on.png);
-                qproperty-iconSize: {self.scale(24)}px {self.scale(24)}px;
-            }}
-            ModernButton:hover {{
-                background: rgba(255, 59, 48, 0.2);
-                border: 2px solid rgba(255, 59, 48, 0.3);
-            }}
-        """)
+        # Mic button styling handled by theme system
         
         # Update timer label style
-        self.timer_label.setStyleSheet(f"""
-            QLabel {{
-                color: #ffffff;
-                font-family: 'Segoe UI Variable';
-                font-size: {self.scale_font(16)}px;
-                font-weight: 600;
-                background: rgba(255, 59, 48, 0.15);
-                border: 2px solid rgba(255, 59, 48, 0.25);
-                border-radius: {self.scale(18)}px;
-                padding: {self.scale(8)}px {self.scale(16)}px;
-                min-width: {self.scale(70)}px;
-            }}
-        """)
+        # Timer label styling handled by theme system
         
         # Call the callback
         if self.on_toggle_mic:
@@ -1291,35 +1156,10 @@ class ModernOverlay(QWidget):
         self.mic_timer.stop_recording()
         
         # Reset button style
-        self.mic_button.setStyleSheet(f"""
-            ModernButton {{
-                background: rgba(255, 255, 255, 0.08);
-                border: 2px solid rgba(255, 255, 255, 0.12);
-                border-radius: {self.scale(25)}px;
-                padding: {self.scale(8)}px;
-                qproperty-icon: url(icons/mic-off.png);
-                qproperty-iconSize: {self.scale(24)}px {self.scale(24)}px;
-            }}
-            ModernButton:hover {{
-                background: rgba(255, 255, 255, 0.12);
-                border: 2px solid rgba(255, 255, 255, 0.16);
-            }}
-        """)
+        # Mic button styling handled by theme system
         
         # Reset timer label style
-        self.timer_label.setStyleSheet(f"""
-            QLabel {{
-                color: #ffffff;
-                font-family: 'Segoe UI Variable';
-                font-size: {self.scale_font(16)}px;
-                font-weight: 600;
-                background: rgba(0, 120, 212, 0.15);
-                border: 2px solid rgba(0, 120, 212, 0.25);
-                border-radius: {self.scale(18)}px;
-                padding: {self.scale(8)}px {self.scale(16)}px;
-                min-width: {self.scale(70)}px;
-            }}
-        """)
+        # Timer label styling handled by theme system
         
         # Call the callback
         if self.on_toggle_mic:
