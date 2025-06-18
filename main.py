@@ -659,6 +659,17 @@ class AIAssistant:
                 
                 logger.info(f"✅ UI resized to {new_multiplier}x successfully!")
             
+            
+            # Check if theme changed
+            current_theme = getattr(self.overlay, 'current_theme_name', 'dark')
+            new_theme = ui_config.get('theme', current_theme)
+            
+            if new_theme != current_theme:
+                logger.info(f"🎨 Theme changing from {current_theme} to {new_theme}")
+                # Apply theme without recreating overlay
+                self.overlay.apply_theme(new_theme)
+                logger.info(f"✅ Theme updated to {new_theme} successfully!")
+            
             # Check if transcript visibility changed
             current_transcript = getattr(self.overlay, 'show_transcript', False)
             new_transcript = ui_config.get('show_transcript', current_transcript)

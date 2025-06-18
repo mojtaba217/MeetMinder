@@ -52,200 +52,8 @@ class ModernSettingsDialog(QDialog):
         self.move(screen_center.x() - dialog_width // 2, screen_center.y() - dialog_height // 2)
         
         # Modern dark theme with high contrast
-        self.setStyleSheet(f"""
-            QDialog {{
-                background: #141414;
-                color: #ffffff;
-                font-family: 'Segoe UI', Arial, sans-serif;
-                font-size: {self.scale(14)}px;
-            }}
-            QWidget {{
-                background: #141414;
-            }}
-            QScrollArea {{
-                background: #141414;
-                border: none;
-            }}
-            QScrollArea > QWidget > QWidget {{
-                background: #141414;
-            }}
-            QTabWidget::pane {{
-                border: 1px solid #404040;
-                border-radius: {self.scale(8)}px;
-                background: #141414;
-                margin-top: -1px;
-            }}
-            QTabWidget QWidget {{
-                background: #141414;
-            }}
-            QTabBar::tab {{
-                background: #1a1a1a;
-                color: #ffffff;
-                border: 1px solid #404040;
-                border-bottom: none;
-                padding: {self.scale(12)}px {self.scale(24)}px;
-                margin-right: 2px;
-                border-top-left-radius: {self.scale(8)}px;
-                border-top-right-radius: {self.scale(8)}px;
-                min-width: {self.scale(120)}px;
-                font-weight: 500;
-                font-size: {self.scale(13)}px;
-            }}
-            QTabBar::tab:selected {{
-                background: #0078d4;
-                color: #ffffff;
-                border: 1px solid #0078d4;
-            }}
-            QTabBar::tab:hover:!selected {{
-                background: #262626;
-            }}
-            QGroupBox {{
-                font-size: {self.scale(16)}px;
-                font-weight: 600;
-                border: 1px solid #404040;
-                border-radius: {self.scale(8)}px;
-                margin-top: {self.scale(15)}px;
-                padding-top: {self.scale(10)}px;
-                background: #1a1a1a;
-                color: #ffffff;
-            }}
-            QGroupBox::title {{
-                subcontrol-origin: margin;
-                left: {self.scale(20)}px;
-                padding: 0 {self.scale(10)}px 0 {self.scale(10)}px;
-                color: #ffffff;
-                font-size: {self.scale(15)}px;
-                font-weight: 600;
-            }}
-            QLabel {{
-                color: #ffffff;
-                font-size: {self.scale(14)}px;
-                min-height: {self.scale(28)}px;
-                padding: {self.scale(4)}px;
-            }}
-            QCheckBox {{
-                color: #ffffff;
-                font-size: {self.scale(14)}px;
-                spacing: {self.scale(12)}px;
-                min-height: {self.scale(32)}px;
-                padding: {self.scale(6)}px;
-            }}
-            QCheckBox::indicator {{
-                width: {self.scale(20)}px;
-                height: {self.scale(20)}px;
-                border-radius: {self.scale(4)}px;
-                border: 2px solid #666666;
-                background: #2d2d2d;
-            }}
-            QCheckBox::indicator:checked {{
-                background: #0078d4;
-                border: 2px solid #0078d4;
-                image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iMTIiIHZpZXdCb3g9IjAgMCAxMiAxMiIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHBhdGggZD0iTTEwIDNMNC41IDguNUwyIDYiIHN0cm9rZT0id2hpdGUiIHN0cm9rZS13aWR0aD0iMiIgc3Ryb2tlLWxpbmVjYXA9InJvdW5kIiBzdHJva2UtbGluZWpvaW49InJvdW5kIi8+Cjwvc3ZnPgo=);
-            }}
-            QComboBox, QSpinBox, QLineEdit {{
-                background: #1a1a1a;
-                border: 1px solid #404040;
-                border-radius: {self.scale(6)}px;
-                color: #ffffff;
-                font-size: {self.scale(13)}px;
-                padding: {self.scale(8)}px {self.scale(12)}px;
-                min-height: {self.scale(30)}px;
-            }}
-            QComboBox:hover, QSpinBox:hover, QLineEdit:hover {{
-                background: #262626;
-                border: 1px solid #0078d4;
-            }}
-            QComboBox:focus, QSpinBox:focus, QLineEdit:focus {{
-                border: 1px solid #0078d4;
-                background: #262626;
-            }}
-            QComboBox::drop-down {{
-                border: none;
-                width: {self.scale(30)}px;
-            }}
-            QComboBox::down-arrow {{
-                image: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTIiIGhlaWdodD0iOCIgdmlld0JveD0iMCAwIDEyIDgiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+CjxwYXRoIGQ9Ik0xIDFMNiA2TDExIDEiIHN0cm9rZT0iI2ZmZmZmZiIgc3Ryb2tlLXdpZHRoPSIyIiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KPC9zdmc+Cg==);
-            }}
-            QComboBox QAbstractItemView {{
-                background: #1a1a1a;
-                border: 1px solid #404040;
-                color: #ffffff;
-                selection-background-color: #0078d4;
-            }}
-            QLineEdit::placeholder {{
-                color: #808080;
-            }}
-            QTextEdit {{
-                background: #2d2d2d;
-                border: 2px solid #404040;
-                border-radius: {self.scale(6)}px;
-                color: #ffffff;
-                font-size: {self.scale(13)}px;
-                padding: {self.scale(10)}px;
-                font-family: 'Consolas', 'Monaco', monospace;
-                line-height: 1.4;
-            }}
-            QTextEdit:focus {{
-                border: 2px solid #0078d4;
-            }}
-            QPushButton {{
-                background: #404040;
-                border: 2px solid #666666;
-                border-radius: {self.scale(6)}px;
-                color: #ffffff;
-                font-size: {self.scale(13)}px;
-                padding: {self.scale(10)}px {self.scale(20)}px;
-                min-height: {self.scale(35)}px;
-                font-weight: 500;
-            }}
-            QPushButton:hover {{
-                background: #505050;
-                border: 2px solid #0078d4;
-            }}
-            QPushButton:pressed {{
-                background: #2d2d2d;
-            }}
-            QPushButton.primary {{
-                background: #0078d4;
-                border: 2px solid #0078d4;
-                color: #ffffff;
-                font-weight: 600;
-            }}
-            QPushButton.primary:hover {{
-                background: #106ebe;
-                border: 2px solid #106ebe;
-            }}
-            QScrollBar:vertical {{
-                background: #2d2d2d;
-                width: {self.scale(12)}px;
-                border-radius: {self.scale(6)}px;
-            }}
-            QScrollBar::handle:vertical {{
-                background: #666666;
-                border-radius: {self.scale(6)}px;
-                min-height: {self.scale(20)}px;
-            }}
-            QScrollBar::handle:vertical:hover {{
-                background: #808080;
-            }}
-            QSlider::groove:horizontal {{
-                background: #404040;
-                height: {self.scale(8)}px;
-                border-radius: {self.scale(4)}px;
-            }}
-            QSlider::handle:horizontal {{
-                background: #0078d4;
-                border: 2px solid #0078d4;
-                width: {self.scale(20)}px;
-                height: {self.scale(20)}px;
-                border-radius: {self.scale(10)}px;
-                margin: -{self.scale(6)}px 0;
-            }}
-            QSlider::handle:horizontal:hover {{
-                background: #106ebe;
-                border: 2px solid #106ebe;
-            }}
-        """)
+        # Apply theme-based styling - will be updated when theme changes
+        self.apply_current_theme()
         
         layout = QVBoxLayout()
         layout.setContentsMargins(self.scale(25), self.scale(25), self.scale(25), self.scale(25))
@@ -253,8 +61,9 @@ class ModernSettingsDialog(QDialog):
         
         # Create tab widget
         self.tab_widget = QTabWidget()
+        self.tab_widget.setMinimumSize(self.scale(1200), self.scale(800))
         
-        # Add tabs
+        # Setup all tabs
         self.setup_ai_provider_tab()
         self.setup_audio_tab()
         self.setup_ui_tab()
@@ -266,10 +75,16 @@ class ModernSettingsDialog(QDialog):
         
         layout.addWidget(self.tab_widget)
         
-        # Buttons
+        # Setup buttons
         self.setup_buttons(layout)
         
         self.setLayout(layout)
+        
+        # Load current settings into the dialog
+        self.load_current_settings()
+        
+        # Clear any hardcoded styles that might interfere with theming
+        self.clear_hardcoded_styles()
     
     def setup_ai_provider_tab(self):
         """Setup AI Provider configuration tab"""
@@ -309,32 +124,32 @@ class ModernSettingsDialog(QDialog):
         self.azure_endpoint = QLineEdit()
         self.azure_endpoint.setPlaceholderText("https://your-resource.openai.azure.com/")
         self.azure_endpoint.setMinimumHeight(self.scale(40))
-        self.azure_endpoint.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+
         azure_layout.addRow("Endpoint:", self.azure_endpoint)
         
         self.azure_api_key = QLineEdit()
         self.azure_api_key.setPlaceholderText("Your Azure OpenAI API key")
         self.azure_api_key.setEchoMode(QLineEdit.Password)
         self.azure_api_key.setMinimumHeight(self.scale(40))
-        self.azure_api_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+
         azure_layout.addRow("API Key:", self.azure_api_key)
         
         self.azure_model = QLineEdit()
         self.azure_model.setPlaceholderText("gpt-4")
         self.azure_model.setMinimumHeight(self.scale(40))
-        self.azure_model.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
+
         azure_layout.addRow("Model:", self.azure_model)
         
         self.azure_deployment = QLineEdit()
-        self.azure_deployment.setPlaceholderText("deployment-name")
+        self.azure_deployment.setPlaceholderText("your-deployment-name")
         self.azure_deployment.setMinimumHeight(self.scale(40))
-        self.azure_deployment.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
-        azure_layout.addRow("Deployment Name:", self.azure_deployment)
+
+        azure_layout.addRow("Deployment:", self.azure_deployment)
         
         self.azure_api_version = QLineEdit()
-        self.azure_api_version.setText("2024-02-15-preview")
+        self.azure_api_version.setText("2024-06-01")
         self.azure_api_version.setMinimumHeight(self.scale(40))
-        self.azure_api_version.setStyleSheet("QLineEdit { color: #ffffff; }")
+
         azure_layout.addRow("API Version:", self.azure_api_version)
         
         self.azure_group.setLayout(azure_layout)
@@ -398,19 +213,16 @@ class ModernSettingsDialog(QDialog):
         self.deepseek_api_key.setPlaceholderText("Your DeepSeek API key")
         self.deepseek_api_key.setEchoMode(QLineEdit.Password)
         self.deepseek_api_key.setMinimumHeight(self.scale(40))
-        self.deepseek_api_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         deepseek_layout.addRow("API Key:", self.deepseek_api_key)
         
         self.deepseek_base_url = QLineEdit()
         self.deepseek_base_url.setPlaceholderText("https://api.deepseek.com")
         self.deepseek_base_url.setMinimumHeight(self.scale(40))
-        self.deepseek_base_url.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         deepseek_layout.addRow("Base URL:", self.deepseek_base_url)
         
         self.deepseek_model = QLineEdit()
         self.deepseek_model.setPlaceholderText("deepseek-coder")
         self.deepseek_model.setMinimumHeight(self.scale(40))
-        self.deepseek_model.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         deepseek_layout.addRow("Model:", self.deepseek_model)
         
         self.deepseek_group.setLayout(deepseek_layout)
@@ -427,19 +239,16 @@ class ModernSettingsDialog(QDialog):
         self.claude_api_key.setPlaceholderText("Your Anthropic API key")
         self.claude_api_key.setEchoMode(QLineEdit.Password)
         self.claude_api_key.setMinimumHeight(self.scale(40))
-        self.claude_api_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         claude_layout.addRow("API Key:", self.claude_api_key)
         
         self.claude_base_url = QLineEdit()
         self.claude_base_url.setPlaceholderText("https://api.anthropic.com")
         self.claude_base_url.setMinimumHeight(self.scale(40))
-        self.claude_base_url.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         claude_layout.addRow("Base URL:", self.claude_base_url)
         
         self.claude_model = QLineEdit()
         self.claude_model.setPlaceholderText("claude-3-sonnet-20240229")
         self.claude_model.setMinimumHeight(self.scale(40))
-        self.claude_model.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         claude_layout.addRow("Model:", self.claude_model)
         
         self.claude_group.setLayout(claude_layout)
@@ -1335,6 +1144,29 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         # Apply theme immediately to settings dialog
         self.apply_theme_to_dialog(theme_name)
     
+    def apply_current_theme(self):
+        """Apply the current theme from config to the dialog"""
+        try:
+            from ui.themes import ThemeManager
+            from core.config import ConfigManager
+            
+            # Get current theme from config
+            config = ConfigManager()
+            current_theme = config.get_ui_config().get('overlay', {}).get('theme', 'dark')
+            
+            theme = ThemeManager.get_theme(current_theme)
+            
+            # Generate and apply stylesheet
+            stylesheet = ThemeManager.generate_settings_stylesheet(theme, self.scale_factor)
+            self.setStyleSheet(stylesheet)
+            
+            print(f"✅ Applied {current_theme} theme to settings dialog")
+            
+        except Exception as e:
+            print(f"❌ Error applying theme: {e}")
+            # Fallback to basic dark theme
+            self.setStyleSheet("QDialog { background: #141414; color: #ffffff; }")
+
     def apply_theme_to_dialog(self, theme_name):
         """Apply theme to the settings dialog"""
         try:
@@ -1348,11 +1180,58 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
             stylesheet = ThemeManager.generate_settings_stylesheet(theme, self.scale_factor)
             self.setStyleSheet(stylesheet)
             
+            # Clear any individual widget overrides that might conflict
+            self.clear_hardcoded_styles()
+            
             print(f"✅ Applied {internal_theme} theme to settings dialog")
             
         except Exception as e:
             print(f"❌ Error applying theme: {e}")
             # Keep current dark theme as fallback
+    
+    def clear_hardcoded_styles(self):
+        """Clear hardcoded color styles from widgets to ensure theme takes precedence"""
+        # Clear styles from specific widgets that had hardcoded colors
+        widgets_to_clear = [
+            # AI Provider fields
+            getattr(self, 'azure_endpoint', None),
+            getattr(self, 'azure_api_key', None),
+            getattr(self, 'azure_model', None),
+            getattr(self, 'azure_deployment', None),
+            getattr(self, 'azure_api_version', None),
+            getattr(self, 'deepseek_api_key', None),
+            getattr(self, 'deepseek_base_url', None),
+            getattr(self, 'deepseek_model', None),
+            getattr(self, 'claude_api_key', None),
+            getattr(self, 'claude_base_url', None),
+            getattr(self, 'claude_model', None),
+            # Audio fields
+            getattr(self, 'custom_app_input', None),
+            getattr(self, 'google_json_file', None),
+            getattr(self, 'google_json_content', None),
+            getattr(self, 'azure_speech_key', None),
+            getattr(self, 'azure_speech_region', None),
+            getattr(self, 'azure_speech_endpoint', None),
+            getattr(self, 'openai_whisper_api_key', None),
+            # System audio monitoring
+            getattr(self, 'full_system_audio', None),
+            getattr(self, 'monitoring_status', None),
+        ]
+        
+        for widget in widgets_to_clear:
+            if widget:
+                widget.setStyleSheet("")
+        
+        # Also clear any labels or other elements that might have hardcoded colors
+        # This covers labels like prompt_info, topic_info, meeting_label, etc.
+        for child in self.findChildren(QLabel):
+            if child.styleSheet() and 'color:' in child.styleSheet():
+                child.setStyleSheet("")
+        
+        # Clear checkbox styles in audio monitoring section
+        for child in self.findChildren(QCheckBox):
+            if child.styleSheet() and 'color:' in child.styleSheet():
+                child.setStyleSheet("")
     
     def browse_google_json_file(self):
         """Browse for Google Cloud service account JSON file"""
