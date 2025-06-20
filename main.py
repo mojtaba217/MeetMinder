@@ -251,6 +251,7 @@ class AIAssistant:
         self.hotkey_manager.register_callback('move_up', lambda: self._move_overlay_threadsafe('up'))
         self.hotkey_manager.register_callback('move_down', lambda: self._move_overlay_threadsafe('down'))
         self.hotkey_manager.register_callback('emergency_reset', self._emergency_reset_threadsafe)
+        self.hotkey_manager.register_callback('toggle_hide_for_screenshots', self._toggle_hide_for_screenshots_threadsafe)
     
     def _setup_resource_monitoring(self):
         """Setup resource monitoring and cleanup systems"""
@@ -360,6 +361,11 @@ class AIAssistant:
         logger.info("🚨 Emergency reset triggered from hotkey!")
         # For emergency reset, we can restart the application
         self.app.quit()
+    
+    def _toggle_hide_for_screenshots_threadsafe(self):
+        """Thread-safe wrapper for toggle hide for screenshots"""
+        logger.info("📷 Toggle hide for screenshots")
+        self.overlay.toggle_hide_for_screenshots()
     
     async def start(self):
         """Start MeetMinder"""
@@ -696,6 +702,16 @@ class AIAssistant:
                 self._update_overlay_topic_analysis_sync()
                 
                 logger.info(f"✅ Transcript visibility updated to {'shown' if new_transcript else 'hidden'} successfully!")
+            
+            # Check if hide for screenshots setting changed
+            current_hide_setting = getattr(self.overlay, 'hide_for_screenshots', False)
+            new_hide_setting = new_config.get('ui', {}).get('hide_overlay_for_screenshots', current_hide_setting)
+            
+            if new_hide_setting != current_hide_setting:
+                logger.info(f"📷 Hide for screenshots changing from {current_hide_setting} to {new_hide_setting}")
+                # Update the setting without recreating overlay
+                self.overlay.update_hide_for_screenshots(new_hide_setting)
+                logger.info(f"✅ Hide for screenshots setting updated successfully!")
             
             # Apply assistant configuration changes
             if 'assistant' in new_config:

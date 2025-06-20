@@ -423,6 +423,11 @@ class ModernOverlay(QWidget):
         self.blur_enabled = config.get('blur_enabled', True)
         self.smooth_animations = config.get('smooth_animations', True)
         
+        # Hide overlay for screenshots/debugging
+        self.hide_for_screenshots = config.get('hide_overlay_for_screenshots', False)
+        if self.hide_for_screenshots:
+            print("📷 Overlay hidden for screenshots/debugging mode")
+        
         # Initialize enhanced components
         self.width_monitor = ResponsiveWidthMonitor()
         self.width_monitor.width_changed.connect(self.on_screen_dimensions_changed)
@@ -1061,34 +1066,33 @@ class ModernOverlay(QWidget):
         self.visibility_button.setText("Show")
     
     def show_overlay(self):
-        """Show overlay with animation"""
-        if self.is_visible:
-            # During startup, still ensure it's visible even if marked as such
-            if not self.isVisible():
-                print("🔍 Overlay marked visible but not showing - forcing show")
-                self._do_show_overlay()
+        """Show the overlay with animation if enabled"""
+        # Check if overlay should be hidden for screenshots/debugging
+        if getattr(self, 'hide_for_screenshots', False):
+            print("📷 Overlay hidden due to screenshots/debugging mode")
             return
         
-        self._do_show_overlay()
+        if self.is_visible:
+            return
+        
+        if self.smooth_animations and self.animation_manager:
+            self.animation_manager.fade_in()
+        else:
+            self._do_show_overlay()
     
     def _do_show_overlay(self):
-        """Actually perform the show animation"""
-        # Ensure proper initial state
-        self.is_visible = True
-        self.setWindowOpacity(0.0)  # Start fully transparent
+        """Actually show the overlay without animation"""
+        # Check if overlay should be hidden for screenshots/debugging
+        if getattr(self, 'hide_for_screenshots', False):
+            print("📷 Overlay hidden due to screenshots/debugging mode")
+            return
         
-        # Reset size to collapsed state
-        self.resize(self.scale(1000), self.scale(60))
+        self.is_visible = True
+        self.show()
         self.position_window()
         
-        # Show window and animate
-        self.show()
-        self.animate_fade_in()
-        self.visibility_button.setText("Hide")
-        
-        # When showing, always start collapsed
-        if self.is_expanded:
-            self.collapse_content()
+        # Update window opacity to ensure it's fully opaque when shown
+        self.setWindowOpacity(1.0)
     
     def animate_fade_in(self):
         """Animate fade in"""
@@ -1362,8 +1366,28 @@ class ModernOverlay(QWidget):
         self.on_settings = callback
     
     def set_close_app_callback(self, callback: Callable):
-        """Set callback for close application button"""
+        """Set callback for close application"""
         self.on_close_app = callback
+    
+    def update_hide_for_screenshots(self, hide: bool):
+        """Update the hide for screenshots/debugging setting"""
+        self.hide_for_screenshots = hide
+        if hide:
+            print("📷 Overlay will be hidden for screenshots/debugging")
+            self.hide_overlay()
+        else:
+            print("📷 Overlay screenshots/debugging mode disabled")
+            # Don't automatically show - let the user control visibility
+    
+    def toggle_hide_for_screenshots(self):
+        """Toggle the hide for screenshots/debugging setting"""
+        current_state = getattr(self, 'hide_for_screenshots', False)
+        new_state = not current_state
+        self.update_hide_for_screenshots(new_state)
+        
+        # Show feedback to user
+        status_msg = "Hidden for screenshots/debugging" if new_state else "Screenshots/debugging mode disabled"
+        self.update_ai_response(f"📷 Overlay: {status_msg}")
     
     # Window drag functionality
     def mousePressEvent(self, event):

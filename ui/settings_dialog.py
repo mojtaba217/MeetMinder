@@ -716,6 +716,13 @@ class ModernSettingsDialog(QDialog):
         self.enable_screen_sharing_detection.setToolTip("Automatically hide overlay when screen sharing apps are detected")
         appearance_layout.addRow("", self.enable_screen_sharing_detection)
         
+        # Hide overlay for screenshots/debugging
+        self.hide_overlay_for_screenshots = QCheckBox("Hide overlay for screenshots/debugging")
+        self.hide_overlay_for_screenshots.setMinimumHeight(self.scale(32))
+        self.hide_overlay_for_screenshots.setToolTip("Temporarily hide the entire overlay for taking clean screenshots or debugging UI issues")
+        self.hide_overlay_for_screenshots.toggled.connect(self.on_hide_overlay_toggled)
+        appearance_layout.addRow("", self.hide_overlay_for_screenshots)
+        
         # Enhanced UI Features Group
         enhanced_group = QGroupBox("🚀 Enhanced Features")
         enhanced_group.setMinimumHeight(self.scale(350))
@@ -1033,6 +1040,12 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.emergency_reset = QLineEdit()
         self.emergency_reset.setMinimumHeight(self.scale(40))
         hotkeys_layout.addRow("Emergency Reset:", self.emergency_reset)
+        
+        self.toggle_hide_for_screenshots = QLineEdit()
+        self.toggle_hide_for_screenshots.setMinimumHeight(self.scale(40))
+        self.toggle_hide_for_screenshots.setPlaceholderText("e.g., Ctrl+H")
+        self.toggle_hide_for_screenshots.setToolTip("Hotkey to quickly toggle overlay hiding for screenshots/debugging")
+        hotkeys_layout.addRow("Toggle Hide Overlay:", self.toggle_hide_for_screenshots)
         
         hotkeys_group.setLayout(hotkeys_layout)
         layout.addWidget(hotkeys_group)
@@ -1521,6 +1534,9 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.enable_auto_width.setChecked(enhanced_ui.get('auto_width', True))
         self.enable_dynamic_transparency.setChecked(enhanced_ui.get('dynamic_transparency', False))
         
+        # Hide overlay for screenshots/debugging
+        self.hide_overlay_for_screenshots.setChecked(ui.get('hide_overlay_for_screenshots', False))
+        
         # Theme selection
         theme = ui.get('theme', 'dark')
         theme_display_name = "Light Mode" if theme == 'light' else "Dark Mode"
@@ -1552,6 +1568,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.toggle_overlay.setText(hotkeys.get('toggle_overlay', 'ctrl+b'))
         self.take_screenshot.setText(hotkeys.get('take_screenshot', 'ctrl+h'))
         self.emergency_reset.setText(hotkeys.get('emergency_reset', 'ctrl+shift+r'))
+        self.toggle_hide_for_screenshots.setText(hotkeys.get('toggle_hide_for_screenshots', 'ctrl+shift+h'))
         
         # Debug
         debug = self.current_config.get('debug', {})
@@ -1647,7 +1664,8 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                         'auto_width': self.enable_auto_width.isChecked(),
                         'dynamic_transparency': self.enable_dynamic_transparency.isChecked()
                     }
-                }
+                },
+                'hide_overlay_for_screenshots': self.hide_overlay_for_screenshots.isChecked()
             },
             'screen_sharing_detection': {
                 'enabled': self.enable_screen_sharing_detection.isChecked(),
@@ -1670,7 +1688,8 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                 'trigger_assistance': self.trigger_assistance.text(),
                 'toggle_overlay': self.toggle_overlay.text(),
                 'take_screenshot': self.take_screenshot.text(),
-                'emergency_reset': self.emergency_reset.text()
+                'emergency_reset': self.emergency_reset.text(),
+                'toggle_hide_for_screenshots': self.toggle_hide_for_screenshots.text()
             },
             'debug': {
                 'enabled': self.debug_enabled.isChecked(),
@@ -1753,4 +1772,9 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
             self.monitoring_status.setStyleSheet("color: #ffa500; font-weight: 600; margin-bottom: 10px; padding: 8px; background: #1a1a1a; border-radius: 4px;")
         
         self.monitoring_status.setText(status_text)
+    
+    def on_hide_overlay_toggled(self, checked):
+        """Handle hide overlay for screenshots/debugging toggle"""
+        # Add any additional logic you want to execute when this toggle is changed
+        print(f"Hide overlay for screenshots/debugging toggled: {'on' if checked else 'off'}")
     
