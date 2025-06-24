@@ -772,7 +772,7 @@ class AIAssistant:
                 logger.info(f"✅ Screenshot saved: {screenshot_path}")
                 
                 # Show brief notification in overlay
-                self.overlay.show_overlay()
+                self.overlay.show_overlay_respecting_hide_setting()
                 self.overlay.update_ai_response(f"📸 Screenshot saved: {screenshot_path}")
             else:
                 logger.info("❌ Failed to take screenshot")

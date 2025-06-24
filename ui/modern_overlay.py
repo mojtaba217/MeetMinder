@@ -126,12 +126,18 @@ class SmoothAnimationManager:
         if 'fade' in self.animations:
             self.animations['fade'].stop()
         
+        # Make sure the widget is shown before animating
+        if not self.widget.isVisible():
+            print("🔄 Showing widget before fade animation")
+            self.widget.show()
+        
         self.animations['fade'] = QPropertyAnimation(self.widget, b"windowOpacity")
         self.animations['fade'].setDuration(duration)
         self.animations['fade'].setStartValue(0.0)
         self.animations['fade'].setEndValue(target_opacity)
         self.animations['fade'].setEasingCurve(QEasingCurve.OutCubic)
         self.animations['fade'].start()
+        print(f"🔄 Started fade in animation to opacity {target_opacity}")
         
     def fade_out(self, duration=200, target_opacity=0.0):
         """Smooth fade out animation"""
@@ -462,12 +468,13 @@ class ModernOverlay(QWidget):
         
         # Screen sharing detector (only start if enabled)
         screen_sharing_config = config.get('screen_sharing_detection', {})
-        self.screen_sharing_enabled = screen_sharing_config.get('enabled', True)  # Default enabled
+        self.screen_sharing_enabled = screen_sharing_config.get('enabled', False)  # Default disabled to prevent issues
         
         if self.screen_sharing_enabled:
             self.screen_sharing_detector = ScreenSharingDetector()
             self.screen_sharing_detector.screen_sharing_changed.connect(self.on_screen_sharing_changed)
-            print("🔍 Screen sharing detection enabled")
+            self.screen_sharing_detector.start()  # Start the detection thread
+            print("🔍 Screen sharing detection enabled and started")
         else:
             self.screen_sharing_detector = None
             print("🔍 Screen sharing detection disabled by configuration")
@@ -496,6 +503,15 @@ class ModernOverlay(QWidget):
             QTimer.singleShot(2000, self.test_transcript)
             # Also auto-start recording for testing
             QTimer.singleShot(3000, self.force_start_recording_test)
+        
+        # Connect Qt signals for thread-safe updates
+        self.update_ai_response_signal.connect(self.update_ai_response)
+        self.append_ai_response_signal.connect(self.append_ai_response)
+        self.update_profile_signal.connect(self.update_profile)
+        self.update_topic_guidance_signal.connect(self.update_topic_guidance)
+        self.update_transcript_signal.connect(self.update_transcript)
+        self.show_overlay_signal.connect(self.show_overlay)
+        print("🔗 Qt signals connected for thread-safe updates")
     
     def scale(self, value: int) -> int:
         """Scale a pixel value by the size multiplier"""
@@ -613,17 +629,23 @@ class ModernOverlay(QWidget):
         if self.themes_available:
             self.apply_theme()
         
-        # Start visible with smooth animation if enabled
-        if self.smooth_animations:
-            self.setWindowOpacity(0.0)
-            self.show()
-            self.animation_manager.fade_in(duration=500, target_opacity=0.9)
+        # Check if overlay should be hidden for screenshots/debugging
+        if self.hide_for_screenshots:
+            print("📷 Overlay hidden for screenshots/debugging mode")
+            self.hide()
+            self.is_visible = False
         else:
-            self.setWindowOpacity(0.9)  # Professional semi-transparency
-            self.show()
-            
-        self.is_visible = True
-        print("✅ Enhanced overlay initialized and shown")
+            # Start visible with smooth animation if enabled
+            if self.smooth_animations:
+                self.setWindowOpacity(0.0)
+                self.show()
+                self.animation_manager.fade_in(duration=500, target_opacity=0.9)
+            else:
+                self.setWindowOpacity(0.9)  # Professional semi-transparency
+                self.show()
+                
+            self.is_visible = True
+            print("✅ Enhanced overlay initialized and shown")
     
     def setup_horizontal_bar(self, parent_layout):
         """Setup the main horizontal bar"""
@@ -1036,11 +1058,15 @@ class ModernOverlay(QWidget):
     
     def hide_overlay(self):
         """Hide overlay with animation"""
+        print(f"🔄 hide_overlay() called - current is_visible: {self.is_visible}")
+        
         if not self.is_visible:
+            print("🔄 Already hidden, skipping")
             return
         
         # First collapse if expanded
         if self.is_expanded:
+            print("🔄 Collapsing expanded content first")
             self.collapse_content()
             # Wait for collapse animation to finish
             if self.expand_animation and self.expand_animation.state() == QPropertyAnimation.Running:
@@ -1051,60 +1077,59 @@ class ModernOverlay(QWidget):
     
     def _do_hide_overlay(self):
         """Actually perform the hide animation"""
+        print(f"🔄 _do_hide_overlay() called")
         self.is_visible = False
         
         # Ensure valid window geometry before animation
         if not self.isVisible():
+            print("🔄 Window not visible, skipping hide animation")
             return
             
         current_geo = self.geometry()
         if not current_geo.isValid():
+            print("🔄 Invalid geometry, resizing before hide")
             self.resize(self.scale(1000), self.scale(60))
             self.position_window()
         
+        print("🔄 Starting fade out animation")
         self.animate_fade_out()
-        self.visibility_button.setText("Show")
     
     def show_overlay(self):
         """Show the overlay with animation if enabled"""
-        # Check if overlay should be hidden for screenshots/debugging
-        if getattr(self, 'hide_for_screenshots', False):
-            print("📷 Overlay hidden due to screenshots/debugging mode")
-            return
+        print(f"🔄 show_overlay() called - current is_visible: {self.is_visible}")
         
         if self.is_visible:
+            print("🔄 Already visible, skipping")
             return
         
         if self.smooth_animations and self.animation_manager:
+            print("🔄 Using smooth animation to show")
             self.animation_manager.fade_in()
         else:
+            print("🔄 Showing without animation")
             self._do_show_overlay()
     
     def _do_show_overlay(self):
         """Actually show the overlay without animation"""
-        # Check if overlay should be hidden for screenshots/debugging
-        if getattr(self, 'hide_for_screenshots', False):
-            print("📷 Overlay hidden due to screenshots/debugging mode")
-            return
-        
+        print(f"🔄 _do_show_overlay() called")
         self.is_visible = True
         self.show()
         self.position_window()
         
         # Update window opacity to ensure it's fully opaque when shown
         self.setWindowOpacity(1.0)
+        print(f"🔄 Overlay shown, opacity: {self.windowOpacity()}")
     
-    def animate_fade_in(self):
-        """Animate fade in"""
-        if self.fade_animation and self.fade_animation.state() == QPropertyAnimation.Running:
-            self.fade_animation.stop()
+    def show_overlay_respecting_hide_setting(self):
+        """Show the overlay only if not in hide_for_screenshots mode"""
+        print(f"🔄 show_overlay_respecting_hide_setting() called")
         
-        self.fade_animation = QPropertyAnimation(self, b"windowOpacity")
-        self.fade_animation.setDuration(300)
-        self.fade_animation.setStartValue(0.0)
-        self.fade_animation.setEndValue(1.0)
-        self.fade_animation.setEasingCurve(QEasingCurve.OutQuart)
-        self.fade_animation.start()
+        # Check if overlay should be hidden for screenshots/debugging
+        if getattr(self, 'hide_for_screenshots', False):
+            print("📷 Overlay hidden due to screenshots/debugging mode")
+            return
+        
+        self.show_overlay()
     
     def animate_fade_out(self):
         """Animate fade out"""
@@ -1202,8 +1227,8 @@ class ModernOverlay(QWidget):
     def _queue_trigger_assistance(self):
         """Queue trigger assistance on main thread"""
         print("🤖 Triggering AI assistance from hotkey...")
-        # Show overlay first
-        self.show_overlay()
+        # Show overlay first (respecting hide setting)
+        self.show_overlay_respecting_hide_setting()
         # Auto-expand when triggered via hotkey
         if not self.is_expanded:
             self.expand_content()
@@ -1448,10 +1473,36 @@ class ModernOverlay(QWidget):
     @pyqtSlot()
     def toggle_visibility(self):
         """Toggle overlay visibility"""
+        print(f"🔄 Toggle visibility called - current state: is_visible={self.is_visible}")
+        print(f"🔄 Hide for screenshots: {getattr(self, 'hide_for_screenshots', False)}")
+        print(f"🔄 Screen sharing active: {getattr(self, 'screen_sharing_active', False)}")
+        
         if self.is_visible:
+            print("🔄 Hiding overlay")
             self.hide_overlay()
         else:
-            self.show_overlay()
+            print("🔄 Showing overlay (forced - ignoring hide settings)")
+            # Force show overlay regardless of hide settings when user explicitly toggles
+            self._force_show_overlay()
+    
+    def _force_show_overlay(self):
+        """Force show overlay regardless of any hide settings"""
+        print("🔄 Force showing overlay")
+        
+        # Update visibility flag first
+        self.is_visible = True
+        
+        if self.smooth_animations and self.animation_manager:
+            print("🔄 Using animation manager to show")
+            self.animation_manager.fade_in()
+        else:
+            print("🔄 Using direct show")
+            self._do_show_overlay()
+        
+        # Override any screen sharing state temporarily
+        if hasattr(self, 'screen_sharing_active'):
+            self.screen_sharing_active = False
+            print("🔄 Temporarily disabled screen sharing state")
     
     @pyqtSlot(str)
     def update_transcript(self, text: str):
