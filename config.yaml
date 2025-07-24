@@ -1,235 +1,225 @@
-# MeetMinder Configuration
-# Edit this file to configure your AI meeting assistant
-
-# AI Provider Configuration
 ai_provider:
-  type: azure_openai  # Options: azure_openai, openai, google_gemini
-  
-  # Azure OpenAI Configuration
   azure_openai:
-    api_key: "your-azure-openai-api-key-here"
-    endpoint: "https://your-resource.openai.azure.com/"
-    api_version: "2024-02-01"
-    model: "gpt-4"
-    deployment_name: "gpt-4"
-  
-  # OpenAI Configuration
-  openai:
-    api_key: "your-openai-api-key-here"
-    model: "gpt-4"
-  
-  # Google Gemini Configuration
+    api_key: ''
+    api_version: '2024-02-01'
+    deployment_name: ''
+    endpoint: ''
+    model: ''
+  claude:
+    api_key: ''
+    base_url: https://api.anthropic.com
+    model: claude-3-sonnet-20240229
+  deepseek:
+    api_key: ''
+    base_url: https://api.deepseek.com
+    model: deepseek-coder
   google_gemini:
-    api_key: "your-gemini-api-key-here"
-    model: "gemini-2.0-flash"
-    project_id: "your-project-id"
-
-# Audio Processing Settings
+    api_key: ''
+    model: ''
+    project_id: ''
+  openai:
+    api_key: ''
+    model: ''
+  type: azure_openai
+assistant:
+  activation_mode: manual
+  auto_hide_behavior: timer
+  input_prioritization: system_audio
+  response_style: professional
+  verbosity: standard
 audio:
-  mode: dual_stream  # Options: single_stream, dual_stream
-  sample_rate: 44100
+  buffer_duration_minutes: 5
   channels: 1
   chunk_size: 1024
-  buffer_duration_minutes: 5
-  processing_interval_seconds: 1.6
-  silence_threshold_seconds: 30
-  transcript_segments_max: 50
-  
-  # Dual stream specific settings
   dual_stream:
+    content_detection: true
+    conversation_analysis: true
     enable_microphone: true
     enable_system_audio: true
-    microphone_threshold: 0.001
-    system_audio_threshold: 0.001
-    separate_transcription: true
-    conversation_analysis: true
     meeting_detection: true
-    content_detection: true
+    microphone_threshold: 0.001
+    separate_transcription: true
     solo_mode_detection: true
-  
-  # Whisper settings for local transcription
-  whisper:
-    model_size: base  # Options: tiny, base, small, medium, large
-
-# Transcription Provider Settings
-transcription:
-  provider: local_whisper  # Options: local_whisper, google_speech, azure_speech
-  
-  # Local Whisper settings
+    system_audio_threshold: 0.001
+  mode: dual_stream
+  processing_interval_seconds: 1.6
+  sample_rate: 44100
+  silence_threshold_seconds: 30
+  system_audio_monitoring:
+    audio_filtering:
+      filter_non_speech: true
+      speech_detection_threshold: 0.6
+    full_monitoring: false
+    monitored_applications:
+      browser: false
+      custom: false
+      discord: true
+      firefox: false
+      google_meet: true
+      gotomeeting: true
+      obs: false
+      skype: true
+      slack: true
+      spotify: false
+      teams: true
+      vlc: false
+      webex: true
+      youtube: false
+      zoom: true
+  transcript_segments_max: 50
   whisper:
     model_size: base
-    language: en
-  
-  # Google Speech-to-Text settings
-  google_speech:
-    credentials_path: "path-to-your-service-account.json"
-    language: en-US
-  
-  # Azure Speech settings
-  azure_speech:
-    subscription_key: "your-azure-speech-key"
-    service_region: "your-region"  # e.g., "eastus"
-    language: en-US
-
-# MeetMinder Behavior
-assistant:
-  activation_mode: manual  # Options: manual, auto
-  verbosity: standard  # Options: concise, standard, detailed
-  response_style: professional  # Options: professional, casual, technical
-  auto_hide_behavior: timer  # Options: timer, manual, never
-  input_prioritization: system_audio  # Options: mic, system_audio, balanced
-
-# User Interface Settings
-ui:
-  overlay:
-    # Size and position
-    size_multiplier: 1.0  # 1.0 to 4.0 scaling
-    position: top_center
-    width: 1000
-    height: 60
-    
-    # Appearance
-    opacity: 0.9
-    font_family: "Segoe UI Variable"
-    font_size: 14
-    
-    # Behavior
-    auto_hide_seconds: 5  # 0 to disable
-    show_transcript: false
-    hide_from_sharing: true
-    
-    # Animation
-    fade_animation_steps: 5
-  
-  # Stealth mode settings
-  stealth_mode:
-    always_on_top: true
-    skip_taskbar: true
-    skip_screen_capture: true
-    transparent_background: true
-
-# Screen Sharing Detection Settings
-screen_sharing_detection:
-  enabled: false  # Disabled by default to prevent false positives
-  auto_hide_overlay: true  # Hide overlay when screen sharing is detected
-  detection_interval_seconds: 3
+context:
+  meeting_mode:
+    objection_keywords:
+    - but
+    - however
+    - concern
+    - issue
+    - problem
+    - worry
+    question_indicators:
+    - '?'
+    - what
+    - how
+    - why
+    - when
+    - where
+    - who
+    rolling_buffer_minutes: 30
+  response_settings:
+    max_tokens: 500
+    response_timeout_seconds: 10
+    temperature: 0.7
+  solo_mode:
+    clipboard_history_max: 10
+    code_file_extensions:
+    - .py
+    - .js
+    - .ts
+    - .java
+    - .cpp
+    - .c
+    - .cs
+    window_title_tracking: true
+debug:
+  audio_chunk_format: wav
+  enabled: false
+  max_debug_files: 100
+  save_audio_chunks: false
+  save_transcriptions: false
   verbose_logging: false
-  # Only detect these specific apps (browsers removed to prevent false positives)
-  monitored_apps:
-    - zoom.exe
-    - teams.exe
-    - discord.exe
-    - obs64.exe
-    - obs32.exe
-    - streamlabs obs.exe
-    - xsplit.core.exe
-    - skype.exe
-    - webexmta.exe
-    - gotomeeting.exe
-    - anydesk.exe
-    - teamviewer.exe
-    - loom.exe
-    - camtasia.exe
-
-# Global Hotkeys
 hotkeys:
-  trigger_assistance: ctrl+space
-  toggle_overlay: ctrl+b
-  take_screenshot: ctrl+h
+  emergency_reset: ctrl+shift+r
+  move_down: alt+down
   move_left: alt+left
   move_right: alt+right
   move_up: alt+up
-  move_down: alt+down
-  emergency_reset: ctrl+shift+r
-
-# Context Analysis Settings
-context:
-  # Solo mode settings
-  solo_mode:
-    window_title_tracking: true
-    clipboard_history_max: 10
-    code_file_extensions:
-      - .py
-      - .js
-      - .ts
-      - .java
-      - .cpp
-      - .c
-      - .cs
-  
-  # Meeting mode settings
-  meeting_mode:
-    rolling_buffer_minutes: 30
-    question_indicators:
-      - "?"
-      - "what"
-      - "how"
-      - "why"
-      - "when"
-      - "where"
-      - "who"
-    objection_keywords:
-      - "but"
-      - "however"
-      - "concern"
-      - "issue"
-      - "problem"
-      - "worry"
-  
-  # Response settings
-  response_settings:
-    temperature: 0.7
-    max_tokens: 500
-    response_timeout_seconds: 10
-
-# Topic Graph and Knowledge Management
-topic_graph:
-  enabled: true
-  auto_suggestions: true
-  matching_threshold: 0.6
-  new_topic_threshold: 0.3
-  max_matches: 3
-
-# User Profile Settings
-user_profile:
-  enabled: true
-  auto_reload: true
-  include_in_prompts: true
-
-# Debug and Logging
-debug:
-  enabled: false
-  verbose_logging: false
-  save_audio_chunks: false
-  save_transcriptions: false
-  audio_chunk_format: wav
-  max_debug_files: 100
-
+  take_screenshot: ctrl+h
+  toggle_hide_for_screenshots: ctrl+shift+h
+  toggle_overlay: ctrl+b
+  trigger_assistance: ctrl+space
 logging:
-  level: INFO  # Options: DEBUG, INFO, WARNING, ERROR
-  file_path: logs/ai_assistant.log
-  max_file_size_mb: 10
   backup_count: 3
-
+  file_path: logs/ai_assistant.log
+  level: INFO
+  max_file_size_mb: 10
 providers:
   azure:
+    api_key: ''
+    api_version: 2024-02-15-preview
     enabled: true
-    endpoint: "https://your-resource.openai.azure.com/"
-    api_key: ""
-    api_version: "2024-02-15-preview"  # Latest Azure API version
+    endpoint: https://your-resource.openai.azure.com/
     models:
-      deepseek:
-        deployment_name: "deepseek-coder"
-        model_name: "deepseek-coder-33b-instruct"
-        max_tokens: 4096
-        temperature: 0.7
       claude:
-        deployment_name: "claude3-sonnet"
-        model_name: "claude-3-sonnet-20240229"
+        deployment_name: claude3-sonnet
         max_tokens: 4096
+        model_name: claude-3-sonnet-20240229
+        temperature: 0.7
+      deepseek:
+        deployment_name: deepseek-coder
+        max_tokens: 4096
+        model_name: deepseek-coder-33b-instruct
         temperature: 0.7
       gpt4:
-        deployment_name: "gpt-4"
-        model_name: "gpt-4"
+        deployment_name: gpt-4
         max_tokens: 4096
+        model_name: gpt-4
         temperature: 0.7
+screen_sharing_detection:
+  auto_hide_overlay: true
+  detection_interval_seconds: 3
+  enabled: false
+  monitored_apps:
+  - zoom.exe
+  - teams.exe
+  - discord.exe
+  - obs64.exe
+  - obs32.exe
+  - streamlabs obs.exe
+  - xsplit.core.exe
+  - skype.exe
+  - webexmta.exe
+  - gotomeeting.exe
+  - anydesk.exe
+  - teamviewer.exe
+  - loom.exe
+  - camtasia.exe
+  verbose_logging: false
+topic_graph:
+  auto_suggestions: true
+  enabled: true
+  matching_threshold: 0.6
+  max_matches: 3
+  new_topic_threshold: 0.3
+transcription:
+  azure_speech:
+    api_key: ''
+    endpoint: ''
+    language: en-US
+    region: eastus
+    service_region: your-region
+    subscription_key: your-azure-speech-key
+  google_speech:
+    credentials_path: path-to-your-service-account.json
+    json_content: ''
+    json_file_path: ''
+    language: en-US
+  openai_whisper:
+    api_key: ''
+    language: auto-detect
+    model: whisper-1
+  provider: local_whisper
+  whisper:
+    language: en
+    model_size: base
+ui:
+  hide_overlay_for_screenshots: false
+  overlay:
+    auto_hide_seconds: 0
+    enhanced:
+      auto_width: true
+      background_opacity: 0.15
+      blur_enabled: true
+      dynamic_transparency: false
+      smooth_animations: true
+    fade_animation_steps: 5
+    font_family: Segoe UI Variable
+    font_size: 14
+    height: 60
+    hide_from_sharing: false
+    opacity: 0.9
+    position: top_center
+    show_transcript: false
+    size_multiplier: 1.0
+    theme: dark
+    width: 1000
+  stealth_mode:
+    always_on_top: true
+    skip_screen_capture: true
+    skip_taskbar: true
+    transparent_background: true
+user_profile:
+  auto_reload: true
+  enabled: true
+  include_in_prompts: true

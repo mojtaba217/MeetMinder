@@ -21,7 +21,7 @@ class DualStreamAudioContextualizer:
         self.topic_manager = topic_manager
         self.is_recording = False
         
-        # Store Whisper model and language
+        # Store Whisper model and language (use lazy loading for better performance)
         self.whisper_model = whisper_model
         self.whisper_language = whisper_language
         
@@ -83,22 +83,38 @@ class DualStreamAudioContextualizer:
         
         # Load Whisper model if not provided
         if not self.whisper_model:
-            try:
-                # Get model size from config
-                try:
-                    from core.config import ConfigManager
-                    full_config = ConfigManager()
-                    model_size = full_config.get('speech_to_text.whisper.model_size', 'small')
-                except:
-                    model_size = 'small'  # Default to small for better accuracy
-                
-                self.whisper_model = whisper.load_model(model_size)
-                print(f"✓ Loaded Whisper model '{model_size}' for dual-stream processing")
-            except Exception as e:
-                print(f"Error loading Whisper model: {e}")
-                self.whisper_model = None
+            # Use lazy loading to save memory at startup
+            self.whisper_model = None
+            print(f"✓ Configured for lazy Whisper model loading (saves ~500MB at startup)")
         else:
-            print(f"✓ Using pre-loaded Whisper model for dual-stream processing (Language: {self.whisper_language})")
+            print(f"✓ Using pre-loaded Whisper model for dual-stream processing")
+    
+    def _get_whisper_model(self):
+        """Get Whisper model using lazy loading"""
+        if self.whisper_model is None:
+            try:
+                # Try to get from memory manager's lazy loader first
+                from utils.memory_manager import memory_manager
+                lazy_model = memory_manager.get_lazy_resource("whisper_model")
+                if lazy_model:
+                    self.whisper_model = lazy_model
+                    print(f"✓ Loaded Whisper model via lazy loading for dual-stream")
+                else:
+                    # Fallback to direct loading
+                    try:
+                        from core.config import ConfigManager
+                        full_config = ConfigManager()
+                        model_size = full_config.get('speech_to_text.whisper.model_size', 'small')
+                    except:
+                        model_size = 'small'  # Default to small for better accuracy
+                    
+                    import whisper
+                    self.whisper_model = whisper.load_model(model_size)
+                    print(f"✓ Loaded Whisper model '{model_size}' (fallback)")
+            except Exception as e:
+                print(f"❌ Error loading Whisper model: {e}")
+                return None
+        return self.whisper_model
         
         # Audio streams
         self.mic_stream = None
@@ -259,7 +275,7 @@ class DualStreamAudioContextualizer:
     
     def start_continuous_capture(self):
         """Start dual-stream audio capture"""
-        if not self.whisper_model:
+        if not self._get_whisper_model():
             print("Cannot start audio capture: Whisper model not loaded")
             return
             
@@ -535,7 +551,7 @@ class DualStreamAudioContextualizer:
                     audio_16k = librosa.resample(audio_data, orig_sr=44100, target_sr=16000)
                     
                     # Transcribe the resampled audio with English language setting
-                    result = self.whisper_model.transcribe(audio_16k, language=self.whisper_language)
+                    result = self._get_whisper_model().transcribe(audio_16k, language=self.whisper_language)
                     text = result['text'].strip()
                     
                     # Debug transcription result
@@ -582,7 +598,7 @@ class DualStreamAudioContextualizer:
             except ImportError:
                 print(f"❌ Librosa not available, falling back to direct transcription")
                 # Fallback to direct transcription without librosa with English language
-                result = self.whisper_model.transcribe(audio_data, language=self.whisper_language)
+                result = self._get_whisper_model().transcribe(audio_data, language=self.whisper_language)
                 text = result['text'].strip()
                 
                 if len(text) > 5:

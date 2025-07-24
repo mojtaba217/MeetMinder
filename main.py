@@ -21,6 +21,11 @@ sys.path.insert(0, str(Path(__file__).parent))
 from utils.app_logger import logger
 from utils.error_handler import handle_errors, MeetMinderError, AIServiceError, AudioError
 
+# Import performance optimization systems
+from utils.performance_manager import performance_manager, cached
+from utils.memory_manager import memory_manager, lazy_load
+from utils.async_pipeline import pipeline_manager, Priority
+
 from core.config import ConfigManager
 from profile.user_profile import UserProfileManager
 from profile.topic_graph import TopicGraphManager
@@ -45,6 +50,9 @@ class AIAssistant:
     
     def __init__(self):
         logger.info("🚀 Initializing MeetMinder...")
+        
+        # Initialize performance management systems first
+        self._initialize_performance_systems()
         
         # Initialize PyQt5 Application first
         self.app: QApplication = QApplication(sys.argv)
@@ -81,6 +89,103 @@ class AIAssistant:
         
         logger.info("✓ MeetMinder initialized successfully")
         logger.info("🚀 Ready to start!")
+    
+    def _initialize_performance_systems(self):
+        """Initialize all performance management systems"""
+        logger.info("⚡ Initializing performance systems...")
+        
+        # Start performance manager
+        performance_manager.start()
+        
+        # Configure memory management
+        memory_manager.auto_cleanup_enabled = True
+        memory_manager.warning_threshold = 75.0  # Warning at 75% memory
+        memory_manager.critical_threshold = 85.0  # Critical at 85% memory
+        
+        # Register lazy loaders for expensive resources
+        memory_manager.register_lazy_loader("whisper_model", self._load_whisper_model_lazy)
+        
+        # Create buffer pools for audio and image processing
+        memory_manager.create_buffer_pool("audio_buffers", 1024 * 1024, max_buffers=10)  # 1MB buffers
+        memory_manager.create_buffer_pool("image_buffers", 2 * 1024 * 1024, max_buffers=5)  # 2MB buffers
+        
+        # Register cleanup callbacks
+        memory_manager.register_cleanup_callback(self._cleanup_audio_resources)
+        memory_manager.register_cleanup_callback(self._cleanup_ai_cache)
+        
+        # Connect performance signals
+        performance_manager.performance_alert.connect(self._handle_performance_alert)
+        memory_manager.memory_warning.connect(self._handle_memory_warning)
+        
+        logger.info("✅ Performance systems initialized successfully")
+    
+    @lazy_load("whisper_model")
+    def _load_whisper_model_lazy(self):
+        """Lazy load Whisper model only when needed"""
+        logger.info("🤖 Lazy loading Whisper model...")
+        try:
+            import whisper
+            # Use the model size from config if available
+            model_size = getattr(self, 'whisper_language', 'base')
+            if hasattr(self, 'config') and self.config:
+                audio_config = self.config.get_audio_config()
+                model_size = getattr(audio_config, 'whisper_model_size', 'base')
+            
+            model = whisper.load_model(model_size)
+            logger.info(f"✅ Whisper model '{model_size}' loaded successfully")
+            return model
+        except Exception as e:
+            logger.error(f"❌ Failed to load Whisper model: {e}")
+            return None
+    
+    def _cleanup_audio_resources(self):
+        """Cleanup audio processing resources"""
+        try:
+            if hasattr(self, 'audio_contextualizer') and hasattr(self.audio_contextualizer, 'audio_buffer'):
+                # Clear audio buffers
+                self.audio_contextualizer.audio_buffer.clear()
+                if hasattr(self.audio_contextualizer, 'transcript_buffer'):
+                    self.audio_contextualizer.transcript_buffer.clear()
+            logger.debug("🧹 Audio resources cleaned")
+        except Exception as e:
+            logger.error(f"❌ Error cleaning audio resources: {e}")
+    
+    def _cleanup_ai_cache(self):
+        """Cleanup AI helper cache"""
+        try:
+            if hasattr(self, 'ai_helper') and hasattr(self.ai_helper, 'request_cache'):
+                # Clear AI request cache
+                self.ai_helper.request_cache.cache.clear()
+                self.ai_helper.request_cache.timestamps.clear()
+            logger.debug("🧹 AI cache cleaned")
+        except Exception as e:
+            logger.error(f"❌ Error cleaning AI cache: {e}")
+    
+    def _handle_performance_alert(self, alert_type: str, data: dict):
+        """Handle performance alerts"""
+        logger.warning(f"🚨 Performance Alert: {alert_type} - {data}")
+        
+        if alert_type == "high_memory":
+            memory_manager.gentle_cleanup("performance_alert")
+        elif alert_type == "high_cpu":
+            # Show alert in overlay if available
+            if hasattr(self, 'overlay') and self.overlay:
+                self.overlay.update_ai_response(f"⚠️ High CPU usage: {data.get('usage', 0):.1f}%")
+        elif alert_type == "queue_backlog":
+            logger.info("🧹 Clearing low priority tasks due to backlog")
+    
+    def _handle_memory_warning(self, memory_percent: float):
+        """Handle memory warnings with progressive response"""
+        if memory_percent > 85:
+            logger.warning(f"🚨 Critical memory usage: {memory_percent:.1f}%")
+            memory_manager.force_cleanup("critical_memory")
+            if hasattr(self, 'overlay') and self.overlay:
+                self.overlay.update_ai_response(f"🚨 Critical memory usage: {memory_percent:.1f}% - cleaning up...")
+        elif memory_percent > 75:
+            logger.warning(f"⚠️ High memory usage: {memory_percent:.1f}%")
+            memory_manager.gentle_cleanup("high_memory")
+            if hasattr(self, 'overlay') and self.overlay:
+                self.overlay.update_ai_response(f"⚠️ Memory usage: {memory_percent:.1f}% - optimizing...")
     
     def _create_loading_screen(self):
         """Create a simple loading screen"""
@@ -130,31 +235,28 @@ class AIAssistant:
             fallback_config = TranscriptionConfig(provider="local_whisper")
             self.transcription_engine = TranscriptionEngineFactory.create_engine(fallback_config)
         
-        self.splash.showMessage("🤖 Loading AI models...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
+        self.splash.showMessage("🤖 Setting up AI models...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
         self.app.processEvents()
         
-        # Load Whisper model for backward compatibility (if using local Whisper)
+        # Setup lazy loading for Whisper model (saves 500MB+ at startup)
         self.whisper_model = None
         self.whisper_language = "en"
         
         if self.transcription_config.provider == "local_whisper":
-            logger.info("📥 Loading Whisper model...")
+            logger.info("📥 Configuring Whisper model for lazy loading...")
             try:
                 model_size = self.transcription_config.whisper_model_size
                 logger.info(f"   Model size: {model_size}")
                 
-                # Load the model
-                self.whisper_model = whisper.load_model(model_size)
-                logger.info("✓ Whisper model loaded successfully")
+                # Store model size for lazy loading
+                self.whisper_model_size = model_size
                 
                 # Set language to English
                 self.whisper_language = "en"
-                logger.info(f"✓ Language set to: English")
+                logger.info(f"✓ Whisper model configured for lazy loading (saves ~500MB at startup)")
                 
             except Exception as e:
-                logger.info(f"❌ Failed to load Whisper model: {e}")
-                logger.info("   Please ensure Whisper is installed: pip install openai-whisper")
-                sys.exit(1)
+                logger.info(f"❌ Failed to configure Whisper model: {e}")
         
         self.splash.showMessage("🧠 Initializing AI components...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
         self.app.processEvents()
@@ -185,7 +287,7 @@ class AIAssistant:
             self.audio_contextualizer = DualStreamAudioContextualizer(
                 audio_config,
                 self.topic_manager,
-                whisper_model=self.whisper_model,  # Pass pre-loaded model
+                whisper_model=None,  # Use lazy loading instead
                 whisper_language=self.whisper_language
             )
         else:
@@ -193,7 +295,7 @@ class AIAssistant:
             self.audio_contextualizer = AudioContextualizer(
                 audio_config,
                 self.topic_manager,
-                whisper_model=self.whisper_model,  # Pass pre-loaded model
+                whisper_model=None,  # Use lazy loading instead
                 whisper_language=self.whisper_language
             )
         
@@ -285,15 +387,6 @@ class AIAssistant:
             
         except Exception as e:
             logger.info(f"❌ Error setting up resource monitoring: {e}")
-    
-    def _cleanup_audio_resources(self):
-        """Cleanup audio processing resources"""
-        try:
-            if hasattr(self.audio_contextualizer, 'clear_buffers'):
-                self.audio_contextualizer.clear_buffers()
-            logger.info("🧹 Audio resources cleaned")
-        except Exception as e:
-            logger.info(f"❌ Error cleaning audio resources: {e}")
     
     def _cleanup_ai_resources(self):
         """Cleanup AI helper resources"""
@@ -466,7 +559,7 @@ class AIAssistant:
     
     @handle_errors(show_user_message=False)
     def _trigger_assistance_background(self):
-        """Background-safe AI assistance that uses signal-based UI updates"""
+        """Performance-optimized AI assistance using async task queue"""
         try:
             logger.info("🤖 Running AI assistance in background thread...")
             
@@ -478,45 +571,87 @@ class AIAssistant:
             transcript_data = self.audio_contextualizer.get_recent_transcript_with_topics()
             transcript = transcript_data['transcript']
             
-            # Update topic analysis using thread-safe method
+            # Update topic analysis using performance manager
             try:
-                threading.Thread(
-                    target=lambda: self._update_overlay_topic_analysis_sync(transcript),
-                    daemon=True
-                ).start()
+                # Submit topic analysis as a low priority task
+                asyncio.create_task(
+                    performance_manager.task_queue.submit(
+                        Priority.LOW, 
+                        self._update_overlay_topic_analysis_async, 
+                        transcript
+                    )
+                )
             except Exception as e:
-                logger.info(f"❌ Error updating topic analysis: {e}")
+                logger.info(f"❌ Error queuing topic analysis: {e}")
             
             # Clear previous AI response using thread-safe method
             self.overlay.update_ai_response_threadsafe("🤔 Analyzing context...")
             
-            # Stream AI response using thread-safe append method
-            import asyncio
-            loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(loop)
-            
+            # Submit AI assistance as high priority task
             try:
-                # Clear the analyzing message
-                self.overlay.update_ai_response_threadsafe("")
-                
-                # Stream the response
-                async def stream_response():
-                    async for chunk in self.ai_helper.analyze_context_stream(
-                        transcript=transcript,
-                        screen_context=f"{screen_context['active_window']['title']} - {screen_context['active_window']['process']}",
-                        clipboard_content=screen_context.get('clipboard', ''),
-                        context_type=self.current_context_type
-                    ):
-                        self.overlay.append_ai_response_threadsafe(chunk)
-                
-                loop.run_until_complete(stream_response())
-                
-            finally:
-                loop.close()
+                asyncio.create_task(
+                    performance_manager.task_queue.submit(
+                        Priority.HIGH,
+                        self._process_ai_assistance_async,
+                        transcript,
+                        screen_context,
+                        self.current_context_type
+                    )
+                )
+            except Exception as e:
+                logger.info(f"❌ Error queuing AI assistance: {e}")
+                self.overlay.update_ai_response_threadsafe(f"Error: {e}")
                 
         except Exception as e:
             logger.info(f"❌ Error in background AI assistance: {e}")
             self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+    
+    @cached(ttl=60)  # Cache results for 1 minute
+    async def _process_ai_assistance_async(self, transcript, screen_context, context_type):
+        """Process AI assistance request asynchronously"""
+        try:
+            # Clear the analyzing message
+            self.overlay.update_ai_response_threadsafe("")
+            
+            # Stream AI response
+            async for chunk in self.ai_helper.analyze_context_stream(
+                transcript=transcript,
+                screen_context=f"{screen_context['active_window']['title']} - {screen_context['active_window']['process']}",
+                clipboard_content=screen_context.get('clipboard', ''),
+                context_type=context_type
+            ):
+                self.overlay.append_ai_response_threadsafe(chunk)
+                
+        except Exception as e:
+            logger.error(f"❌ Error in AI assistance processing: {e}")
+            self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+    
+    async def _update_overlay_topic_analysis_async(self, transcript=None):
+        """Async version of topic analysis update"""
+        try:
+            if not transcript:
+                transcript_data = self.audio_contextualizer.get_recent_transcript_with_topics()
+                transcript = transcript_data['transcript']
+            
+            # Get screen context for additional context
+            screen_context = self.screen_capture.get_screen_context()
+            context_str = f"{screen_context['active_window']['title']} - {screen_context['active_window']['process']}"
+            
+            # Analyze conversation flow
+            analysis = await self.topic_analyzer.analyze_conversation_flow(transcript, context_str)
+            
+            # Update UI with analysis results using thread-safe methods
+            if analysis['current_path']:
+                topic_path = self.topic_analyzer.get_current_topic_display()
+                self.overlay.update_topic_path_threadsafe(topic_path)
+            else:
+                self.overlay.update_topic_path_threadsafe("No active topic")
+            
+            self.overlay.update_topic_guidance_threadsafe(analysis['guidance'])
+            self.overlay.update_conversation_flow_threadsafe(analysis['conversation_flow'])
+            
+        except Exception as e:
+            logger.info(f"❌ Error updating topic analysis: {e}")
     
     def _trigger_assistance_sync(self):
         """Synchronous wrapper for UI callback"""

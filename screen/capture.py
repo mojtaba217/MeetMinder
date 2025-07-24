@@ -6,30 +6,102 @@ import io
 import base64
 from typing import Optional, Dict, Any
 import time
+import hashlib
 
 class ScreenCapture:
     def __init__(self):
         # Disable pyautogui failsafe for automated screenshots
         pyautogui.FAILSAFE = False
         
-    def take_screenshot(self) -> Optional[Image.Image]:
-        """Take a screenshot of the current screen"""
+        # Cache for screen captures to avoid redundant operations
+        self.screenshot_cache = {}
+        self.window_info_cache = {}
+        self.cache_ttl = 30  # 30 seconds cache for screenshots
+        self.window_cache_ttl = 5  # 5 seconds cache for window info
+        
+        # Initialize performance caching if available
         try:
+            from utils.performance_manager import performance_manager
+            self.use_advanced_cache = True
+            self.cache = performance_manager.cache
+            print("✅ Screen capture using advanced performance cache")
+        except ImportError:
+            self.use_advanced_cache = False
+            print("⚠️ Screen capture using basic cache")
+    
+    def _get_cache_key(self, operation: str, **kwargs) -> str:
+        """Generate cache key for operations"""
+        key_data = f"{operation}_{kwargs}"
+        return hashlib.md5(key_data.encode()).hexdigest()
+    
+    def _is_cache_valid(self, timestamp: float, ttl: int) -> bool:
+        """Check if cache entry is still valid"""
+        return time.time() - timestamp < ttl
+    
+    def take_screenshot(self) -> Optional[Image.Image]:
+        """Take a screenshot of the current screen with intelligent caching"""
+        cache_key = "screenshot"
+        
+        if self.use_advanced_cache:
+            # Use advanced cache with TTL
+            cached_screenshot = self.cache.get(cache_key)
+            if cached_screenshot:
+                print("📷 Using cached screenshot")
+                return cached_screenshot
+        else:
+            # Use basic cache
+            if cache_key in self.screenshot_cache:
+                cached_data, timestamp = self.screenshot_cache[cache_key]
+                if self._is_cache_valid(timestamp, self.cache_ttl):
+                    print("📷 Using cached screenshot")
+                    return cached_data
+        
+        try:
+            print("📷 Taking new screenshot")
             screenshot = pyautogui.screenshot()
+            
+            # Cache the screenshot
+            if self.use_advanced_cache:
+                self.cache.set(cache_key, screenshot, ttl=self.cache_ttl)
+            else:
+                self.screenshot_cache[cache_key] = (screenshot, time.time())
+            
             return screenshot
         except Exception as e:
             print(f"Error taking screenshot: {e}")
             return None
     
     def get_active_window_info(self) -> Dict[str, Any]:
-        """Get information about the currently active window"""
+        """Get information about the currently active window with caching"""
+        cache_key = "active_window"
+        
+        if self.use_advanced_cache:
+            # Use advanced cache with TTL
+            cached_info = self.cache.get(cache_key)
+            if cached_info:
+                return cached_info
+        else:
+            # Use basic cache
+            if cache_key in self.window_info_cache:
+                cached_data, timestamp = self.window_info_cache[cache_key]
+                if self._is_cache_valid(timestamp, self.window_cache_ttl):
+                    return cached_data
+        
         try:
             if platform.system() == "Windows":
-                return self._get_windows_active_window()
+                window_info = self._get_windows_active_window()
             elif platform.system() == "Darwin":  # macOS
-                return self._get_macos_active_window()
+                window_info = self._get_macos_active_window()
             else:  # Linux
-                return self._get_linux_active_window()
+                window_info = self._get_linux_active_window()
+            
+            # Cache the window info
+            if self.use_advanced_cache:
+                self.cache.set(cache_key, window_info, ttl=self.window_cache_ttl)
+            else:
+                self.window_info_cache[cache_key] = (window_info, time.time())
+            
+            return window_info
         except Exception as e:
             print(f"Error getting active window info: {e}")
             return {"title": "Unknown", "process": "Unknown"}

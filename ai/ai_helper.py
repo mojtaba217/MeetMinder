@@ -79,8 +79,15 @@ class AIHelper:
         self.assistant_config = None
         self.custom_prompt_rules = ""
         
-        # Performance optimizations
-        self.request_cache = RequestCache()
+        # Performance optimizations - use advanced caching system
+        try:
+            from utils.performance_manager import performance_manager
+            self.request_cache = performance_manager.cache  # Use advanced cache with TTL and LRU
+            print("✅ Using advanced performance cache for AI requests")
+        except ImportError:
+            self.request_cache = RequestCache()  # Fallback to basic cache
+            print("⚠️ Using basic cache for AI requests")
+        
         self.rate_limiter = RateLimiter()
         self.connection_pool_size = 3
         self.clients_pool = []

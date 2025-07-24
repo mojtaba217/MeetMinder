@@ -19,28 +19,45 @@ class AudioContextualizer:
         self.audio_buffer = deque(maxlen=buffer_size)
         self.transcript_buffer = deque(maxlen=config.transcript_segments_max)
         
-        # Load Whisper model based on config or use provided model
+        # Load Whisper model based on config or use lazy loading for better performance
         if whisper_model:
             self.whisper_model = whisper_model
             print(f"✓ Using pre-loaded Whisper model (Language: {self.whisper_language})")
         else:
-            try:
-                self.whisper_model = whisper.load_model("base")
-                print("✓ Loaded Whisper model")
-            except Exception as e:
-                print(f"Error loading Whisper model: {e}")
-                self.whisper_model = None
+            # Use lazy loading to save memory at startup
+            self.whisper_model = None
+            print(f"✓ Configured for lazy Whisper model loading (saves ~500MB at startup)")
         
         self.last_audio_time = time.time()
         self.context_change_callbacks = []
-        
+    
+    def _get_whisper_model(self):
+        """Get Whisper model using lazy loading"""
+        if self.whisper_model is None:
+            try:
+                # Try to get from memory manager's lazy loader first
+                from utils.memory_manager import memory_manager
+                lazy_model = memory_manager.get_lazy_resource("whisper_model")
+                if lazy_model:
+                    self.whisper_model = lazy_model
+                    print(f"✓ Loaded Whisper model via lazy loading")
+                else:
+                    # Fallback to direct loading
+                    import whisper
+                    self.whisper_model = whisper.load_model("base")
+                    print(f"✓ Loaded Whisper model (fallback)")
+            except Exception as e:
+                print(f"❌ Error loading Whisper model: {e}")
+                return None
+        return self.whisper_model
+    
     def add_context_change_callback(self, callback: Callable):
         """Add callback for when context changes are detected"""
         self.context_change_callbacks.append(callback)
     
     def start_continuous_capture(self):
         """Start continuous audio capture with configured parameters"""
-        if not self.whisper_model:
+        if not self._get_whisper_model():
             print("Cannot start audio capture: Whisper model not loaded")
             return
             
@@ -107,7 +124,7 @@ class AudioContextualizer:
                     audio_float = recent_audio.astype(np.float32) / 32768.0
                     
                     # Transcribe using Whisper with language setting
-                    result = self.whisper_model.transcribe(audio_float, language=self.whisper_language)
+                    result = self._get_whisper_model().transcribe(audio_float, language=self.whisper_language)
                     text = result['text'].strip()
                     
                     if text and len(text) > 5:
