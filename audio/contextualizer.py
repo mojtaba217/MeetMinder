@@ -22,11 +22,11 @@ class AudioContextualizer:
         # Load Whisper model based on config or use lazy loading for better performance
         if whisper_model:
             self.whisper_model = whisper_model
-            print(f"✓ Using pre-loaded Whisper model (Language: {self.whisper_language})")
+            print(f"[AUDIO] Using pre-loaded Whisper model (Language: {self.whisper_language})")
         else:
             # Use lazy loading to save memory at startup
             self.whisper_model = None
-            print(f"✓ Configured for lazy Whisper model loading (saves ~500MB at startup)")
+            print(f"[AUDIO] Configured for lazy Whisper model loading (saves ~500MB at startup)")
         
         self.last_audio_time = time.time()
         self.context_change_callbacks = []
@@ -40,14 +40,14 @@ class AudioContextualizer:
                 lazy_model = memory_manager.get_lazy_resource("whisper_model")
                 if lazy_model:
                     self.whisper_model = lazy_model
-                    print(f"✓ Loaded Whisper model via lazy loading")
+                    print(f"[SUCCESS] Loaded Whisper model via lazy loading")
                 else:
                     # Fallback to direct loading
                     import whisper
                     self.whisper_model = whisper.load_model("base")
-                    print(f"✓ Loaded Whisper model (fallback)")
+                    print(f"[SUCCESS] Loaded Whisper model (fallback)")
             except Exception as e:
-                print(f"❌ Error loading Whisper model: {e}")
+                print(f"[ERROR] Error loading Whisper model: {e}")
                 return None
         return self.whisper_model
     
@@ -72,7 +72,7 @@ class AudioContextualizer:
         # Silence detection thread
         threading.Thread(target=self._silence_detection_loop, daemon=True).start()
         
-        print("✓ Started audio capture")
+        print("[SUCCESS] Started audio capture")
         
     def _audio_capture_loop(self):
         """Capture audio using configured parameters"""
@@ -212,4 +212,4 @@ class AudioContextualizer:
     def stop(self):
         """Stop all audio processing"""
         self.is_recording = False
-        print("✓ Stopped audio capture") 
+        print("[SUCCESS] Stopped audio capture") 

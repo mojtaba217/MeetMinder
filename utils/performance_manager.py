@@ -265,7 +265,7 @@ class PerformanceManager(QObject):
         self.monitor_timer = QTimer()
         self.monitor_timer.timeout.connect(self._collect_metrics)
         
-        logger.info("🚀 Performance Manager initialized")
+        logger.info("[PERF] Performance Manager initialized")
     
     def start(self):
         """Start performance management"""

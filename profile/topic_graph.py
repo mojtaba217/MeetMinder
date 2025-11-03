@@ -59,7 +59,7 @@ class TopicGraphManager:
             self._parse_topic_graph(content)
             self.last_modified = current_modified
             
-            print(f"✓ Loaded topic graph with {len(self.topics)} topics")
+            print(f"[TOPICS] Loaded topic graph with {len(self.topics)} topics")
             return True
             
         except Exception as e:
@@ -268,4 +268,4 @@ Career Development -> Skill Building (suggestion: "Identify learning paths and p
         with open(self.graph_path, 'w', encoding='utf-8') as file:
             file.write(sample_content)
         
-        print(f"✓ Created sample topic graph at {self.graph_path}") 
+        print(f"[SAMPLE] Created sample topic graph at {self.graph_path}") 

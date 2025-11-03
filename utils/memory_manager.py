@@ -85,7 +85,7 @@ class LazyLoader:
                 return resource
                 
             except Exception as e:
-                logger.error(f"❌ Failed to load resource {name}: {e}")
+                logger.error(f"[ERROR] Failed to load resource {name}: {e}")
                 return None
             finally:
                 self.loading_flags[name] = False
@@ -113,7 +113,7 @@ class LazyLoader:
         
         for name in to_unload:
             self.unload_resource(name)
-            logger.info(f"🧹 Auto-unloaded unused resource: {name}")
+            logger.info(f"[CLEANUP] Auto-unloaded unused resource: {name}")
     
     def get_resource_info(self) -> Dict[str, Dict[str, Any]]:
         """Get information about all resources"""
@@ -233,7 +233,7 @@ class MemoryManager(QObject):
         self.last_cleanup = time.time()
         self.cleanup_interval = 300  # 5 minutes
         
-        logger.info("🧠 Memory Manager initialized")
+        logger.info("[MEMORY] Memory Manager initialized")
     
     def register_lazy_loader(self, name: str, loader_func: Callable):
         """Register a lazy loader"""
@@ -320,7 +320,7 @@ class MemoryManager(QObject):
         if time.time() - self.last_cleanup < 60:  # Don't cleanup too frequently
             return
         
-        logger.info(f"🧹 Starting gentle cleanup: {reason}")
+        logger.info(f"[CLEANUP] Starting gentle cleanup: {reason}")
         start_memory = self._get_current_memory()
         
         cleanup_stats = {

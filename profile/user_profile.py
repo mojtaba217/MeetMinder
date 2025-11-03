@@ -53,7 +53,7 @@ class UserProfileManager:
             self.profile = self._parse_resume(content)
             self.last_modified = current_modified
             
-            print(f"✓ Loaded user profile: {self.profile.name}")
+            print(f"[PROFILE] Loaded user profile: {self.profile.name}")
             return True
             
         except Exception as e:
@@ -231,4 +231,4 @@ Python, Machine Learning, Data Engineering, NLP, TensorFlow, PyTorch, SQL, AWS, 
         with open(self.resume_path, 'w', encoding='utf-8') as file:
             file.write(sample_content)
         
-        print(f"✓ Created sample resume at {self.resume_path}") 
+        print(f"[SAMPLE] Created sample resume at {self.resume_path}") 

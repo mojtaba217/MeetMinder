@@ -40,7 +40,7 @@ class HotkeyManager:
             keyboard.add_hotkey(self.config.emergency_reset, 
                               lambda: self._trigger_callback('emergency_reset'))
             
-            print("✓ Global hotkeys registered")
+            print("[SUCCESS] Global hotkeys registered")
             print(f"  • Trigger assistance: {self.config.trigger_assistance}")
             print(f"  • Take screenshot: {self.config.take_screenshot}")
             print(f"  • Toggle overlay: {self.config.toggle_overlay}")
@@ -80,7 +80,7 @@ class HotkeyManager:
         try:
             keyboard.unhook_all_hotkeys()
             self.is_active = False
-            print("✓ Stopped hotkey listening")
+            print("[SUCCESS] Stopped hotkey listening")
         except Exception as e:
             print(f"Error stopping hotkey listening: {e}")
     
@@ -123,7 +123,7 @@ class AsyncHotkeyManager:
         )
         self._hotkey_thread.start()
         
-        print("✓ Async hotkey manager started")
+        print("[SUCCESS] Async hotkey manager started")
     
     def _hotkey_listener_thread(self):
         """Thread function for hotkey listening"""
@@ -192,6 +192,6 @@ class AsyncHotkeyManager:
         
         try:
             keyboard.unhook_all_hotkeys()
-            print("✓ Stopped async hotkey listening")
+            print("[SUCCESS] Stopped async hotkey listening")
         except Exception as e:
             print(f"Error stopping async hotkey listening: {e}") 

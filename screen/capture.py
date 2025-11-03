@@ -24,10 +24,10 @@ class ScreenCapture:
             from utils.performance_manager import performance_manager
             self.use_advanced_cache = True
             self.cache = performance_manager.cache
-            print("✅ Screen capture using advanced performance cache")
+            print("[SCREEN] Screen capture using advanced performance cache")
         except ImportError:
             self.use_advanced_cache = False
-            print("⚠️ Screen capture using basic cache")
+            print("[SCREEN] Screen capture using basic cache")
     
     def _get_cache_key(self, operation: str, **kwargs) -> str:
         """Generate cache key for operations"""

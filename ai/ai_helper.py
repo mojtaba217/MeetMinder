@@ -83,10 +83,10 @@ class AIHelper:
         try:
             from utils.performance_manager import performance_manager
             self.request_cache = performance_manager.cache  # Use advanced cache with TTL and LRU
-            print("✅ Using advanced performance cache for AI requests")
+            print("[CACHE] Using advanced performance cache for AI requests")
         except ImportError:
             self.request_cache = RequestCache()  # Fallback to basic cache
-            print("⚠️ Using basic cache for AI requests")
+            print("[WARN] Using basic cache for AI requests")
         
         self.rate_limiter = RateLimiter()
         self.connection_pool_size = 3
@@ -120,12 +120,12 @@ class AIHelper:
                 api_version=self.config.azure_openai['api_version'],
                 azure_endpoint=self.config.azure_openai['endpoint']
             )
-            print(f"✅ Azure OpenAI client initialized with model: {self.config.model}")
+            print(f"[AZURE] Azure OpenAI client initialized with model: {self.config.model}")
         elif self.config.type == "google_gemini":
             import google.generativeai as genai
             genai.configure(api_key=self.config.google_gemini['api_key'])
             self.client = genai.GenerativeModel(self.config.google_gemini['model'])
-            print(f"✅ Google Gemini client initialized")
+            print(f"[GEMINI] Google Gemini client initialized")
         else:
             raise ValueError(f"Unsupported AI provider: {self.config.type}")
     
@@ -524,4 +524,4 @@ Adjust your responses according to these settings."""
     def update_assistant_config(self, new_assistant_config: AssistantConfig):
         """Update assistant configuration"""
         self.assistant_config = new_assistant_config
-        print(f"✅ Updated assistant config: {new_assistant_config.response_style} style, {new_assistant_config.verbosity} verbosity") 
+        print(f"[CONFIG] Updated assistant config: {new_assistant_config.response_style} style, {new_assistant_config.verbosity} verbosity") 

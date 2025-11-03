@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MeetMinder Overlay</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: transparent;
+            color: white;
+            overflow: hidden;
+            -webkit-app-region: drag;
+        }
+
+        .overlay-container {
+            width: 100vw;
+            padding: 10px;
+        }
+
+        /* Top Bar */
+        .top-bar {
+            background: rgba(20, 20, 20, 0.92);
+            border: 2px solid rgba(255, 255, 255, 0.12);
+            border-radius: 35px;
+            padding: 10px 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            box-shadow: 0 6px 30px rgba(0, 0, 0, 0.5);
+            -webkit-app-region: no-drag;
+        }
+
+        .mic-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 24px;
+        }
+
+        .mic-button:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .mic-button.recording {
+            background: rgba(255, 59, 48, 0.2);
+            border-color: rgba(255, 59, 48, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .timer {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 16px;
+            font-family: 'Courier New', monospace;
+            min-width: 60px;
+        }
+
+        .timer.recording {
+            color: #ff3b30;
+        }
+
+        .ask-ai-button {
+            background: rgba(0, 122, 255, 0.15);
+            border: 1px solid rgba(0, 122, 255, 0.3);
+            color: white;
+            padding: 12px 24px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .ask-ai-button:hover {
+            background: rgba(0, 122, 255, 0.25);
+        }
+
+        .shortcut-label {
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 12px;
+        }
+
+        .expand-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 20px;
+            margin-left: auto;
+        }
+
+        .expand-button:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .settings-button, .close-button {
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 20px;
+        }
+
+        .settings-button:hover, .close-button:hover {
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        .close-button {
+            background: rgba(255, 59, 48, 0.15);
+            border-color: rgba(255, 59, 48, 0.3);
+        }
+
+        .close-button:hover {
+            background: rgba(255, 59, 48, 0.25);
+        }
+
+        /* Expandable Content */
+        .content-area {
+            background: rgba(20, 20, 20, 0.90);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-top: none;
+            border-radius: 0 0 16px 16px;
+            margin-top: -10px;
+            padding: 24px;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, padding 0.3s ease;
+        }
+
+        .content-area.expanded {
+            max-height: 400px;
+            padding: 24px;
+            margin-top: 10px;
+        }
+
+        .content-layout {
+            display: grid;
+            grid-template-columns: 3fr 1fr;
+            gap: 20px;
+        }
+
+        .ai-response-section {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .section-header {
+            font-size: 16px;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .ai-response-area {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 16px;
+            min-height: 200px;
+            max-height: 300px;
+            overflow-y: auto;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .transcript-section {
+            margin-top: 12px;
+        }
+
+        .transcript-header {
+            color: #98FB98;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .transcript-area {
+            background: rgba(152, 251, 152, 0.05);
+            border: 1px solid rgba(152, 251, 152, 0.15);
+            border-radius: 8px;
+            padding: 12px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .info-panels {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .info-panel {
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 11px;
+        }
+
+        .topic-panel {
+            background: rgba(135, 206, 235, 0.1);
+            border: 1px solid rgba(135, 206, 235, 0.2);
+        }
+
+        .topic-panel .header {
+            color: #87CEEB;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .guidance-panel {
+            background: rgba(152, 251, 152, 0.1);
+            border: 1px solid rgba(152, 251, 152, 0.2);
+        }
+
+        .guidance-panel .header {
+            color: #98FB98;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        .flow-panel {
+            background: rgba(255, 215, 0, 0.1);
+            border: 1px solid rgba(255, 215, 0, 0.2);
+        }
+
+        .flow-panel .header {
+            color: #FFD700;
+            font-weight: 500;
+            margin-bottom: 4px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 4px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+    </style>
+</head>
+<body>
+    <div class="overlay-container">
+        <!-- Top Bar -->
+        <div class="top-bar">
+            <div class="mic-button" id="micButton">🎤</div>
+            <div class="timer" id="timer">00:00</div>
+            <div class="ask-ai-button" id="askAiButton">🤖 Ask AI</div>
+            <div class="shortcut-label">Ctrl+Space</div>
+            <div class="expand-button" id="expandButton">▼</div>
+            <div class="settings-button" id="settingsButton">⚙️</div>
+            <div class="close-button" id="closeButton">✕</div>
+        </div>
+
+        <!-- Expandable Content -->
+        <div class="content-area" id="contentArea">
+            <div class="content-layout">
+                <!-- Left: AI Response -->
+                <div class="ai-response-section">
+                    <div class="section-header">🤖 AI Response</div>
+                    <div class="ai-response-area" id="aiResponseArea">
+                        Ready to assist...
+                    </div>
+                    
+                    <!-- Transcript Section -->
+                    <div class="transcript-section">
+                        <div class="transcript-header">📝 Live Transcript (System Audio)</div>
+                        <div class="transcript-area" id="transcriptArea">
+                            Waiting for system audio...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Right: Info Panels -->
+                <div class="info-panels">
+                    <div class="info-panel topic-panel">
+                        <div class="header">🧠 Topic Analysis</div>
+                        <div id="topicPath">No active topic</div>
+                    </div>
+                    <div class="info-panel guidance-panel">
+                        <div class="header">💡 Guidance</div>
+                        <div id="topicGuidance">Start speaking to get guidance</div>
+                    </div>
+                    <div class="info-panel flow-panel">
+                        <div class="header">🔄 Flow</div>
+                        <div id="flowStatus">Waiting</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // State management
+        let isRecording = false;
+        let isExpanded = false;
+        let recordingStartTime = null;
+        let timerInterval = null;
+
+        // Elements
+        const micButton = document.getElementById('micButton');
+        const timer = document.getElementById('timer');
+        const expandButton = document.getElementById('expandButton');
+        const contentArea = document.getElementById('contentArea');
+        const aiResponseArea = document.getElementById('aiResponseArea');
+        const transcriptArea = document.getElementById('transcriptArea');
+
+        // Toggle recording
+        micButton.addEventListener('click', () => {
+            isRecording = !isRecording;
+            
+            if (isRecording) {
+                micButton.classList.add('recording');
+                timer.classList.add('recording');
+                recordingStartTime = Date.now();
+                startTimer();
+                pywebview.api.toggle_mic(true);
+            } else {
+                micButton.classList.remove('recording');
+                timer.classList.remove('recording');
+                stopTimer();
+                pywebview.api.toggle_mic(false);
+            }
+        });
+
+        // Timer functions
+        function startTimer() {
+            timerInterval = setInterval(() => {
+                const elapsed = Math.floor((Date.now() - recordingStartTime) / 1000);
+                const minutes = Math.floor(elapsed / 60);
+                const seconds = elapsed % 60;
+                timer.textContent = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+            }, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            timer.textContent = '00:00';
+        }
+
+        // Expand/collapse content
+        expandButton.addEventListener('click', () => {
+            isExpanded = !isExpanded;
+            contentArea.classList.toggle('expanded');
+            expandButton.textContent = isExpanded ? '▲' : '▼';
+        });
+
+        // Ask AI button
+        document.getElementById('askAiButton').addEventListener('click', () => {
+            if (!isExpanded) {
+                isExpanded = true;
+                contentArea.classList.add('expanded');
+                expandButton.textContent = '▲';
+            }
+            aiResponseArea.textContent = '🤔 Analyzing context...';
+            pywebview.api.ask_ai();
+        });
+
+        // Settings button
+        document.getElementById('settingsButton').addEventListener('click', () => {
+            pywebview.api.open_settings();
+        });
+
+        // Close button
+        document.getElementById('closeButton').addEventListener('click', () => {
+            pywebview.api.close_app();
+        });
+
+        // API functions called from Python
+        window.updateAIResponse = function(text) {
+            aiResponseArea.textContent = text;
+            if (!isExpanded) {
+                isExpanded = true;
+                contentArea.classList.add('expanded');
+                expandButton.textContent = '▲';
+            }
+        };
+
+        window.appendAIResponse = function(text) {
+            aiResponseArea.textContent += text;
+            aiResponseArea.scrollTop = aiResponseArea.scrollHeight;
+        };
+
+        window.updateTranscript = function(text) {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('en-US', { hour12: false });
+            const lines = transcriptArea.textContent.split('\n').filter(l => l.trim());
+            lines.push(`[${timeStr}] ${text}`);
+            if (lines.length > 5) lines.shift();
+            transcriptArea.textContent = lines.join('\n');
+            transcriptArea.scrollTop = transcriptArea.scrollHeight;
+        };
+
+        window.updateTopicPath = function(text) {
+            document.getElementById('topicPath').textContent = text;
+        };
+
+        window.updateTopicGuidance = function(text) {
+            document.getElementById('topicGuidance').textContent = text;
+        };
+
+        window.updateFlowStatus = function(text) {
+            document.getElementById('flowStatus').textContent = text;
+        };
+
+        window.startRecording = function() {
+            if (!isRecording) {
+                micButton.click();
+            }
+        };
+
+        window.stopRecording = function() {
+            if (isRecording) {
+                micButton.click();
+            }
+        };
+    </script>
+</body>
+</html>
+

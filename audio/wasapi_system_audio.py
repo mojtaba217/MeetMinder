@@ -46,7 +46,7 @@ class WASAPISystemAudioCapture:
                 self.loopback_device = self.pyaudio_instance.get_default_wasapi_loopback()
                 
                 if self.loopback_device:
-                    print(f"✓ Found default WASAPI loopback device: {self.loopback_device['name']}")
+                    print(f"[SUCCESS] Found default WASAPI loopback device: {self.loopback_device['name']}")
                     print(f"  Sample rate: {self.loopback_device['defaultSampleRate']}")
                     print(f"  Max input channels: {self.loopback_device['maxInputChannels']}")
                     return
@@ -72,7 +72,7 @@ class WASAPISystemAudioCapture:
                     host_api = self.pyaudio_instance.get_host_api_info_by_index(device_info['hostApi'])
                     if 'wasapi' in host_api['name'].lower():
                         self.loopback_device = device_info
-                        print(f"✓ Found WASAPI loopback device: {device_info['name']}")
+                        print(f"[SUCCESS] Found WASAPI loopback device: {device_info['name']}")
                         print(f"  Device #{i}: {device_info['name']}")
                         print(f"  Host API: {host_api['name']}")
                         print(f"  Sample rate: {device_info['defaultSampleRate']}")
@@ -96,17 +96,17 @@ class WASAPISystemAudioCapture:
                         host_api = self.pyaudio_instance.get_host_api_info_by_index(device_info['hostApi'])
                         if 'wasapi' in host_api['name'].lower():
                             self.loopback_device = device_info
-                            print(f"✓ Found loopback analogue: {device_info['name']}")
+                            print(f"[SUCCESS] Found loopback analogue: {device_info['name']}")
                             return
                             
             except Exception as e:
                 print(f"Could not find loopback analogue: {e}")
             
-            print("❌ No WASAPI loopback device found")
+            print("[ERROR] No WASAPI loopback device found")
             print("💡 Make sure PyAudioWPatch is properly installed and WASAPI loopback is supported")
                 
         except Exception as e:
-            print(f"❌ Error initializing PyAudioWPatch WASAPI: {e}")
+            print(f"[ERROR] Error initializing PyAudioWPatch WASAPI: {e}")
     
     def add_callback(self, callback: Callable[[np.ndarray, float], None]):
         """Add callback function that receives (audio_data, timestamp)"""
@@ -132,14 +132,14 @@ class WASAPISystemAudioCapture:
                 self.audio_queue.put((audio_data.copy(), time.time()))
                 
         except Exception as e:
-            print(f"❌ Error in WASAPI callback: {e}")
+            print(f"[ERROR] Error in WASAPI callback: {e}")
         
         return (None, pyaudio.paContinue)
     
     def start_capture(self):
         """Start WASAPI loopback capture"""
         if not self.loopback_device or not self.pyaudio_instance:
-            print("❌ Cannot start WASAPI capture: loopback device not available")
+            print("[ERROR] Cannot start WASAPI capture: loopback device not available")
             return False
         
         try:
@@ -165,12 +165,12 @@ class WASAPISystemAudioCapture:
             # Start processing thread
             threading.Thread(target=self._process_audio, daemon=True).start()
             
-            print(f"✓ Started WASAPI loopback capture at {use_rate}Hz")
+            print(f"[SUCCESS] Started WASAPI loopback capture at {use_rate}Hz")
             print(f"  Device: {self.loopback_device['name']}")
             return True
             
         except Exception as e:
-            print(f"❌ Failed to start WASAPI capture: {e}")
+            print(f"[ERROR] Failed to start WASAPI capture: {e}")
             return False
     
     def _process_audio(self):
@@ -185,12 +185,12 @@ class WASAPISystemAudioCapture:
                     try:
                         callback(audio_data, timestamp)
                     except Exception as e:
-                        print(f"❌ Error in WASAPI callback: {e}")
+                        print(f"[ERROR] Error in WASAPI callback: {e}")
                         
             except queue.Empty:
                 continue
             except Exception as e:
-                print(f"❌ Error processing WASAPI audio: {e}")
+                print(f"[ERROR] Error processing WASAPI audio: {e}")
     
     def stop_capture(self):
         """Stop WASAPI loopback capture"""
@@ -201,9 +201,9 @@ class WASAPISystemAudioCapture:
                 self.stream.stop_stream()
                 self.stream.close()
             except Exception as e:
-                print(f"❌ Error stopping WASAPI stream: {e}")
+                print(f"[ERROR] Error stopping WASAPI stream: {e}")
         
-        print("✓ Stopped WASAPI loopback capture")
+        print("[SUCCESS] Stopped WASAPI loopback capture")
     
     def cleanup(self):
         """Clean up PyAudio resources"""
@@ -213,7 +213,7 @@ class WASAPISystemAudioCapture:
             try:
                 self.pyaudio_instance.terminate()
             except Exception as e:
-                print(f"❌ Error terminating PyAudio: {e}")
+                print(f"[ERROR] Error terminating PyAudio: {e}")
     
     def get_device_info(self) -> Optional[dict]:
         """Get information about the WASAPI loopback device"""
@@ -229,7 +229,7 @@ class WASAPISystemAudioCapture:
             print("PyAudio not initialized")
             return
             
-        print("\n🔍 All Available Audio Devices:")
+        print("\n[ANALYZER] All Available Audio Devices:")
         print("=" * 60)
         
         for i in range(self.pyaudio_instance.get_device_count()):

@@ -39,10 +39,10 @@ class WhisperLocalEngine(TranscriptionEngine):
             self.model = whisper.load_model(self.config.whisper_model_size)
             print(f"✅ Loaded Whisper model: {self.config.whisper_model_size}")
         except ImportError:
-            print("❌ Whisper not installed. Install with: pip install openai-whisper")
+            print("[ERROR] Whisper not installed. Install with: pip install openai-whisper")
             self.model = None
         except Exception as e:
-            print(f"❌ Failed to load Whisper model: {e}")
+            print(f"[ERROR] Failed to load Whisper model: {e}")
             self.model = None
     
     def transcribe(self, audio_data: np.ndarray, sample_rate: int = 16000) -> str:
@@ -72,7 +72,7 @@ class WhisperLocalEngine(TranscriptionEngine):
             return result['text'].strip()
             
         except Exception as e:
-            print(f"❌ Whisper transcription error: {e}")
+            print(f"[ERROR] Whisper transcription error: {e}")
             return ""
     
     def is_available(self) -> bool:
@@ -110,10 +110,10 @@ class GoogleSpeechEngine(TranscriptionEngine):
             print("✅ Google Speech-to-Text client initialized")
             
         except ImportError:
-            print("❌ Google Cloud Speech not installed. Install with: pip install google-cloud-speech")
+            print("[ERROR] Google Cloud Speech not installed. Install with: pip install google-cloud-speech")
             self.client = None
         except Exception as e:
-            print(f"❌ Failed to setup Google Speech client: {e}")
+            print(f"[ERROR] Failed to setup Google Speech client: {e}")
             self.client = None
     
     def transcribe(self, audio_data: np.ndarray, sample_rate: int = 16000) -> str:
@@ -151,7 +151,7 @@ class GoogleSpeechEngine(TranscriptionEngine):
             return ""
             
         except Exception as e:
-            print(f"❌ Google Speech transcription error: {e}")
+            print(f"[ERROR] Google Speech transcription error: {e}")
             return ""
     
     def is_available(self) -> bool:
@@ -181,7 +181,7 @@ class AzureSpeechEngine(TranscriptionEngine):
             import azure.cognitiveservices.speech as speechsdk
             
             if not self.config.azure_subscription_key or not self.config.azure_service_region:
-                print("❌ Azure Speech credentials not configured")
+                print("[ERROR] Azure Speech credentials not configured")
                 return
             
             self.speech_config = speechsdk.SpeechConfig(
@@ -192,10 +192,10 @@ class AzureSpeechEngine(TranscriptionEngine):
             print("✅ Azure Speech-to-Text client initialized")
             
         except ImportError:
-            print("❌ Azure Speech SDK not installed. Install with: pip install azure-cognitiveservices-speech")
+            print("[ERROR] Azure Speech SDK not installed. Install with: pip install azure-cognitiveservices-speech")
             self.speech_config = None
         except Exception as e:
-            print(f"❌ Failed to setup Azure Speech client: {e}")
+            print(f"[ERROR] Failed to setup Azure Speech client: {e}")
             self.speech_config = None
     
     def transcribe(self, audio_data: np.ndarray, sample_rate: int = 16000) -> str:
@@ -240,11 +240,11 @@ class AzureSpeechEngine(TranscriptionEngine):
             elif result.reason == speechsdk.ResultReason.NoMatch:
                 return ""
             else:
-                print(f"❌ Azure Speech recognition failed: {result.reason}")
+                print(f"[ERROR] Azure Speech recognition failed: {result.reason}")
                 return ""
                 
         except Exception as e:
-            print(f"❌ Azure Speech transcription error: {e}")
+            print(f"[ERROR] Azure Speech transcription error: {e}")
             return ""
     
     def is_available(self) -> bool:

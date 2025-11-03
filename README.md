@@ -4,17 +4,19 @@
 [![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
 [![Website](https://img.shields.io/badge/website-meetminder.io-blue)](https://meetminder.io/)
 
-A real-time AI meeting assistant with system audio transcription, intelligent topic analysis, and context-aware responses. Features a modern horizontal UI bar that stays at the top of your screen during meetings and calls.
+A real-time AI meeting assistant with system audio transcription, intelligent topic analysis, and context-aware responses. Available in two UI options: standard PyQt5 interface (~150MB) or lightweight web-based UI (~15-30MB) using native OS webviews. Features a modern overlay interface that stays at the top of your screen during meetings and calls.
 
 ## ✨ Features
 
 - **🎙️ Real-time Audio Transcription**: Captures system audio (meetings, videos) with live transcript display
 - **🤖 Multi-LLM Support**: OpenAI GPT, Azure OpenAI, Google Gemini integration
 - **📊 Topic Analysis**: Intelligent conversation flow tracking and guidance
-- **🖥️ Modern UI**: Horizontal bar interface with expandable content areas
+- **🖥️ Modern UI Options**:
+  - Standard: Advanced PyQt5 interface with transparency effects (~150MB)
+  - Lightweight: Web-based UI using native OS webviews (~15-30MB) ⭐ **RECOMMENDED**
 - **⌨️ Global Hotkeys**: Instant AI assistance with customizable shortcuts
 - **🔒 Privacy Focused**: Local audio processing with optional cloud AI
-- **⚙️ Highly Configurable**: Extensive settings through YAML configuration
+- **⚙️ Highly Configurable**: Extensive settings through YAML configuration or full settings dialog
 
 ## 🚀 Quick Start
 
@@ -24,7 +26,10 @@ A real-time AI meeting assistant with system audio transcription, intelligent to
 - Windows 10/11, macOS, or Linux
 - Microphone and speaker access
 
-### Installation
+### Installation Options
+
+#### Option 1: Standard Version (PyQt5 - ~150MB)
+For full-featured UI with advanced graphics capabilities:
 
 1. **Clone the repository**
    ```bash
@@ -38,7 +43,7 @@ A real-time AI meeting assistant with system audio transcription, intelligent to
    ```
 
 3. **Configure API Keys**
-   
+
    Edit `config.yaml` and add your AI provider credentials:
    ```yaml
    ai_provider:
@@ -53,6 +58,33 @@ A real-time AI meeting assistant with system audio transcription, intelligent to
    ```bash
    python main.py
    ```
+
+#### Option 2: Lightweight Version (pywebview - ~15-30MB) ⭐ **RECOMMENDED**
+For a much smaller, web-based UI with 80-90% size reduction:
+
+1. **Install lightweight dependencies**
+   ```bash
+   pip install -r requirements_lightweight.txt
+   ```
+
+2. **Configure API Keys** (same as above)
+
+3. **Run the lightweight version**
+   ```bash
+   python main_lightweight.py
+   ```
+
+4. **Build portable executable** (optional)
+   ```bash
+   python build_lightweight.py
+   ```
+
+**Key Differences:**
+- **Lightweight**: Uses native OS webviews instead of PyQt5
+- **Size**: 80-90% smaller (~15-30MB vs ~150MB)
+- **UI**: Modern web-based interface with full settings dialog
+- **Features**: All core functionality preserved
+- **Performance**: Faster startup, lower memory usage
 
 ## 💻 Usage
 
@@ -140,9 +172,12 @@ hotkeys:
 - **TopicGraphManager**: Topic matching and suggestion system
 - **AIHelper**: Multi-provider AI integration with streaming
 - **AudioContextualizer**: Continuous audio processing with Whisper
-- **EnhancedOverlay**: Stealth UI with profile and topic sections
 - **ScreenCapture**: Cross-platform screen and window analysis
 - **HotkeyManager**: Global hotkey handling with async support
+
+### UI Implementations
+- **EnhancedOverlay** (`main.py`): Full-featured PyQt5 interface with advanced graphics
+- **WebviewOverlay** (`main_lightweight.py`): Lightweight web-based UI using native OS webviews
 
 ### Data Flow
 1. **Audio Capture** → Whisper transcription → Topic matching
@@ -235,13 +270,26 @@ meetminder/
 - **Audio**: Microphone and speaker access
 
 ### Python Dependencies
-See `requirements.txt` for full list. Key dependencies:
-- `PyQt5` - User interface
+
+#### Standard Version (`requirements.txt`)
+Full-featured UI with PyQt5 (~150MB build size):
+- `PyQt5` - Advanced user interface with transparency effects
 - `openai-whisper` - Local speech recognition
 - `openai` - OpenAI API integration
 - `google-generativeai` - Google Gemini integration
 - `pyaudio` - Audio capture
 - `pyyaml` - Configuration management
+
+#### Lightweight Version (`requirements_lightweight.txt`) ⭐ **RECOMMENDED**
+Web-based UI with pywebview (~15-30MB build size):
+- `pywebview` - Lightweight native OS webviews
+- `openai-whisper` - Local speech recognition
+- `openai` - OpenAI API integration
+- `google-generativeai` - Google Gemini integration
+- `sounddevice` - Audio capture (lighter than pyaudio)
+- `pyyaml` - Configuration management
+
+**Size Comparison**: Lightweight version is 80-90% smaller while maintaining all core functionality!
 
 ## 🔒 Privacy & Security
 
