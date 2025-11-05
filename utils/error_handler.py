@@ -6,7 +6,12 @@ import logging
 import traceback
 from typing import Callable, Any, Optional
 from functools import wraps
-from PyQt5.QtWidgets import QMessageBox
+try:
+    from PyQt5.QtWidgets import QMessageBox  # type: ignore
+    _HAS_QT = True
+except ImportError:
+    QMessageBox = None  # type: ignore
+    _HAS_QT = False
 
 logger = logging.getLogger('meetminder.error_handler')
 
@@ -84,15 +89,20 @@ def show_error_message(message: str, title: str = "Error") -> None:
         message: Error message to display
         title: Dialog title
     """
-    try:
-        msg_box = QMessageBox()
-        msg_box.setIcon(QMessageBox.Critical)
-        msg_box.setWindowTitle(title)
-        msg_box.setText(message)
-        msg_box.setStandardButtons(QMessageBox.Ok)
-        msg_box.exec_()
-    except Exception as e:
-        logger.error(f"Failed to show error message: {e}")
+    if _HAS_QT and QMessageBox is not None:
+        try:
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Critical)
+            msg_box.setWindowTitle(title)
+            msg_box.setText(message)
+            msg_box.setStandardButtons(QMessageBox.Ok)
+            msg_box.exec_()
+            return
+        except Exception as e:
+            logger.error(f"Failed to show error message via Qt: {e}")
+
+    # Fallback for environments without PyQt5 or if dialog fails
+    logger.error(f"{title}: {message}")
 
 
 def log_and_ignore(func: Callable) -> Callable:
