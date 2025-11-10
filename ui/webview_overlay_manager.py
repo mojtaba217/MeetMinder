@@ -39,6 +39,12 @@ class WebviewOverlayAPI:
         print("[EXIT] Closing application")
         if self.manager.on_close_app:
             self.manager.on_close_app()
+    
+    def minimize_window(self):
+        """Called when minimize button is clicked"""
+        print("[MINIMIZE] Minimizing window")
+        if self.manager.window:
+            self.manager.window.minimize()
 
 
 class WebviewOverlay:
@@ -66,9 +72,9 @@ class WebviewOverlay:
     
     def start(self):
         """Start the webview window"""
-        # Window configuration
-        width = self.config.get('width', 1000)
-        height = self.config.get('height', 70)
+        # Window configuration - larger size for better UI visibility
+        width = self.config.get('width', 1200)
+        height = self.config.get('height', 400)
         
         # Create webview window
         self.window = webview.create_window(
@@ -77,11 +83,11 @@ class WebviewOverlay:
             js_api=self.api,
             width=width,
             height=height,
-            resizable=False,
-            frameless=True,
-            on_top=True,
-            transparent=True,
-            easy_drag=True
+            resizable=True,
+            frameless=False,  # Show frame for easier debugging
+            on_top=False,  # Don't force on top
+            transparent=False,  # Disable transparency for stability
+            easy_drag=False
         )
         
         self.is_visible = True
