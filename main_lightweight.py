@@ -285,133 +285,271 @@ class AIAssistantLightweight:
         import webview
         import threading
         
-        # Settings API class
+        app_ref = self
+        settings_window_ref = [None]  # Use list to allow mutation in nested scope
+
+        # Settings API class with no instance attributes to avoid pywebview introspection recursion
         class SettingsAPI:
-            def __init__(self, app):
-                self.app = app
+            __slots__ = ()
             
+            def __init__(self, *args, **kwargs):
+                """Accept any arguments but ignore them to prevent pywebview errors"""
+                pass
+
             def get_settings(self):
-                """Get current settings"""
+                """Get current settings - returns only simple data types"""
                 try:
+                    app = app_ref
+                    config = app.config
+                    overlay_config = config.get('ui', {}).get('overlay', {})
+                    profile = app.profile_manager.profile if app.profile_manager.profile else None
+
                     return {
                         'ai': {
-                            'type': self.app.config.get('ai_provider.type', 'azure_openai'),
-                            'api_key': self.app.config.get('ai_provider.azure_openai.api_key', ''),
-                            'model': self.app.config.get('ai_provider.azure_openai.model', 'gpt-4'),
-                            'response_style': self.app.config.get('ai_provider.assistant.response_style', 'balanced')
+                            'type': config.get('ai_provider.type', 'azure_openai'),
+                            'api_key': config.get('ai_provider.azure_openai.api_key', ''),
+                            'model': config.get('ai_provider.azure_openai.model', 'gpt-4'),
+                            'response_style': config.get('ai_provider.assistant.response_style', 'balanced')
                         },
                         'audio': {
-                            'mode': self.app.config.get('audio.mode', 'single_stream'),
-                            'sample_rate': self.app.config.get('audio.sample_rate', 44100),
-                            'language': self.app.config.get('audio.whisper_language', 'en'),
-                            'auto_start': self.app.config.get('audio.auto_start', False)
+                            'mode': config.get('audio.mode', 'single_stream'),
+                            'sample_rate': config.get('audio.sample_rate', 44100),
+                            'language': config.get('audio.whisper_language', 'en'),
+                            'auto_start': config.get('audio.auto_start', False)
                         },
                         'hotkeys': {
-                            'trigger_assistance': self.app.config.get('hotkeys.trigger_assistance', 'ctrl+space'),
-                            'toggle_overlay': self.app.config.get('hotkeys.toggle_overlay', 'ctrl+b'),
-                            'take_screenshot': self.app.config.get('hotkeys.take_screenshot', 'ctrl+h')
+                            'trigger_assistance': config.get('hotkeys.trigger_assistance', 'ctrl+space'),
+                            'toggle_overlay': config.get('hotkeys.toggle_overlay', 'ctrl+b'),
+                            'take_screenshot': config.get('hotkeys.take_screenshot', 'ctrl+h')
                         },
                         'ui': {
-                            'position': self.app.config.get('ui.overlay.position', 'top-right'),
-                            'opacity': self.app.config.get('ui.overlay.opacity', 95),
-                            'always_on_top': self.app.config.get('ui.overlay.always_on_top', True),
-                            'start_minimized': self.app.config.get('ui.start_minimized', False)
+                            'width': overlay_config.get('width', 800),
+                            'height': overlay_config.get('height', 380),
+                            'position': overlay_config.get('position', 'top_center'),
+                            'opacity': overlay_config.get('opacity', 0.9),
+                            'auto_hide_seconds': overlay_config.get('auto_hide_seconds', 0),
+                            'always_on_top': overlay_config.get('enhanced', {}).get('always_on_top', True),
+                            'hide_from_sharing': overlay_config.get('hide_from_sharing', False),
+                            'hide_for_screenshots': overlay_config.get('hide_for_screenshots', False),
+                            'show_transcript': overlay_config.get('show_transcript', False)
                         },
                         'user_profile': {
-                            'name': self.app.profile_manager.profile.name if self.app.profile_manager.profile else '',
-                            'title': self.app.profile_manager.profile.title if self.app.profile_manager.profile else '',
-                            'skills': self.app.profile_manager.profile.skills if self.app.profile_manager.profile else []
+                            'name': profile.name if profile else '',
+                            'title': profile.title if profile else '',
+                            'skills': list(profile.skills) if profile and profile.skills else []
                         },
                         'advanced': {
-                            'enable_cache': self.app.config.get('advanced.enable_cache', True),
-                            'enable_logging': self.app.config.get('advanced.enable_logging', False),
-                            'max_history': self.app.config.get('advanced.max_history', 20)
+                            'enable_cache': config.get('advanced.enable_cache', True),
+                            'enable_logging': config.get('advanced.enable_logging', False),
+                            'max_history': config.get('advanced.max_history', 20)
                         }
                     }
                 except Exception as e:
                     logger.error(f"[SETTINGS] Error getting settings: {e}")
+                    import traceback
+                    traceback.print_exc()
                     return {}
-            
+
             def save_settings(self, settings):
                 """Save settings"""
                 try:
-                    # Update config
+                    app = app_ref
+                    config_mgr = app.config
+
+                    updates: Dict[str, Any] = {}
+
                     if 'ai' in settings:
-                        self.app.config.config['ai_provider']['type'] = settings['ai']['type']
-                        if settings['ai']['api_key']:
-                            self.app.config.config['ai_provider']['azure_openai']['api_key'] = settings['ai']['api_key']
-                        self.app.config.config['ai_provider']['azure_openai']['model'] = settings['ai']['model']
-                        self.app.config.config['ai_provider']['assistant']['response_style'] = settings['ai']['response_style']
-                    
+                        ai_settings = settings['ai']
+                        ai_updates: Dict[str, Any] = {
+                            'type': ai_settings.get('type', config_mgr.get('ai_provider.type', 'azure_openai'))
+                        }
+                        # Azure OpenAI specific fields (preserve existing)
+                        azure_existing = config_mgr.get('ai_provider.azure_openai', {}) or {}
+                        azure_updates = {}
+                        if ai_settings.get('api_key'):
+                            azure_updates['api_key'] = ai_settings['api_key']
+                        if ai_settings.get('model'):
+                            azure_updates['model'] = ai_settings['model']
+                        if azure_updates:
+                            ai_updates['azure_openai'] = {**azure_existing, **azure_updates}
+                        updates['ai_provider'] = ai_updates
+                        # Assistant response style
+                        updates.setdefault('assistant', {})['response_style'] = ai_settings.get(
+                            'response_style',
+                            config_mgr.get('assistant.response_style', 'balanced')
+                        )
+
                     if 'audio' in settings:
-                        self.app.config.config['audio']['mode'] = settings['audio']['mode']
-                        self.app.config.config['audio']['sample_rate'] = settings['audio']['sample_rate']
-                        self.app.config.config['audio']['whisper_language'] = settings['audio']['language']
-                        self.app.config.config['audio']['auto_start'] = settings['audio']['auto_start']
-                    
+                        audio_settings = settings['audio']
+                        audio_updates: Dict[str, Any] = {
+                            'mode': audio_settings.get('mode', config_mgr.get('audio.mode', 'dual_stream')),
+                            'sample_rate': audio_settings.get('sample_rate', config_mgr.get('audio.sample_rate', 44100)),
+                            'whisper_language': audio_settings.get(
+                                'language',
+                                config_mgr.get('audio.whisper_language', 'en')
+                            ),
+                            'auto_start': audio_settings.get('auto_start', config_mgr.get('audio.auto_start', False))
+                        }
+                        updates['audio'] = audio_updates
+
                     if 'hotkeys' in settings:
-                        self.app.config.config['hotkeys']['trigger_assistance'] = settings['hotkeys']['trigger_assistance']
-                        self.app.config.config['hotkeys']['toggle_overlay'] = settings['hotkeys']['toggle_overlay']
-                        self.app.config.config['hotkeys']['take_screenshot'] = settings['hotkeys']['take_screenshot']
-                    
+                        hotkey_settings = settings['hotkeys']
+                        updates['hotkeys'] = {
+                            'trigger_assistance': hotkey_settings.get(
+                                'trigger_assistance', config_mgr.get('hotkeys.trigger_assistance', 'ctrl+space')
+                            ),
+                            'toggle_overlay': hotkey_settings.get(
+                                'toggle_overlay', config_mgr.get('hotkeys.toggle_overlay', 'ctrl+b')
+                            ),
+                            'take_screenshot': hotkey_settings.get(
+                                'take_screenshot', config_mgr.get('hotkeys.take_screenshot', 'ctrl+h')
+                            )
+                        }
+
                     if 'ui' in settings:
-                        if 'overlay' not in self.app.config.config['ui']:
-                            self.app.config.config['ui']['overlay'] = {}
-                        self.app.config.config['ui']['overlay']['position'] = settings['ui']['position']
-                        self.app.config.config['ui']['overlay']['opacity'] = settings['ui']['opacity']
-                        self.app.config.config['ui']['overlay']['always_on_top'] = settings['ui']['always_on_top']
-                        self.app.config.config['ui']['start_minimized'] = settings['ui']['start_minimized']
-                    
-                    if 'user_profile' in settings:
-                        if self.app.profile_manager.profile:
-                            self.app.profile_manager.profile.name = settings['user_profile']['name']
-                            self.app.profile_manager.profile.title = settings['user_profile']['title']
-                            self.app.profile_manager.profile.skills = settings['user_profile']['skills']
-                    
+                        ui_settings = settings['ui']
+                        overlay_updates: Dict[str, Any] = {
+                            'width': ui_settings.get('width', config_mgr.get('ui.overlay.width', 800)),
+                            'height': ui_settings.get('height', config_mgr.get('ui.overlay.height', 380)),
+                            'position': ui_settings.get('position', config_mgr.get('ui.overlay.position', 'top_center')),
+                            'opacity': ui_settings.get('opacity', config_mgr.get('ui.overlay.opacity', 0.9)),
+                            'auto_hide_seconds': ui_settings.get(
+                                'auto_hide_seconds', config_mgr.get('ui.overlay.auto_hide_seconds', 0)
+                            ),
+                            'hide_from_sharing': ui_settings.get(
+                                'hide_from_sharing', config_mgr.get('ui.overlay.hide_from_sharing', False)
+                            ),
+                            'hide_for_screenshots': ui_settings.get(
+                                'hide_for_screenshots', config_mgr.get('ui.overlay.hide_for_screenshots', False)
+                            ),
+                            'show_transcript': ui_settings.get(
+                                'show_transcript', config_mgr.get('ui.overlay.show_transcript', False)
+                            )
+                        }
+
+                        overlay_enhanced = {
+                            'always_on_top': ui_settings.get(
+                                'always_on_top',
+                                config_mgr.get('ui.overlay.enhanced.always_on_top', True)
+                            )
+                        }
+
+                        overlay_updates['enhanced'] = overlay_enhanced
+                        updates.setdefault('ui', {})['overlay'] = overlay_updates
+
                     if 'advanced' in settings:
-                        if 'advanced' not in self.app.config.config:
-                            self.app.config.config['advanced'] = {}
-                        self.app.config.config['advanced']['enable_cache'] = settings['advanced']['enable_cache']
-                        self.app.config.config['advanced']['enable_logging'] = settings['advanced']['enable_logging']
-                        self.app.config.config['advanced']['max_history'] = settings['advanced']['max_history']
-                    
-                    # Save to file
-                    self.app.config.save_config()
-                    logger.info("[SETTINGS] Settings saved successfully")
-                    return {'success': True}
+                        advanced_settings = settings['advanced']
+                        updates['advanced'] = {
+                            'enable_cache': advanced_settings.get(
+                                'enable_cache', config_mgr.get('advanced.enable_cache', True)
+                            ),
+                            'enable_logging': advanced_settings.get(
+                                'enable_logging', config_mgr.get('advanced.enable_logging', False)
+                            ),
+                            'max_history': advanced_settings.get(
+                                'max_history', config_mgr.get('advanced.max_history', 20)
+                            )
+                        }
+
+                    if updates:
+                        config_mgr.update_config(updates)
+
+                    if 'user_profile' in settings and app.profile_manager.profile:
+                        profile = app.profile_manager.profile
+                        profile.name = settings['user_profile']['name']
+                        profile.title = settings['user_profile']['title']
+                        profile.skills = settings['user_profile']['skills']
+
+                    if updates:
+                        config_mgr.save_config()
+                        logger.info("[SETTINGS] Settings saved successfully")
+                        return {'success': True}
+                    else:
+                        logger.info("[SETTINGS] No configuration changes detected")
+                        return {'success': True, 'message': 'No changes'}
                 except Exception as e:
                     logger.error(f"[SETTINGS] Error saving settings: {e}")
+                    import traceback
+                    traceback.print_exc()
                     return {'success': False, 'error': str(e)}
-            
+
             def reset_settings(self):
                 """Reset settings to defaults"""
                 try:
-                    # Reload default config
-                    self.app.config = ConfigManager()
+                    app = app_ref
+                    config_path = str(app.config.config_path)
+                    app.config = ConfigManager(config_path)
                     logger.info("[SETTINGS] Settings reset to defaults")
                     return {'success': True}
                 except Exception as e:
                     logger.error(f"[SETTINGS] Error resetting settings: {e}")
+                    import traceback
+                    traceback.print_exc()
                     return {'success': False, 'error': str(e)}
-            
+
             def close_settings(self):
                 """Close settings window"""
-                # Window will close automatically when this returns
-                logger.info("[SETTINGS] Closing settings dialog")
+                try:
+                    logger.info("[SETTINGS] Closing settings dialog")
+                    if settings_window_ref[0]:
+                        settings_window_ref[0].destroy()
+                    return True
+                except Exception as e:
+                    logger.error(f"[SETTINGS] Error closing: {e}")
+                    return False
         
         # Open settings window in new thread
         def open_settings_window():
             try:
                 html_path = Path(__file__).parent / "ui" / "settings_dialog.html"
                 
+                # Create settings window
                 settings_window = webview.create_window(
                     'MeetMinder Settings',
                     str(html_path),
                     width=900,
                     height=700,
                     resizable=True,
-                    js_api=SettingsAPI(self)
+                    frameless=True,  # Frameless for modern look
+                    on_top=True,  # Always on top
+                    easy_drag=True,  # Allow dragging
+                    js_api=SettingsAPI()
                 )
+                
+                # Store window reference
+                settings_window_ref[0] = settings_window
+                
+                # Apply Windows-specific settings for always on top
+                def apply_settings_window_config():
+                    import win32gui
+                    import win32con
+                    time.sleep(1.0)  # Wait for window creation
+                    
+                    try:
+                        # Find settings window
+                        def callback(hwnd, windows):
+                            if win32gui.IsWindowVisible(hwnd):
+                                if 'MeetMinder Settings' in win32gui.GetWindowText(hwnd):
+                                    windows.append(hwnd)
+                            return True
+                        
+                        windows = []
+                        win32gui.EnumWindows(callback, windows)
+                        
+                        if windows:
+                            hwnd = windows[0]
+                            # Set always on top
+                            win32gui.SetWindowPos(
+                                hwnd, win32con.HWND_TOPMOST,
+                                0, 0, 0, 0,
+                                win32con.SWP_NOMOVE | win32con.SWP_NOSIZE
+                            )
+                            print("[SETTINGS] Settings window set to always on top")
+                    except Exception as e:
+                        print(f"[SETTINGS] Error setting always on top: {e}")
+                
+                # Apply settings in background
+                threading.Thread(target=apply_settings_window_config, daemon=True).start()
                 
                 webview.start(debug=False)
             except Exception as e:

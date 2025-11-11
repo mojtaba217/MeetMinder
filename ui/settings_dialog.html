@@ -387,19 +387,37 @@
             <div class="section-title">🎨 Interface</div>
             
             <div class="setting-item">
+                <label class="setting-label">Window Width (pixels)</label>
+                <span class="setting-description">Overlay window width</span>
+                <input type="number" id="windowWidth" min="400" max="2000" value="800" step="10">
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">Window Height (pixels)</label>
+                <span class="setting-description">Overlay window height</span>
+                <input type="number" id="windowHeight" min="200" max="1200" value="380" step="10">
+            </div>
+
+            <div class="setting-item">
                 <label class="setting-label">Overlay Position</label>
                 <select id="overlayPosition">
-                    <option value="top-right">Top Right</option>
-                    <option value="top-left">Top Left</option>
-                    <option value="bottom-right">Bottom Right</option>
-                    <option value="bottom-left">Bottom Left</option>
+                    <option value="top_center">Top Center</option>
+                    <option value="top_right">Top Right</option>
+                    <option value="top_left">Top Left</option>
                     <option value="center">Center</option>
                 </select>
             </div>
 
             <div class="setting-item">
-                <label class="setting-label">Overlay Opacity (%)</label>
-                <input type="number" id="overlayOpacity" min="50" max="100" value="95">
+                <label class="setting-label">Window Opacity</label>
+                <span class="setting-description">0.0 = fully transparent, 1.0 = fully opaque</span>
+                <input type="number" id="overlayOpacity" min="0.1" max="1.0" step="0.05" value="0.9">
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">Auto-hide Timer (seconds)</label>
+                <span class="setting-description">Hide overlay after inactivity (0 = disabled)</span>
+                <input type="number" id="autoHideSeconds" min="0" max="60" value="0">
             </div>
 
             <div class="setting-item">
@@ -411,9 +429,27 @@
 
             <div class="setting-item">
                 <div class="checkbox-wrapper">
-                    <input type="checkbox" id="startMinimized">
-                    <label class="setting-label" for="startMinimized">Start minimized to system tray</label>
+                    <input type="checkbox" id="hideFromSharing">
+                    <label class="setting-label" for="hideFromSharing">Hide from screen sharing (Zoom, Teams, etc.)</label>
                 </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="hideForScreenshots">
+                    <label class="setting-label" for="hideForScreenshots">Hide for screenshots</label>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <div class="checkbox-wrapper">
+                    <input type="checkbox" id="showTranscript">
+                    <label class="setting-label" for="showTranscript">Show live transcript</label>
+                </div>
+            </div>
+
+            <div class="info-box">
+                ℹ️ Changes to window size and position will take effect on next restart
             </div>
         </div>
 
@@ -505,10 +541,15 @@
 
                     // UI Settings
                     if (settings.ui) {
-                        document.getElementById('overlayPosition').value = settings.ui.position || 'top-right';
-                        document.getElementById('overlayOpacity').value = settings.ui.opacity || 95;
-                        document.getElementById('alwaysOnTop').checked = settings.ui.always_on_top || false;
-                        document.getElementById('startMinimized').checked = settings.ui.start_minimized || false;
+                        document.getElementById('windowWidth').value = settings.ui.width || 800;
+                        document.getElementById('windowHeight').value = settings.ui.height || 380;
+                        document.getElementById('overlayPosition').value = settings.ui.position || 'top_center';
+                        document.getElementById('overlayOpacity').value = settings.ui.opacity || 0.9;
+                        document.getElementById('autoHideSeconds').value = settings.ui.auto_hide_seconds || 0;
+                        document.getElementById('alwaysOnTop').checked = settings.ui.always_on_top !== false;
+                        document.getElementById('hideFromSharing').checked = settings.ui.hide_from_sharing !== false;
+                        document.getElementById('hideForScreenshots').checked = settings.ui.hide_for_screenshots || false;
+                        document.getElementById('showTranscript').checked = settings.ui.show_transcript || false;
                     }
 
                     // User Profile
@@ -551,10 +592,15 @@
                     take_screenshot: document.getElementById('hotkeyScreenshot').value
                 },
                 ui: {
+                    width: parseInt(document.getElementById('windowWidth').value),
+                    height: parseInt(document.getElementById('windowHeight').value),
                     position: document.getElementById('overlayPosition').value,
-                    opacity: parseInt(document.getElementById('overlayOpacity').value),
+                    opacity: parseFloat(document.getElementById('overlayOpacity').value),
+                    auto_hide_seconds: parseInt(document.getElementById('autoHideSeconds').value),
                     always_on_top: document.getElementById('alwaysOnTop').checked,
-                    start_minimized: document.getElementById('startMinimized').checked
+                    hide_from_sharing: document.getElementById('hideFromSharing').checked,
+                    hide_for_screenshots: document.getElementById('hideForScreenshots').checked,
+                    show_transcript: document.getElementById('showTranscript').checked
                 },
                 user_profile: {
                     name: document.getElementById('userName').value,
@@ -571,7 +617,9 @@
             pywebview.api.save_settings(settings).then(result => {
                 if (result.success) {
                     showSuccessMessage();
-                    setTimeout(() => closeSettings(), 2000);
+                    setTimeout(() => {
+                        pywebview.api.close_settings();
+                    }, 500);
                 }
             }).catch(error => {
                 console.error('Error saving settings:', error);
@@ -591,7 +639,11 @@
 
         // Close settings
         function closeSettings() {
-            pywebview.api.close_settings();
+            try {
+                pywebview.api.close_settings();
+            } catch (e) {
+                console.error('Error closing settings:', e);
+            }
         }
 
         // Show success message

@@ -18,38 +18,42 @@
             overflow: hidden;
             user-select: none;
             -webkit-user-select: none;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
         }
 
         .overlay-container {
             background: rgba(20, 25, 45, 0.95);
-            border-radius: 24px;
-            padding: 20px 30px;
+            border-radius: 16px;
+            padding: 15px 20px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            max-width: 1200px;
-            width: 100%;
+            width: calc(100% - 20px);
+            height: calc(100% - 20px);
+            margin: 10px;
+            display: flex;
+            flex-direction: column;
         }
 
         /* Main horizontal control bar */
         .control-bar {
             display: flex;
             align-items: center;
-            gap: 20px;
-            padding: 15px 20px;
+            gap: 15px;
+            padding: 12px 16px;
             background: rgba(30, 35, 55, 0.8);
-            border-radius: 16px;
-            margin-bottom: 20px;
+            border-radius: 12px;
+            margin-bottom: 15px;
+            flex-shrink: 0;
         }
 
         /* Edit button (left side) */
         .edit-btn {
-            width: 56px;
-            height: 56px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             background: rgba(100, 100, 120, 0.3);
             border: 2px solid rgba(150, 150, 180, 0.4);
@@ -68,19 +72,20 @@
         }
 
         .edit-icon {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
             fill: #8b9dc3;
         }
 
         /* Timer display */
         .timer {
-            font-size: 32px;
+            font-size: 24px;
             font-weight: 300;
             color: #e0e0e0;
             font-variant-numeric: tabular-nums;
-            letter-spacing: 2px;
+            letter-spacing: 1px;
             flex-shrink: 0;
+            min-width: 60px;
         }
 
         /* AI Button (center) */
@@ -89,13 +94,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 12px;
-            padding: 14px 24px;
+            gap: 10px;
+            padding: 10px 20px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             border: none;
-            border-radius: 12px;
+            border-radius: 10px;
             color: white;
-            font-size: 16px;
+            font-size: 14px;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
@@ -112,22 +117,22 @@
         }
 
         .ai-icon {
-            width: 24px;
-            height: 24px;
+            width: 20px;
+            height: 20px;
         }
 
         /* Right side buttons */
         .right-buttons {
             display: flex;
-            gap: 12px;
+            gap: 8px;
             align-items: center;
             flex-shrink: 0;
         }
 
         .icon-btn {
-            width: 48px;
-            height: 48px;
-            border-radius: 12px;
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
             background: rgba(100, 100, 120, 0.3);
             border: 1px solid rgba(150, 150, 180, 0.3);
             display: flex;
@@ -161,24 +166,24 @@
         }
 
         .btn-icon {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             fill: #c0c5d8;
         }
 
         /* Content display area */
         .content-display {
             background: rgba(30, 35, 55, 0.6);
-            border-radius: 16px;
-            padding: 20px;
-            min-height: 200px;
-            max-height: 400px;
+            border-radius: 12px;
+            padding: 15px;
+            flex: 1;
             overflow-y: auto;
+            min-height: 0;
         }
 
         .content-text {
-            font-size: 14px;
-            line-height: 1.6;
+            font-size: 13px;
+            line-height: 1.5;
             color: #d0d5e0;
             white-space: pre-wrap;
             word-wrap: break-word;
