@@ -6,6 +6,7 @@ Replaces PyQt5 with native webview for drastically reduced build size
 import webview
 import threading
 import time
+import sys
 from typing import Dict, Any, Callable, Optional
 from pathlib import Path
 import win32gui
@@ -14,6 +15,18 @@ import win32api
 from ctypes import windll
 
 DPI_AWARENESS_SET = False
+
+
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # Running as script, use current directory
+        base_path = Path(__file__).parent
+    
+    return Path(base_path) / relative_path
 
 
 class ScreenSharingDetector(threading.Thread):
@@ -161,7 +174,7 @@ class WebviewOverlay:
         self.on_close_app = None
         
         # Get HTML template path
-        html_path = Path(__file__).parent / "webview_overlay.html"
+        html_path = get_resource_path("ui/webview_overlay.html")
         with open(html_path, 'r', encoding='utf-8') as f:
             self.html_content = f.read()
         

@@ -1,10 +1,14 @@
+advanced:
+  enable_cache: true
+  enable_logging: false
+  max_history: 20
 ai_provider:
   azure_openai:
     api_key: ''
     api_version: '2024-02-01'
     deployment_name: ''
     endpoint: ''
-    model: ''
+    model: gpt-4
   claude:
     api_key: ''
     base_url: https://api.anthropic.com
@@ -25,9 +29,10 @@ assistant:
   activation_mode: manual
   auto_hide_behavior: timer
   input_prioritization: system_audio
-  response_style: professional
+  response_style: balanced
   verbosity: standard
 audio:
+  auto_start: false
   buffer_duration_minutes: 5
   channels: 1
   chunk_size: 1024
@@ -69,6 +74,7 @@ audio:
   transcript_segments_max: 50
   whisper:
     model_size: base
+  whisper_language: en
 context:
   meeting_mode:
     objection_keywords:
@@ -198,6 +204,7 @@ ui:
   overlay:
     auto_hide_seconds: 0
     enhanced:
+      always_on_top: true
       auto_width: true
       background_opacity: 0.15
       blur_enabled: true
@@ -206,14 +213,15 @@ ui:
     fade_animation_steps: 5
     font_family: Segoe UI Variable
     font_size: 14
-    height: 60
+    height: 380
+    hide_for_screenshots: false
     hide_from_sharing: false
     opacity: 0.9
     position: top_center
     show_transcript: false
     size_multiplier: 1.0
     theme: dark
-    width: 1000
+    width: 800
   stealth_mode:
     always_on_top: true
     skip_screen_capture: true

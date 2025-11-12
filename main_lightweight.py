@@ -40,6 +40,18 @@ from utils.hotkeys import AsyncHotkeyManager
 from ui.webview_overlay_manager import WebviewOverlay
 
 
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # Running as script, use current directory
+        base_path = Path(__file__).parent
+    
+    return Path(base_path) / relative_path
+
+
 class AIAssistantLightweight:
     """Lightweight MeetMinder application using webview instead of PyQt5"""
     
@@ -501,7 +513,7 @@ class AIAssistantLightweight:
         # Open settings window in new thread
         def open_settings_window():
             try:
-                html_path = Path(__file__).parent / "ui" / "settings_dialog.html"
+                html_path = get_resource_path("ui/settings_dialog.html")
                 
                 # Create settings window
                 settings_window = webview.create_window(
