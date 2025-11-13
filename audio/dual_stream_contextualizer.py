@@ -88,6 +88,23 @@ class DualStreamAudioContextualizer:
             print(f"✓ Configured for lazy Whisper model loading (saves ~500MB at startup)")
         else:
             print(f"✓ Using pre-loaded Whisper model for dual-stream processing")
+        
+        # Audio streams
+        self.mic_stream = None
+        self.system_audio_capture = None
+        
+        # Timing
+        self.last_mic_time = time.time()
+        self.last_system_time = time.time()
+        
+        # Callbacks
+        self.context_change_callbacks = []
+        
+        # Initialize system audio capture lazily (in background thread to avoid blocking)
+        # This prevents the app from hanging during startup
+        self.system_audio_capture = None
+        self._system_audio_initializing = False
+        threading.Thread(target=self._init_system_audio, daemon=True).start()
     
     def _get_whisper_model(self):
         """Get Whisper model using lazy loading"""
@@ -115,20 +132,6 @@ class DualStreamAudioContextualizer:
                 print(f"❌ Error loading Whisper model: {e}")
                 return None
         return self.whisper_model
-        
-        # Audio streams
-        self.mic_stream = None
-        self.system_audio_capture = None
-        
-        # Timing
-        self.last_mic_time = time.time()
-        self.last_system_time = time.time()
-        
-        # Callbacks
-        self.context_change_callbacks = []
-        
-        # Initialize system audio capture
-        self._init_system_audio()
         
     def update_debug_config(self, new_debug_config: Dict[str, Any]):
         """Update debug configuration at runtime"""
@@ -208,6 +211,10 @@ class DualStreamAudioContextualizer:
     
     def _init_system_audio(self):
         """Initialize PyAudioWPatch system audio capture"""
+        if self._system_audio_initializing:
+            return  # Already initializing
+        self._system_audio_initializing = True
+        
         try:
             self.system_audio_capture = WASAPISystemAudioCapture(
                 sample_rate=self.config.sample_rate,
@@ -248,6 +255,8 @@ class DualStreamAudioContextualizer:
             import traceback
             traceback.print_exc()
             self.system_audio_capture = None
+        finally:
+            self._system_audio_initializing = False
     
     def _system_audio_callback(self, audio_data: np.ndarray, timestamp: float):
         """Callback for system audio from PyAudioWPatch"""
@@ -275,11 +284,29 @@ class DualStreamAudioContextualizer:
     
     def start_continuous_capture(self):
         """Start dual-stream audio capture"""
-        if not self._get_whisper_model():
-            print("Cannot start audio capture: Whisper model not loaded")
-            return
-            
+        # Don't block on Whisper model loading - start capture in background
+        # The model will be loaded lazily when needed
         self.is_recording = True
+        
+        # Load Whisper model in background thread to avoid blocking
+        def load_model_async():
+            try:
+                model = self._get_whisper_model()
+                if not model:
+                    print("Warning: Whisper model not loaded, audio transcription may be delayed")
+            except Exception as e:
+                print(f"Error loading Whisper model: {e}")
+        
+        threading.Thread(target=load_model_async, daemon=True).start()
+        
+        # Wait a moment for system audio initialization to complete (if still initializing)
+        # This gives the background thread time to finish initialization
+        max_wait = 3.0  # Maximum 3 seconds to wait
+        wait_interval = 0.1
+        waited = 0.0
+        while self.system_audio_capture is None and waited < max_wait:
+            time.sleep(wait_interval)
+            waited += wait_interval
         
         # Start microphone capture
         threading.Thread(target=self._start_microphone_capture, daemon=True).start()
@@ -468,6 +495,11 @@ class DualStreamAudioContextualizer:
     
     def _transcribe_audio(self, audio_data: np.ndarray, source: str) -> str:
         """Transcribe audio using Whisper with librosa preprocessing"""
+        # Check if model is loaded, if not, return empty (will be transcribed later when model is ready)
+        model = self._get_whisper_model()
+        if model is None:
+            return ""  # Model not ready yet, skip transcription for now
+        
         try:
             # Ensure audio is in the right format for Whisper
             if audio_data.dtype != np.float32:
@@ -551,7 +583,7 @@ class DualStreamAudioContextualizer:
                     audio_16k = librosa.resample(audio_data, orig_sr=44100, target_sr=16000)
                     
                     # Transcribe the resampled audio with English language setting
-                    result = self._get_whisper_model().transcribe(audio_16k, language=self.whisper_language)
+                    result = model.transcribe(audio_16k, language=self.whisper_language)
                     text = result['text'].strip()
                     
                     # Debug transcription result
@@ -598,7 +630,7 @@ class DualStreamAudioContextualizer:
             except ImportError:
                 print(f"❌ Librosa not available, falling back to direct transcription")
                 # Fallback to direct transcription without librosa with English language
-                result = self._get_whisper_model().transcribe(audio_data, language=self.whisper_language)
+                result = model.transcribe(audio_data, language=self.whisper_language)
                 text = result['text'].strip()
                 
                 if len(text) > 5:
