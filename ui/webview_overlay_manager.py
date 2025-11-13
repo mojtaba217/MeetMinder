@@ -6,8 +6,94 @@ Replaces PyQt5 with native webview for drastically reduced build size
 import webview
 import threading
 import time
+import sys
 from typing import Dict, Any, Callable, Optional
 from pathlib import Path
+import win32gui
+import win32con
+import win32api
+from ctypes import windll
+
+DPI_AWARENESS_SET = False
+
+
+def get_resource_path(relative_path):
+    """Get absolute path to resource, works for dev and PyInstaller"""
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        # Running as script, use current directory
+        base_path = Path(__file__).parent
+    
+    return Path(base_path) / relative_path
+
+
+class ScreenSharingDetector(threading.Thread):
+    """Detect screen sharing and hide overlay automatically"""
+    
+    def __init__(self, hide_callback, show_callback):
+        super().__init__(daemon=True)
+        self.hide_callback = hide_callback
+        self.show_callback = show_callback
+        self.running = True
+        self.was_hidden = False
+        self.check_interval = 1.0  # Check every second
+        
+    def run(self):
+        """Main detection loop"""
+        while self.running:
+            try:
+                is_sharing = self._detect_screen_sharing()
+                
+                if is_sharing and not self.was_hidden:
+                    print("[SCREEN_SHARE] Screen sharing detected - hiding overlay")
+                    self.hide_callback()
+                    self.was_hidden = True
+                elif not is_sharing and self.was_hidden:
+                    print("[SCREEN_SHARE] Screen sharing stopped - showing overlay")
+                    self.show_callback()
+                    self.was_hidden = False
+                    
+            except Exception as e:
+                print(f"[SCREEN_SHARE] Error detecting screen sharing: {e}")
+            
+            time.sleep(self.check_interval)
+    
+    def _detect_screen_sharing(self) -> bool:
+        """Detect if screen sharing is active"""
+        try:
+            # Common screen sharing apps
+            sharing_apps = [
+                'zoom.exe', 'teams.exe', 'skype.exe', 
+                'discord.exe', 'obs64.exe', 'obs32.exe',
+                'webexmta.exe', 'slack.exe', 'meet.google.com',
+                'CiscoCollabHost.exe', 'lync.exe', 'GoToMeeting.exe'
+            ]
+            
+            def enum_window_callback(hwnd, results):
+                if win32gui.IsWindowVisible(hwnd):
+                    window_text = win32gui.GetWindowText(hwnd).lower()
+                    # Check for sharing indicators in window titles
+                    if any(indicator in window_text for indicator in [
+                        'sharing', 'screen share', 'presenting', 
+                        'you are presenting', 'screenshare'
+                    ]):
+                        results.append(True)
+                return True
+            
+            results = []
+            win32gui.EnumWindows(enum_window_callback, results)
+            
+            return len(results) > 0
+            
+        except Exception as e:
+            print(f"[SCREEN_SHARE] Detection error: {e}")
+            return False
+    
+    def stop_detection(self):
+        """Stop the detection thread"""
+        self.running = False
 
 
 class WebviewOverlayAPI:
@@ -39,6 +125,12 @@ class WebviewOverlayAPI:
         print("[EXIT] Closing application")
         if self.manager.on_close_app:
             self.manager.on_close_app()
+    
+    def minimize_window(self):
+        """Called when minimize button is clicked"""
+        print("[MINIMIZE] Minimizing window")
+        if self.manager.window:
+            self.manager.window.minimize()
 
 
 class WebviewOverlay:
@@ -47,9 +139,33 @@ class WebviewOverlay:
     def __init__(self, config: Dict[str, Any]):
         self.config = config
         self.window = None
+        self.hwnd = None  # Windows handle
         self.api = WebviewOverlayAPI(self)
         self.is_visible = False
         self.is_recording = False
+        
+        # Enhanced config options
+        self.always_on_top = config.get('enhanced', {}).get('always_on_top', True)
+        self.hide_from_sharing = config.get('hide_from_sharing', True)
+        self.auto_hide_seconds = config.get('auto_hide_seconds', 0)
+        self.opacity = config.get('opacity', 0.95)
+        self.position = config.get('position', 'top_center')
+        self.hide_for_screenshots = config.get('hide_for_screenshots', False)
+        
+        # Auto-hide timer
+        self.auto_hide_timer = None
+        self.auto_hide_lock = threading.Lock()
+        
+        # Screen sharing detector
+        self.screen_sharing_detector = None
+        if self.hide_from_sharing:
+            self.screen_sharing_detector = ScreenSharingDetector(
+                self._hide_for_screen_share,
+                self._show_after_screen_share
+            )
+        
+        # Initialize DPI awareness once per process
+        self._initialize_dpi_awareness()
         
         # Callbacks
         self.on_ask_ai = None
@@ -58,17 +174,63 @@ class WebviewOverlay:
         self.on_close_app = None
         
         # Get HTML template path
-        html_path = Path(__file__).parent / "webview_overlay.html"
+        html_path = get_resource_path("ui/webview_overlay.html")
         with open(html_path, 'r', encoding='utf-8') as f:
             self.html_content = f.read()
         
         print("[WEBVIEW] Webview overlay initialized")
+        print(f"[WEBVIEW] Always on top: {self.always_on_top}")
+        print(f"[WEBVIEW] Hide from sharing: {self.hide_from_sharing}")
+        print(f"[WEBVIEW] Auto-hide: {self.auto_hide_seconds}s")
+        print(f"[WEBVIEW] Position: {self.position}")
+    
+    def _initialize_dpi_awareness(self):
+        global DPI_AWARENESS_SET
+        if DPI_AWARENESS_SET:
+            return
+        try:
+            if hasattr(windll, "shcore"):
+                # 2 = PROCESS_PER_MONITOR_DPI_AWARE
+                windll.shcore.SetProcessDpiAwareness(2)
+                DPI_AWARENESS_SET = True
+                print("[WEBVIEW] DPI awareness set to PER_MONITOR_AWARE")
+            else:
+                # Fallback for older versions
+                windll.user32.SetProcessDPIAware()
+                DPI_AWARENESS_SET = True
+                print("[WEBVIEW] DPI awareness set to SYSTEM_AWARE")
+        except Exception as e:
+            # Ignore error if already set or unsupported
+            print(f"[WEBVIEW] DPI awareness setup failed or already applied: {e}")
+            DPI_AWARENESS_SET = True
+
+    def _get_dpi_scale(self, hwnd: Optional[int] = None) -> float:
+        """Get the DPI scale factor for the given window (defaults to system DPI)"""
+        scale = 1.0
+        try:
+            if hwnd:
+                try:
+                    dpi = windll.user32.GetDpiForWindow(hwnd)
+                except AttributeError:
+                    dpi = windll.user32.GetDpiForSystem()
+            else:
+                dpi = windll.user32.GetDpiForSystem()
+            if dpi:
+                scale = dpi / 96.0
+        except Exception as e:
+            print(f"[WEBVIEW] DPI detection failed, using scale 1.0: {e}")
+        return scale
     
     def start(self):
         """Start the webview window"""
         # Window configuration
-        width = self.config.get('width', 1000)
-        height = self.config.get('height', 70)
+        width = self.config.get('width', 800)
+        height = self.config.get('height', 380)
+        
+        # Get transparency and frameless settings
+        # Note: pywebview's built-in transparent doesn't work well, we'll apply it via Windows API
+        use_transparent = False  # Don't use pywebview's transparency, use Windows API instead
+        use_frameless = True  # Always use frameless for clean look
         
         # Create webview window
         self.window = webview.create_window(
@@ -77,15 +239,51 @@ class WebviewOverlay:
             js_api=self.api,
             width=width,
             height=height,
-            resizable=False,
-            frameless=True,
-            on_top=True,
-            transparent=True,
-            easy_drag=True
+            resizable=True,
+            frameless=use_frameless,
+            on_top=self.always_on_top,
+            transparent=use_transparent,
+            easy_drag=True  # Enable dragging
         )
         
         self.is_visible = True
         print("[WEBVIEW] Webview window created")
+        
+        # Apply Windows-specific settings after window creation
+        def apply_windows_settings():
+            time.sleep(2.0)  # Wait even longer for window to be fully initialized
+            print("[WEBVIEW] Applying Windows-specific settings...")
+            try:
+                # First position the window
+                self._position_window(width, height)
+                time.sleep(0.3)  # Wait after positioning
+                
+                # Then apply transparency and other settings
+                self._apply_window_settings()
+                time.sleep(0.2)  # Wait after transparency
+                
+                # Verify transparency was applied
+                hwnd = self._get_window_handle()
+                if hwnd:
+                    import win32gui
+                    ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+                    if ex_style & win32con.WS_EX_LAYERED:
+                        print("[WEBVIEW] ✓ Transparency verified - window is layered")
+                    else:
+                        print("[WEBVIEW] ⚠ Warning: Transparency may not be applied correctly")
+                
+                # Start screen sharing detector
+                if self.screen_sharing_detector:
+                    self.screen_sharing_detector.start()
+                    print("[WEBVIEW] Screen sharing detector started")
+                    
+            except Exception as e:
+                print(f"[WEBVIEW] Error applying window settings: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        # Apply settings in background
+        threading.Thread(target=apply_windows_settings, daemon=True).start()
         
         # Start webview in main thread
         webview.start(debug=False)
@@ -249,8 +447,233 @@ class WebviewOverlay:
         """Legacy thread-safe method - redirects to topic path"""
         self.update_topic_path(text)
     
+    def _get_window_handle(self):
+        """Get the Windows handle for the webview window"""
+        if not self.hwnd and self.window:
+            try:
+                # Try to find the window by title
+                def callback(hwnd, handles):
+                    if win32gui.IsWindowVisible(hwnd):
+                        if 'MeetMinder' in win32gui.GetWindowText(hwnd):
+                            handles.append(hwnd)
+                    return True
+                
+                handles = []
+                win32gui.EnumWindows(callback, handles)
+                if handles:
+                    self.hwnd = handles[0]
+                    print(f"[WEBVIEW] Window handle found: {self.hwnd}")
+            except Exception as e:
+                print(f"[WEBVIEW] Error getting window handle: {e}")
+        return self.hwnd
+    
+    def _apply_window_settings(self):
+        """Apply Windows-specific settings like transparency and always-on-top"""
+        hwnd = self._get_window_handle()
+        if not hwnd:
+            print("[WEBVIEW] Warning: Could not get window handle")
+            return
+        
+        try:
+            # Get current window styles
+            ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
+            style = win32gui.GetWindowLong(hwnd, win32con.GWL_STYLE)
+            
+            print(f"[WEBVIEW] Current extended style: {ex_style}")
+            print(f"[WEBVIEW] Current style: {style}")
+            
+            # Add layered window style for transparency
+            ex_style |= win32con.WS_EX_LAYERED
+            win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, ex_style)
+            print("[WEBVIEW] Layered window style applied")
+            
+            # Set opacity (0-255)
+            # Using 242 (95%) as default for better visibility
+            opacity_value = int(self.opacity * 255)
+            print(f"[WEBVIEW] Setting opacity to {opacity_value}/255 ({self.opacity*100:.0f}%)")
+            
+            # Set the layered window attributes
+            result = windll.user32.SetLayeredWindowAttributes(
+                hwnd, 
+                0,  # Transparent color key (not used)
+                opacity_value,  # Alpha value
+                win32con.LWA_ALPHA  # Use alpha blending
+            )
+            
+            if result:
+                print(f"[WEBVIEW] ✓ Opacity successfully set to {self.opacity}")
+            else:
+                print(f"[WEBVIEW] ✗ Failed to set opacity (error code: {windll.kernel32.GetLastError()})")
+            
+            # IMPORTANT: Do NOT use WS_EX_TRANSPARENT as it makes window click-through
+            # Users need to be able to interact with buttons and controls
+            
+            # Set always on top
+            if self.always_on_top:
+                win32gui.SetWindowPos(
+                    hwnd, win32con.HWND_TOPMOST,
+                    0, 0, 0, 0,
+                    win32con.SWP_NOMOVE | win32con.SWP_NOSIZE
+                )
+                print("[WEBVIEW] ✓ Set to always on top")
+            
+            # Redraw the window to apply changes
+            win32gui.InvalidateRect(hwnd, None, True)
+            win32gui.UpdateWindow(hwnd)
+            print("[WEBVIEW] Window refreshed")
+            
+        except Exception as e:
+            print(f"[WEBVIEW] ✗ Error applying window settings: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _position_window(self, width: int, height: int):
+        """Position the window based on config"""
+        hwnd = self._get_window_handle()
+        if not hwnd:
+            print("[WEBVIEW] Warning: Could not get window handle for positioning")
+            return
+        
+        try:
+            # Get screen dimensions
+            screen_width = win32api.GetSystemMetrics(0)
+            screen_height = win32api.GetSystemMetrics(1)
+            
+            print(f"[WEBVIEW] Screen size: {screen_width}x{screen_height}")
+            print(f"[WEBVIEW] Target window size: {width}x{height}")
+            
+            # Get current window rect to see actual size
+            try:
+                rect = win32gui.GetWindowRect(hwnd)
+                current_width = rect[2] - rect[0]
+                current_height = rect[3] - rect[1]
+                print(f"[WEBVIEW] Current window size: {current_width}x{current_height}")
+            except:
+                pass
+            
+            # Adjust for DPI scaling
+            scale = self._get_dpi_scale(hwnd)
+            scaled_width = int(width * scale)
+            scaled_height = int(height * scale)
+            print(f"[WEBVIEW] DPI scale factor: {scale:.2f}")
+            print(f"[WEBVIEW] Scaled window size: {scaled_width}x{scaled_height}")
+            
+            # Calculate position based on config
+            if self.position == 'top_center':
+                x = (screen_width - scaled_width) // 2
+                y = 20
+            elif self.position == 'top_right':
+                x = screen_width - scaled_width - 20
+                y = 20
+            elif self.position == 'top_left':
+                x = 20
+                y = 20
+            elif self.position == 'center':
+                x = (screen_width - scaled_width) // 2
+                y = (screen_height - scaled_height) // 2
+            else:
+                x = (screen_width - scaled_width) // 2
+                y = 20
+            
+            print(f"[WEBVIEW] Calculated position: ({x}, {y})")
+            
+            # Set window position AND size
+            flags = win32con.SWP_SHOWWINDOW | win32con.SWP_FRAMECHANGED
+            win32gui.SetWindowPos(
+                hwnd, 
+                win32con.HWND_TOPMOST if self.always_on_top else win32con.HWND_TOP,
+                x, y, scaled_width, scaled_height,
+                flags
+            )
+            
+            # Verify the new size
+            time.sleep(0.1)
+            try:
+                rect = win32gui.GetWindowRect(hwnd)
+                actual_width = rect[2] - rect[0]
+                actual_height = rect[3] - rect[1]
+                print(f"[WEBVIEW] ✓ Window positioned at ({x}, {y}) with size {actual_width}x{actual_height}")
+                if abs(actual_width - scaled_width) > 10 or abs(actual_height - scaled_height) > 10:
+                    print(f"[WEBVIEW] ⚠ Warning: Window size differs from scaled target!")
+                    print(f"[WEBVIEW]   Target (scaled): {scaled_width}x{scaled_height}")
+                    print(f"[WEBVIEW]   Actual        : {actual_width}x{actual_height}")
+                else:
+                    print("[WEBVIEW] ✓ Window size matches scaled configuration")
+            except:
+                print(f"[WEBVIEW] ✓ Window positioned at ({x}, {y})")
+            
+        except Exception as e:
+            print(f"[WEBVIEW] ✗ Error positioning window: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _start_auto_hide_timer(self):
+        """Start auto-hide timer"""
+        if self.auto_hide_seconds > 0:
+            with self.auto_hide_lock:
+                # Cancel existing timer
+                if self.auto_hide_timer:
+                    self.auto_hide_timer.cancel()
+                
+                # Start new timer
+                self.auto_hide_timer = threading.Timer(
+                    self.auto_hide_seconds,
+                    self._auto_hide_callback
+                )
+                self.auto_hide_timer.start()
+                print(f"[WEBVIEW] Auto-hide timer started ({self.auto_hide_seconds}s)")
+    
+    def _auto_hide_callback(self):
+        """Callback for auto-hide timer"""
+        print("[WEBVIEW] Auto-hide timer expired - hiding overlay")
+        self.hide_overlay()
+    
+    def _cancel_auto_hide_timer(self):
+        """Cancel auto-hide timer"""
+        with self.auto_hide_lock:
+            if self.auto_hide_timer:
+                self.auto_hide_timer.cancel()
+                self.auto_hide_timer = None
+                print("[WEBVIEW] Auto-hide timer cancelled")
+    
+    def _hide_for_screen_share(self):
+        """Hide overlay for screen sharing"""
+        if self.is_visible:
+            self.hide_overlay()
+            print("[WEBVIEW] Hidden for screen sharing")
+    
+    def _show_after_screen_share(self):
+        """Show overlay after screen sharing stops"""
+        if not self.is_visible:
+            self.show_overlay()
+            print("[WEBVIEW] Shown after screen sharing")
+    
+    def show_overlay_with_timer(self):
+        """Show overlay and start auto-hide timer"""
+        self.show_overlay()
+        self._start_auto_hide_timer()
+    
+    def update_hide_for_screenshots(self, enabled: bool):
+        """Update hide for screenshots setting"""
+        self.hide_for_screenshots = enabled
+        print(f"[WEBVIEW] Hide for screenshots: {enabled}")
+    
+    def toggle_hide_for_screenshots(self):
+        """Toggle hide for screenshots setting"""
+        self.hide_for_screenshots = not self.hide_for_screenshots
+        print(f"[WEBVIEW] Hide for screenshots toggled: {self.hide_for_screenshots}")
+    
     def destroy(self):
         """Clean up and destroy the overlay"""
+        # Stop screen sharing detector
+        if self.screen_sharing_detector:
+            self.screen_sharing_detector.stop_detection()
+            print("[WEBVIEW] Screen sharing detector stopped")
+        
+        # Cancel auto-hide timer
+        self._cancel_auto_hide_timer()
+        
+        # Destroy window
         if self.window:
             try:
                 self.window.destroy()
