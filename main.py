@@ -81,10 +81,16 @@ class AIAssistant:
         self.splash.show()
         self.app.processEvents()  # Make sure splash is visible
         
+        # Use QTimer to keep GUI responsive during initialization
+        self._init_timer = QTimer()
+        self._init_timer.timeout.connect(self.app.processEvents)
+        self._init_timer.start(50)  # Process events every 50ms
+        
         # Initialize components with progress updates
         self._initialize_components()
         
-        # Hide loading screen
+        # Stop the timer and hide loading screen
+        self._init_timer.stop()
         self.splash.finish(None)
         
         logger.info("✓ MeetMinder initialized successfully")
@@ -187,6 +193,12 @@ class AIAssistant:
             if hasattr(self, 'overlay') and self.overlay:
                 self.overlay.update_ai_response(f"⚠️ Memory usage: {memory_percent:.1f}% - optimizing...")
     
+    def _force_process_events(self):
+        """Force processing of GUI events multiple times to keep UI responsive"""
+        # Process events multiple times to ensure GUI stays responsive
+        for _ in range(5):  # Process events 5 times
+            self.app.processEvents()
+    
     def _create_loading_screen(self):
         """Create a simple loading screen"""
         # Create a simple pixmap for the splash screen
@@ -211,18 +223,21 @@ class AIAssistant:
     def _initialize_components(self):
         """Initialize all MeetMinder components with progress updates"""
         self.splash.showMessage("🔧 Loading configuration...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
-        self.app.processEvents()
+        self._force_process_events()
         
         # Load configuration
         self.config = ConfigManager()
+        self._force_process_events()
         
         self.splash.showMessage("🎤 Initializing transcription engine...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
-        self.app.processEvents()
+        self._force_process_events()
         
         # Initialize transcription engine
         logger.info("🎤 Initializing transcription engine...")
         self.transcription_config = self.config.get_transcription_config()
+        self._force_process_events()
         self.transcription_engine = TranscriptionEngineFactory.create_engine(self.transcription_config)
+        self._force_process_events()
         
         if self.transcription_engine.is_available():
             engine_info = self.transcription_engine.get_info()
@@ -234,9 +249,10 @@ class AIAssistant:
             from core.config import TranscriptionConfig
             fallback_config = TranscriptionConfig(provider="local_whisper")
             self.transcription_engine = TranscriptionEngineFactory.create_engine(fallback_config)
+        self._force_process_events()
         
         self.splash.showMessage("🤖 Setting up AI models...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
-        self.app.processEvents()
+        self._force_process_events()
         
         # Setup lazy loading for Whisper model (saves 500MB+ at startup)
         self.whisper_model = None
@@ -259,26 +275,31 @@ class AIAssistant:
                 logger.info(f"❌ Failed to configure Whisper model: {e}")
         
         self.splash.showMessage("🧠 Initializing AI components...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
-        self.app.processEvents()
+        self._force_process_events()
         
         # Initialize components
         self.profile_manager = UserProfileManager(self.config)
+        self._force_process_events()
         self.topic_manager = TopicGraphManager(self.config)
+        self._force_process_events()
         
         # Initialize AI helper with enhanced configuration
         ai_config = self.config.get_ai_config()
+        self._force_process_events()
         self.ai_helper = AIHelper(
             ai_config,
             self.profile_manager,
             self.topic_manager,
             self.config  # Pass config manager for assistant settings
         )
+        self._force_process_events()
         
         # Initialize live topic analyzer
         self.topic_analyzer = LiveTopicAnalyzer(self.ai_helper, self.config)
+        self._force_process_events()
         
         self.splash.showMessage("🎵 Setting up audio processing...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
-        self.app.processEvents()
+        self._force_process_events()
         
         # Choose audio contextualizer based on configuration
         audio_config = self.config.get_audio_config()
@@ -298,12 +319,15 @@ class AIAssistant:
                 whisper_model=None,  # Use lazy loading instead
                 whisper_language=self.whisper_language
             )
+        self._force_process_events()
         
         self.splash.showMessage("🖥️ Initializing interface...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
-        self.app.processEvents()
+        self._force_process_events()
         
         self.screen_capture = ScreenCapture()
+        self._force_process_events()
         self.hotkey_manager = AsyncHotkeyManager(self.config.get_hotkeys_config())
+        self._force_process_events()
         
         # Initialize modern UI
         ui_config = self.config.get('ui.overlay', {})
@@ -312,22 +336,25 @@ class AIAssistant:
             ui_config['size_multiplier'] = 1.0
         
         self.overlay = ModernOverlay(ui_config)
+        self._force_process_events()
         
         # State management
         self.is_running = False
         self.current_context_type = "general"
         
         self.splash.showMessage("🔍 Initializing monitoring systems...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
-        self.app.processEvents()
+        self._force_process_events()
         
         # Initialize resource monitoring
         self._setup_resource_monitoring()
+        self._force_process_events()
         
         self.splash.showMessage("⚙️ Finalizing setup...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
-        self.app.processEvents()
+        self._force_process_events()
         
         # Setup callbacks
         self._setup_callbacks()
+        self._force_process_events()
     
     def _setup_callbacks(self):
         """Setup callbacks for various components"""
@@ -521,47 +548,20 @@ class AIAssistant:
     
     @handle_errors(show_user_message=False)
     async def _trigger_assistance(self):
-        """Trigger AI assistance based on current context"""
-        try:
-            logger.info("🤖 Triggering AI assistance...")
-            
-            # Get current context
-            screen_context = self.screen_capture.get_screen_context()
-            self.current_context_type = self.screen_capture.detect_context_type()
-            
-            # Get recent transcript
-            transcript_data = self.audio_contextualizer.get_recent_transcript_with_topics()
-            transcript = transcript_data['transcript']
-            
-            # Update overlay with topic analysis
-            await self._update_overlay_topic_analysis(transcript)
-            
-            # Show overlay
-            self.overlay.show_overlay()
-            
-            # Clear previous AI response
-            self.overlay.update_ai_response("🤔 Analyzing context...")
-            
-            # Stream AI response
-            self.overlay.update_ai_response("")  # Clear the analyzing message
-            
-            async for chunk in self.ai_helper.analyze_context_stream(
-                transcript=transcript,
-                screen_context=f"{screen_context['active_window']['title']} - {screen_context['active_window']['process']}",
-                clipboard_content=screen_context.get('clipboard', ''),
-                context_type=self.current_context_type
-            ):
-                self.overlay.append_ai_response(chunk)
-                
-        except Exception as e:
-            logger.info(f"❌ Error triggering assistance: {e}")
-            self.overlay.update_ai_response(f"Error: {e}")
+        """Trigger AI assistance based on current context - DEPRECATED: Use _trigger_assistance_background instead"""
+        # This method is kept for compatibility but should not be called directly
+        # as it doesn't handle threading correctly
+        logger.info("[AI] Triggering AI assistance (legacy method)")
+        self._trigger_assistance_background()
     
     @handle_errors(show_user_message=False)
     def _trigger_assistance_background(self):
         """Performance-optimized AI assistance using async task queue"""
         try:
-            logger.info("🤖 Running AI assistance in background thread...")
+            logger.info("[AI] Running AI assistance in background thread...")
+            
+            # Show overlay using thread-safe method
+            self.overlay.show_overlay_threadsafe()
             
             # Get current context
             screen_context = self.screen_capture.get_screen_context()
@@ -571,39 +571,33 @@ class AIAssistant:
             transcript_data = self.audio_contextualizer.get_recent_transcript_with_topics()
             transcript = transcript_data['transcript']
             
-            # Update topic analysis using performance manager
-            try:
-                # Submit topic analysis as a low priority task
-                asyncio.create_task(
-                    performance_manager.task_queue.submit(
-                        Priority.LOW, 
-                        self._update_overlay_topic_analysis_async, 
-                        transcript
-                    )
-                )
-            except Exception as e:
-                logger.info(f"❌ Error queuing topic analysis: {e}")
-            
             # Clear previous AI response using thread-safe method
-            self.overlay.update_ai_response_threadsafe("🤔 Analyzing context...")
+            self.overlay.update_ai_response_threadsafe("[AI] Analyzing context...")
             
-            # Submit AI assistance as high priority task
-            try:
-                asyncio.create_task(
-                    performance_manager.task_queue.submit(
-                        Priority.HIGH,
-                        self._process_ai_assistance_async,
+            # Run AI assistance in a background thread to avoid blocking
+            def run_ai_assistance():
+                try:
+                    # Create new event loop for this thread
+                    loop = asyncio.new_event_loop()
+                    asyncio.set_event_loop(loop)
+                    
+                    # Run the async function
+                    loop.run_until_complete(self._process_ai_assistance_async(
                         transcript,
                         screen_context,
                         self.current_context_type
-                    )
-                )
-            except Exception as e:
-                logger.info(f"❌ Error queuing AI assistance: {e}")
-                self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+                    ))
+                    
+                    loop.close()
+                except Exception as e:
+                    logger.error(f"[ERROR] Error in AI assistance: {e}")
+                    self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+            
+            # Start in background thread
+            threading.Thread(target=run_ai_assistance, daemon=True).start()
                 
         except Exception as e:
-            logger.info(f"❌ Error in background AI assistance: {e}")
+            logger.error(f"[ERROR] Error in background AI assistance: {e}")
             self.overlay.update_ai_response_threadsafe(f"Error: {e}")
     
     @cached(ttl=60)  # Cache results for 1 minute
@@ -654,12 +648,9 @@ class AIAssistant:
             logger.info(f"❌ Error updating topic analysis: {e}")
     
     def _trigger_assistance_sync(self):
-        """Synchronous wrapper for UI callback"""
-        # Run the async trigger assistance in a separate thread
-        threading.Thread(
-            target=lambda: asyncio.run(self._trigger_assistance()),
-            daemon=True
-        ).start()
+        """Synchronous wrapper for UI callback - uses thread-safe background method"""
+        # Use the background method which already handles threading correctly
+        self._trigger_assistance_background()
     
     def _on_mic_toggle(self, is_recording: bool):
         """Handle microphone toggle from UI"""
