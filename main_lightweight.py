@@ -75,7 +75,31 @@ class AIAssistantLightweight:
         try:
             # 1. Configuration
             logger.info("[CONFIG] Loading configuration...")
-            self.config = ConfigManager()
+            try:
+                self.config = ConfigManager()
+            except ValueError as config_error:
+                # Handle configuration errors with user-friendly dialog
+                error_msg = str(config_error)
+                print("❌ Configuration Error"                print(f"   {error_msg}")
+                print("\n🔧 Quick Fixes:")
+                print("   1. Check config.yaml syntax (use colons : not equals =)")
+                print("   2. For offline mode: transcription.provider: local_whisper")
+                print("   3. Leave ai_provider empty for transcription-only mode")
+                print("   4. See OFFLINE_MODE.md for complete offline setup guide")
+
+                # Try to show a dialog if possible, otherwise exit
+                try:
+                    import tkinter as tk
+                    from tkinter import messagebox
+                    root = tk.Tk()
+                    root.withdraw()  # Hide the main window
+                    messagebox.showerror("MeetMinder Configuration Error",
+                                       f"{error_msg}\n\nCheck the console for detailed instructions.")
+                    root.destroy()
+                except ImportError:
+                    pass  # Tkinter not available, continue with console message
+
+                sys.exit(1)  # Exit with error code
 
             # 2. User Profile
             logger.info("[PROFILE] Loading user profile...")
@@ -88,11 +112,24 @@ class AIAssistantLightweight:
             # 4. AI Helper
             logger.info("[AI] Initializing AI helper...")
             ai_config = self.config.get_ai_config()
-            self.ai_helper = AIHelper(
-                ai_config,
-                self.profile_manager,
-                self.topic_manager
-            )
+
+            if ai_config is None:
+                logger.warning("[AI] No AI provider configured - running in transcription-only mode")
+                print("🤖 AI responses disabled - transcription only mode active")
+                print("   Configure an AI provider in config.yaml for intelligent assistance")
+                self.ai_helper = AIHelper(
+                    None,  # No AI config
+                    self.profile_manager,
+                    self.topic_manager,
+                    self.config
+                )
+            else:
+                self.ai_helper = AIHelper(
+                    ai_config,
+                    self.profile_manager,
+                    self.topic_manager,
+                    self.config
+                )
             
             # 5. Topic Analyzer
             logger.info("[ANALYZER] Initializing topic analyzer...")

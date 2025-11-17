@@ -9,13 +9,13 @@ A real-time AI meeting assistant with system audio transcription, intelligent to
 ## ✨ Features
 
 - **🎙️ Real-time Audio Transcription**: Captures system audio (meetings, videos) with live transcript display
-- **🤖 Multi-LLM Support**: OpenAI GPT, Azure OpenAI, Google Gemini integration
+- **🤖 Multi-LLM Support**: OpenAI GPT, Azure OpenAI, Google Gemini, and **Ollama (fully offline)** integration
 - **📊 Topic Analysis**: Intelligent conversation flow tracking and guidance
 - **🖥️ Modern UI Options**:
   - Standard: Advanced PyQt5 interface with transparency effects (~150MB)
   - Lightweight: Web-based UI using native OS webviews (~15-30MB) ⭐ **RECOMMENDED**
 - **⌨️ Global Hotkeys**: Instant AI assistance with customizable shortcuts
-- **🔒 Privacy Focused**: Local audio processing with optional cloud AI
+- **🔒 Privacy Focused**: **Fully offline operation** with local Whisper + Ollama, or local audio processing with optional cloud AI
 - **⚙️ Highly Configurable**: Extensive settings through YAML configuration or full settings dialog
 
 ## 🚀 Quick Start
@@ -42,17 +42,19 @@ For full-featured UI with advanced graphics capabilities:
    pip install -r requirements.txt
    ```
 
-3. **Configure API Keys**
+3. **Configure AI Provider** (Optional - see Offline Mode below)
 
    Edit `config.yaml` and add your AI provider credentials:
    ```yaml
    ai_provider:
-     type: azure_openai  # or 'openai' or 'google_gemini'
+     type: azure_openai  # or 'openai', 'google_gemini', or 'ollama'
      azure_openai:
        api_key: "your-api-key-here"
        endpoint: "https://your-resource.openai.azure.com/"
        model: "gpt-4"
    ```
+
+   **🚀 Offline Mode Available!** Skip AI configuration for transcription-only mode, or use Ollama for fully offline AI.
 
 4. **Run the application**
    ```bash
@@ -67,7 +69,7 @@ For a much smaller, web-based UI with 80-90% size reduction:
    pip install -r requirements_lightweight.txt
    ```
 
-2. **Configure API Keys** (same as above)
+2. **Configure AI Provider** (Optional - Offline Mode Available)
 
 3. **Run the lightweight version**
    ```bash
@@ -85,6 +87,50 @@ For a much smaller, web-based UI with 80-90% size reduction:
 - **UI**: Modern web-based interface with full settings dialog
 - **Features**: All core functionality preserved
 - **Performance**: Faster startup, lower memory usage
+
+## 🔓 Offline Mode
+
+MeetMinder supports **completely offline operation** without requiring any online AI APIs!
+
+### Option 1: Transcription Only (No AI)
+Perfect for privacy-conscious users who want transcription without AI features:
+
+```yaml
+transcription:
+  provider: local_whisper  # Uses local Whisper model
+  whisper:
+    model_size: base       # tiny, base, small, medium, large
+
+ai_provider:
+  # Leave empty or set type: none for offline mode
+```
+
+### Option 2: Full Offline AI with Ollama
+Run AI locally on your machine using Ollama:
+
+1. **Install Ollama**: Download from https://ollama.com/download
+2. **Pull a model**: `ollama pull llama2`
+3. **Configure MeetMinder**:
+   ```yaml
+   transcription:
+     provider: local_whisper
+     whisper:
+       model_size: base
+
+   ai_provider:
+     type: ollama           # Fully offline AI!
+     ollama:
+       base_url: http://localhost:11434
+       model: llama2         # or codellama, mistral, etc.
+       timeout: 120
+   ```
+
+**Benefits:**
+- ✅ **No API keys required**
+- ✅ **Complete privacy** (no data sent to cloud)
+- ✅ **No subscription costs**
+- ✅ **Works without internet**
+- ✅ **Local AI processing**
 
 ## 💻 Usage
 
@@ -130,9 +176,9 @@ MeetMinder displays as a horizontal bar at the top-center of your screen:
 
 ### Main Configuration (`config.yaml`)
 ```yaml
-# AI Provider
+# AI Provider (optional - leave empty for offline mode)
 ai_provider:
-  type: "azure_openai"  # or "google_gemini"
+  type: "azure_openai"  # azure_openai, openai, google_gemini, ollama, or leave empty
 
 # Audio Settings
 audio:
@@ -211,6 +257,22 @@ ai_provider:
     api_key: "your-gemini-api-key"
     model: "gemini-2.0-flash"
 ```
+
+#### Ollama (Fully Offline)
+```yaml
+ai_provider:
+  type: "ollama"
+  ollama:
+    base_url: "http://localhost:11434"
+    model: "llama2"  # llama2, codellama, mistral, vicuna, etc.
+    timeout: 120
+```
+
+**Setup Ollama:**
+1. Install Ollama from https://ollama.com/download
+2. Pull your desired model: `ollama pull llama2`
+3. Configure MeetMinder as shown above
+4. Enjoy fully offline AI assistance!
 
 ## 🏗️ Architecture
 
@@ -293,9 +355,11 @@ Web-based UI with pywebview (~15-30MB build size):
 
 ## 🔒 Privacy & Security
 
+- **Fully Offline Operation**: Complete offline mode with local Whisper + Ollama (no internet required)
 - **Local Processing**: Audio transcription can run entirely locally with Whisper
 - **No Data Storage**: Audio is processed in real-time, not permanently stored
-- **API Security**: All API keys stored in local configuration files
+- **API Security**: All API keys stored in local configuration files (when using cloud AI)
+- **Zero Cloud Dependency**: Works completely offline with no external API calls
 - **Transparency**: Full source code available for security review
 
 ## 📄 License
@@ -312,6 +376,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙏 Acknowledgments
 
 - [OpenAI Whisper](https://github.com/openai/whisper) for speech recognition
+- [Ollama](https://ollama.com/) for enabling fully offline AI capabilities
 - [PyQt5](https://riverbankcomputing.com/software/pyqt/) for the user interface
 - All AI providers for their APIs and services
 
@@ -319,4 +384,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 **Visit [MeetMinder.io](https://meetminder.io/) for more information and updates.**
 
-**Note**: This software requires API keys from AI providers for full functionality. Local-only operation is available with Whisper transcription only. 
+**Note**: This software supports both online AI providers (requires API keys) and **fully offline operation** with local Whisper transcription + Ollama AI. No API keys required for offline mode! 

@@ -274,7 +274,10 @@ class TranscriptionEngineFactory:
         elif config.provider == "azure_whisper":
             return AzureSpeechEngine(config)
         else:
-            print(f"⚠️  Unknown transcription provider: {config.provider}, falling back to local Whisper")
+            print(f"⚠️  Unknown transcription provider: '{config.provider}'")
+            print(f"   Valid options: local_whisper, google_speech, azure_speech, openai_whisper")
+            print(f"   Check your config.yaml syntax - use 'transcription.provider: local_whisper' for offline mode")
+            print(f"   Falling back to local Whisper...")
             return WhisperLocalEngine(config)
     
     @staticmethod

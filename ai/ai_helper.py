@@ -10,6 +10,7 @@ from functools import lru_cache
 from dataclasses import dataclass
 from collections import defaultdict
 from core.config import AIProviderConfig, AssistantConfig
+from .ollama_provider import OllamaProvider
 
 @dataclass
 class RequestCache:
@@ -70,7 +71,7 @@ class RateLimiter:
             self.requests.append(time.time())
 
 class AIHelper:
-    def __init__(self, config: AIProviderConfig, profile_manager=None, topic_manager=None, config_manager=None):
+    def __init__(self, config: Optional[AIProviderConfig], profile_manager=None, topic_manager=None, config_manager=None):
         self.config = config
         self.profile_manager = profile_manager
         self.topic_manager = topic_manager
@@ -78,7 +79,8 @@ class AIHelper:
         self.client = None
         self.assistant_config = None
         self.custom_prompt_rules = ""
-        
+        self.ai_available = config is not None and config.type not in [None, "", "none"]
+
         # Performance optimizations - use advanced caching system
         try:
             from utils.performance_manager import performance_manager
@@ -87,12 +89,12 @@ class AIHelper:
         except ImportError:
             self.request_cache = RequestCache()  # Fallback to basic cache
             print("[WARN] Using basic cache for AI requests")
-        
+
         self.rate_limiter = RateLimiter()
         self.connection_pool_size = 3
         self.clients_pool = []
         self.pool_lock = threading.Lock()
-        
+
         # Performance metrics
         self.request_metrics = {
             'total_requests': 0,
@@ -102,17 +104,27 @@ class AIHelper:
             'avg_response_time': 0.0,
             'last_response_times': []
         }
-        
+
         # Load assistant configuration
         if config_manager:
             self.assistant_config = config_manager.get_assistant_config()
             self.custom_prompt_rules = config_manager.load_prompt_rules()
-        
-        self._setup_client()
-        self._initialize_connection_pool()
-    
+
+        if self.ai_available:
+            self._setup_client()
+            self._initialize_connection_pool()
+        else:
+            print("[AI] AI provider not configured - transcription-only mode")
+
+    def is_available(self) -> bool:
+        """Check if AI provider is configured and available"""
+        return self.ai_available
+
     def _setup_client(self):
         """Initialize the appropriate AI client based on configuration"""
+        if not self.ai_available:
+            return  # Skip client setup for offline mode
+
         if self.config.type == "azure_openai":
             # Create Azure OpenAI client with the proper interface
             self.client = AzureOpenAI(
@@ -126,11 +138,23 @@ class AIHelper:
             genai.configure(api_key=self.config.google_gemini['api_key'])
             self.client = genai.GenerativeModel(self.config.google_gemini['model'])
             print(f"[GEMINI] Google Gemini client initialized")
+        elif self.config.type == "ollama":
+            # Create Ollama provider instance
+            ollama_config = {
+                'base_url': self.config.ollama.get('base_url', 'http://localhost:11434'),
+                'model': self.config.ollama.get('model', self.config.model),
+                'timeout': self.config.ollama.get('timeout', 120)
+            }
+            self.client = OllamaProvider(ollama_config)
+            print(f"[OLLAMA] Ollama client initialized with model: {ollama_config['model']} at {ollama_config['base_url']}")
         else:
             raise ValueError(f"Unsupported AI provider: {self.config.type}")
     
     def _initialize_connection_pool(self):
         """Initialize a pool of connections for better performance"""
+        if not self.ai_available:
+            return  # Skip pool initialization for offline mode
+
         with self.pool_lock:
             for _ in range(self.connection_pool_size):
                 if self.config.type == "azure_openai":
@@ -172,13 +196,18 @@ class AIHelper:
         }
         return hashlib.md5(json.dumps(cache_data, sort_keys=True).encode()).hexdigest()
     
-    async def analyze_context_stream(self, 
-                                   transcript: List[str], 
+    async def analyze_context_stream(self,
+                                   transcript: List[str],
                                    screen_context: str,
                                    clipboard_content: str = None,
                                    context_type: str = "general") -> AsyncGenerator[str, None]:
         """Stream real-time AI analysis of context with enhanced dual-stream support and caching"""
-        
+
+        # Check if AI is available
+        if not self.is_available():
+            yield "🤖 AI responses disabled - transcription only mode active. Configure an AI provider in config.yaml for intelligent assistance."
+            return
+
         # Check rate limiting
         if not self.rate_limiter.can_make_request():
             self.request_metrics['rate_limited'] += 1
@@ -218,6 +247,10 @@ class AIHelper:
                     yield chunk
             elif self.config.type == "google_gemini":
                 async for chunk in self._stream_google_gemini(context_prompt):
+                    response_chunks.append(chunk)
+                    yield chunk
+            elif self.config.type == "ollama":
+                async for chunk in self._stream_ollama(context_prompt):
                     response_chunks.append(chunk)
                     yield chunk
             
@@ -301,7 +334,18 @@ class AIHelper:
                     
         except Exception as e:
             yield f"Google Gemini Error: {e}"
-    
+
+    async def _stream_ollama(self, prompt: str) -> AsyncGenerator[str, None]:
+        """Stream responses from Ollama"""
+        try:
+            system_prompt = self._get_system_prompt()
+            async for chunk in self.client._make_request(prompt, system_prompt=system_prompt, stream=True):
+                yield chunk
+                await asyncio.sleep(0.01)  # Small delay for UI updates
+
+        except Exception as e:
+            yield f"Ollama Error: {e}"
+
     def _get_temperature(self) -> float:
         """Get temperature based on assistant configuration"""
         if not self.assistant_config:
@@ -516,10 +560,16 @@ Adjust your responses according to these settings."""
         
         return base_prompt
     
-    def update_config(self, new_config: AIProviderConfig):
+    def update_config(self, new_config: Optional[AIProviderConfig]):
         """Update AI configuration"""
         self.config = new_config
-        self._setup_client()
+        self.ai_available = new_config is not None and new_config.type not in [None, "", "none"]
+
+        if self.ai_available:
+            self._setup_client()
+            self._initialize_connection_pool()
+        else:
+            print("[AI] AI provider disabled - switched to transcription-only mode")
     
     def update_assistant_config(self, new_assistant_config: AssistantConfig):
         """Update assistant configuration"""

@@ -28,14 +28,15 @@ class TranscriptionConfig:
 @dataclass
 class AIProviderConfig:
     type: str
-    model: str = "gpt-4"
+    model: str = "llama2"
     azure_openai: Optional[Dict[str, str]] = None
     openai: Optional[Dict[str, str]] = None
     google_gemini: Optional[Dict[str, str]] = None
-    
+    ollama: Optional[Dict[str, str]] = None
+
     def __post_init__(self):
         """Validate AI provider configuration"""
-        valid_types = ["azure_openai", "openai", "google_gemini"]
+        valid_types = ["azure_openai", "openai", "google_gemini", "ollama"]
         if self.type not in valid_types:
             raise ValueError(f"Invalid AI provider type: {self.type}")
 
@@ -106,9 +107,33 @@ class ConfigManager:
         """Load configuration from YAML file"""
         if not self.config_path.exists():
             self._create_default_config()
-        
-        with open(self.config_path, 'r') as file:
-            self._config = yaml.safe_load(file)
+
+        try:
+            with open(self.config_path, 'r') as file:
+                self._config = yaml.safe_load(file)
+
+            # Validate the loaded configuration
+            validation_issues = self.validate_config()
+            if validation_issues:
+                print("⚠️ Configuration validation warnings:")
+                for issue in validation_issues:
+                    print(f"   - {issue}")
+                print("\n💡 For offline mode, ensure transcription.provider is set to 'local_whisper'")
+                print("   and leave ai_provider.type empty or set to 'none'\n")
+
+        except yaml.YAMLError as e:
+            error_msg = f"❌ YAML syntax error in {self.config_path}:\n{e}"
+            if "expected" in str(e).lower() and ("scalar" in str(e).lower() or "mapping" in str(e).lower()):
+                error_msg += "\n\n💡 Common YAML errors:"
+                error_msg += "\n   - Use colons (:) not equals (=) for configuration"
+                error_msg += "\n   - Correct:   transcription.provider: local_whisper"
+                error_msg += "\n   - Wrong:     TRANSCRIBE_ENGINE=local"
+                error_msg += "\n   - Check indentation (use spaces, not tabs)"
+                error_msg += "\n   - Ensure quotes around string values if needed"
+            raise ValueError(error_msg)
+        except Exception as e:
+            error_msg = f"❌ Error loading configuration from {self.config_path}:\n{e}"
+            raise ValueError(error_msg)
     
     def _create_default_config(self):
         """Create default configuration file"""
@@ -192,17 +217,28 @@ class ConfigManager:
         assistant_config = self._config.get('assistant', {})
         return AssistantConfig(**assistant_config)
     
-    def get_ai_config(self) -> AIProviderConfig:
+    def get_ai_config(self) -> Optional[AIProviderConfig]:
         """Get AI provider configuration"""
         ai_config = self._config.get('ai_provider', {})
-        
+
+        provider_type = ai_config.get('type', 'azure_openai')
+        # Return None if no valid AI provider is configured
+        if provider_type in [None, "", "none"]:
+            return None
+
         return AIProviderConfig(
-            type=ai_config.get('type', 'azure_openai'),
+            type=provider_type,
             azure_openai=ai_config.get('azure_openai'),
             openai=ai_config.get('openai'),
             google_gemini=ai_config.get('google_gemini')
         )
-    
+
+    def has_ai_provider(self) -> bool:
+        """Check if a valid AI provider is configured"""
+        ai_config = self._config.get('ai_provider', {})
+        provider_type = ai_config.get('type', 'azure_openai')
+        return provider_type not in [None, "", "none"]
+
     def get_audio_config(self) -> AudioConfig:
         """Get audio configuration"""
         audio_config = self._config.get('audio', {})
@@ -293,6 +329,37 @@ class ConfigManager:
             print(f"⚠️ Error loading prompt rules: {e}")
             return "You are a helpful AI meeting assistant."
     
+    def validate_config(self) -> List[str]:
+        """Validate configuration and return list of issues found"""
+        issues = []
+
+        # Check transcription provider
+        transcription_config = self._config.get('transcription', {})
+        provider = transcription_config.get('provider', '')
+        if not provider:
+            issues.append("Missing transcription.provider - set to 'local_whisper' for offline mode")
+        elif provider not in ["local_whisper", "google_speech", "azure_speech", "openai_whisper"]:
+            issues.append(f"Invalid transcription provider: '{provider}'. Valid options: local_whisper, google_speech, azure_speech, openai_whisper")
+        elif provider == "local_whisper":
+            # Check whisper config
+            whisper_config = transcription_config.get('whisper', {})
+            model_size = whisper_config.get('model_size', '')
+            if model_size and model_size not in ["tiny", "base", "small", "medium", "large"]:
+                issues.append(f"Invalid Whisper model size: '{model_size}'. Valid options: tiny, base, small, medium, large")
+
+        # Check AI provider (optional)
+        ai_config = self._config.get('ai_provider', {})
+        ai_type = ai_config.get('type', '')
+        if ai_type and ai_type not in ["azure_openai", "openai", "google_gemini", "ollama", "", "none"]:
+            issues.append(f"Invalid AI provider type: '{ai_type}'. Valid options: azure_openai, openai, google_gemini, ollama, or leave empty for offline mode")
+
+        # Check for common YAML syntax errors (environment variable style)
+        config_str = yaml.dump(self._config)
+        if "TRANSCRIBE_ENGINE=" in config_str or "OPENAI_API_KEY=" in config_str:
+            issues.append("YAML syntax error detected! Use colons (:) not equals (=) for configuration. Example: provider: local_whisper")
+
+        return issues
+
     def update_config(self, new_config: Dict[str, Any]):
         """Update configuration with new values"""
         def deep_merge(base_dict, update_dict):
@@ -302,7 +369,7 @@ class ConfigManager:
                     deep_merge(base_dict[key], value)
                 else:
                     base_dict[key] = value
-        
+
         deep_merge(self._config, new_config)
     
     def save_config(self):

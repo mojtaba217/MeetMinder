@@ -1,6 +1,7 @@
 from typing import Dict, Any, Optional
 from .base_provider import BaseProvider
 from .azure_provider import AzureProvider
+from .ollama_provider import OllamaProvider
 
 class AIProviderFactory:
     """Factory for creating AI providers"""
@@ -10,6 +11,8 @@ class AIProviderFactory:
         """Create and return an AI provider instance"""
         if provider_type == "azure":
             return AzureProvider(config)
+        elif provider_type == "ollama":
+            return OllamaProvider(config)
         else:
             raise ValueError(f"Unsupported provider type: {provider_type}")
     

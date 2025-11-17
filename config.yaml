@@ -24,6 +24,10 @@ ai_provider:
   openai:
     api_key: ''
     model: ''
+  ollama:
+    base_url: http://localhost:11434
+    model: llama2
+    timeout: 120
   type: azure_openai
 assistant:
   activation_mode: manual
@@ -195,7 +199,7 @@ transcription:
     api_key: ''
     language: auto-detect
     model: whisper-1
-  provider: local_whisper
+  provider: local_whisper  # CORRECT YAML SYNTAX for offline mode (not TRANSCRIBE_ENGINE=local)
   whisper:
     language: en
     model_size: base
