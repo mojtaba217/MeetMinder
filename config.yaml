@@ -235,3 +235,17 @@ user_profile:
   auto_reload: true
   enabled: true
   include_in_prompts: true
+documents:
+  enabled: true
+  data_dir: data/user_documents
+  chunk_size: 1000
+  chunk_overlap: 200
+  max_context_chunks: 5
+  embedding:
+    provider: local
+    model: all-MiniLM-L6-v2
+    device: cpu
+  vector:
+    backend: faiss
+    dimension: 384
+    metric: cosine

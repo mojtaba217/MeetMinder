@@ -4,315 +4,377 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeetMinder Overlay</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
+        :root {
+            --glass-bg: rgba(20, 25, 45, 0.75);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --glass-highlight: rgba(255, 255, 255, 0.05);
+            --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+            --text-primary: #ffffff;
+            --text-secondary: #94a3b8;
+            --danger: #ef4444;
+            --success: #22c55e;
+        }
+
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #1e3a5f 0%, #2d1b4e 100%);
-            color: white;
-            overflow: hidden;
-            user-select: none;
-            -webkit-user-select: none;
-            width: 100vw;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: transparent;
+            color: var(--text-primary);
             height: 100vh;
-            margin: 0;
-            padding: 0;
+            width: 100vw;
+            overflow: hidden;
         }
 
         .overlay-container {
-            background: rgba(20, 25, 45, 0.95);
-            border-radius: 16px;
-            padding: 15px 20px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(20px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            width: calc(100% - 20px);
-            height: calc(100% - 20px);
-            margin: 10px;
+            width: 100%;
+            height: 100%;
+            padding: 12px;
             display: flex;
             flex-direction: column;
+            gap: 12px;
         }
 
-        /* Main horizontal control bar */
+        /* Glass Panel Base Style */
+        .glass-panel {
+            background: var(--glass-bg);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        /* Control Bar */
         .control-bar {
             display: flex;
             align-items: center;
-            gap: 15px;
-            padding: 12px 16px;
-            background: rgba(30, 35, 55, 0.8);
-            border-radius: 12px;
-            margin-bottom: 15px;
+            padding: 8px 12px;
+            gap: 12px;
+            height: 64px;
             flex-shrink: 0;
         }
 
-        /* Edit button (left side) */
-        .edit-btn {
+        /* Recording Button */
+        .record-btn {
             width: 44px;
             height: 44px;
-            border-radius: 50%;
-            background: rgba(100, 100, 120, 0.3);
-            border: 2px solid rgba(150, 150, 180, 0.4);
+            border-radius: 12px;
+            border: 1px solid var(--glass-border);
+            background: rgba(255, 255, 255, 0.05);
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
             transition: all 0.3s ease;
-            flex-shrink: 0;
+            position: relative;
+            overflow: hidden;
         }
 
-        .edit-btn:hover {
-            background: rgba(100, 100, 120, 0.5);
-            border-color: rgba(150, 150, 180, 0.6);
-            transform: scale(1.05);
+        .record-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-1px);
         }
 
-        .edit-icon {
+        .record-icon {
             width: 20px;
             height: 20px;
-            fill: #8b9dc3;
+            fill: var(--text-secondary);
+            transition: all 0.3s ease;
+            z-index: 2;
         }
 
-        /* Timer display */
+        .record-btn.active {
+            border-color: rgba(239, 68, 68, 0.3);
+            background: rgba(239, 68, 68, 0.1);
+        }
+
+        .record-btn.active .record-icon {
+            fill: var(--danger);
+        }
+
+        .record-wave {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle, rgba(239, 68, 68, 0.2) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .record-btn.active .record-wave {
+            opacity: 1;
+            animation: pulse-wave 2s infinite;
+        }
+
+        @keyframes pulse-wave {
+            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
+            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+        }
+
+        /* Timer */
         .timer {
-            font-size: 24px;
-            font-weight: 300;
-            color: #e0e0e0;
-            font-variant-numeric: tabular-nums;
-            letter-spacing: 1px;
-            flex-shrink: 0;
-            min-width: 60px;
+            font-family: 'Inter', monospace;
+            font-size: 18px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            min-width: 54px;
+            letter-spacing: 0.5px;
         }
 
-        /* AI Button (center) */
+        .timer.active {
+            color: var(--text-primary);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.2);
+        }
+
+        /* AI Button */
         .ai-btn {
             flex: 1;
+            height: 44px;
+            border: none;
+            border-radius: 12px;
+            background: var(--accent-gradient);
+            color: white;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            gap: 10px;
-            padding: 10px 20px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            border: none;
-            border-radius: 10px;
-            color: white;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
+            gap: 8px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .ai-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: 0.5s;
         }
 
         .ai-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+            transform: translateY(-1px);
+            box-shadow: 0 6px 16px rgba(99, 102, 241, 0.4);
+        }
+
+        .ai-btn:hover::before {
+            left: 100%;
         }
 
         .ai-btn:active {
             transform: translateY(0);
         }
 
-        .ai-icon {
-            width: 20px;
-            height: 20px;
-        }
-
-        /* Right side buttons */
-        .right-buttons {
+        /* Action Buttons */
+        .actions {
             display: flex;
             gap: 8px;
-            align-items: center;
-            flex-shrink: 0;
         }
 
         .icon-btn {
             width: 40px;
             height: 40px;
             border-radius: 10px;
-            background: rgba(100, 100, 120, 0.3);
-            border: 1px solid rgba(150, 150, 180, 0.3);
+            border: 1px solid transparent;
+            background: transparent;
+            cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
         }
 
         .icon-btn:hover {
-            background: rgba(120, 120, 140, 0.4);
-            border-color: rgba(170, 170, 200, 0.5);
-            transform: scale(1.05);
-        }
-
-        .icon-btn.settings {
-            background: rgba(100, 100, 120, 0.3);
-        }
-
-        .icon-btn.minimize {
-            background: rgba(100, 100, 120, 0.3);
-        }
-
-        .icon-btn.close {
-            background: rgba(180, 50, 60, 0.3);
-            border-color: rgba(200, 70, 80, 0.4);
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-primary);
         }
 
         .icon-btn.close:hover {
-            background: rgba(200, 60, 70, 0.5);
+            background: rgba(239, 68, 68, 0.1);
+            color: var(--danger);
         }
 
-        .btn-icon {
-            width: 18px;
-            height: 18px;
-            fill: #c0c5d8;
+        .icon-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke-width: 2;
         }
 
-        /* Content display area */
-        .content-display {
-            background: rgba(30, 35, 55, 0.6);
-            border-radius: 12px;
-            padding: 15px;
+        /* Content Area */
+        .content-area {
             flex: 1;
+            padding: 16px;
             overflow-y: auto;
-            min-height: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            min-height: 0; /* Important for flex scrolling */
         }
 
-        .content-text {
-            font-size: 13px;
+        .message-group {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message-label {
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            margin-left: 4px;
+        }
+
+        .message-content {
+            background: rgba(255, 255, 255, 0.03);
+            border-radius: 12px;
+            padding: 12px;
+            font-size: 14px;
             line-height: 1.5;
-            color: #d0d5e0;
-            white-space: pre-wrap;
-            word-wrap: break-word;
+            color: var(--text-primary);
+            border-left: 3px solid transparent;
         }
 
-        .content-placeholder {
-            color: #7a7f90;
-            font-style: italic;
+        .message-content.ai {
+            border-left-color: #a855f7;
+            background: linear-gradient(90deg, rgba(168, 85, 247, 0.05), transparent);
         }
 
-        /* Scrollbar styling */
-        .content-display::-webkit-scrollbar {
+        .message-content.transcript {
+            border-left-color: #3b82f6;
+        }
+
+        .message-content.topic {
+            border-left-color: #10b981;
+            font-weight: 500;
+        }
+
+        /* Scrollbar */
+        .content-area::-webkit-scrollbar {
             width: 6px;
         }
 
-        .content-display::-webkit-scrollbar-track {
-            background: rgba(255, 255, 255, 0.05);
+        .content-area::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .content-area::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 3px;
         }
 
-        .content-display::-webkit-scrollbar-thumb {
+        .content-area::-webkit-scrollbar-thumb:hover {
             background: rgba(255, 255, 255, 0.2);
-            border-radius: 3px;
         }
 
-        .content-display::-webkit-scrollbar-thumb:hover {
-            background: rgba(255, 255, 255, 0.3);
+        /* Placeholder */
+        .placeholder {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100%;
+            color: var(--text-secondary);
+            gap: 12px;
+            opacity: 0.6;
         }
 
-        /* Recording indicator */
-        .recording-indicator {
-            position: absolute;
-            top: -8px;
-            right: -8px;
-            width: 16px;
-            height: 16px;
-            background: #ef4444;
-            border-radius: 50%;
-            border: 2px solid #1e2545;
-            opacity: 0;
-            transition: opacity 0.3s ease;
+        .placeholder svg {
+            width: 48px;
+            height: 48px;
+            stroke: currentColor;
+            stroke-width: 1.5;
         }
 
-        .recording-indicator.active {
-            opacity: 1;
-            animation: pulse 1.5s ease-in-out infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% {
-                transform: scale(1);
-                opacity: 1;
-            }
-            50% {
-                transform: scale(1.2);
-                opacity: 0.7;
-            }
-        }
-
-        /* Responsive */
-        @media (max-width: 900px) {
-            .overlay-container {
-                padding: 15px 20px;
-            }
-
-            .control-bar {
-                gap: 15px;
-                padding: 12px 16px;
-            }
-
-            .timer {
-                font-size: 24px;
-            }
-
-            .ai-btn {
-                font-size: 14px;
-                padding: 12px 20px;
-            }
+        .placeholder p {
+            font-size: 14px;
         }
     </style>
 </head>
 <body>
     <div class="overlay-container">
-        <!-- Main control bar -->
-        <div class="control-bar">
-            <!-- Edit button -->
-            <div class="edit-btn" onclick="toggleEdit()" title="Edit">
-                <svg class="edit-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+        <!-- Control Bar -->
+        <div class="glass-panel control-bar">
+            <!-- Record Button -->
+            <div class="record-btn" id="recordBtn" onclick="toggleRecording()" title="Toggle Microphone">
+                <div class="record-wave"></div>
+                <svg class="record-icon" viewBox="0 0 24 24">
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
+                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
                 </svg>
             </div>
 
             <!-- Timer -->
             <div class="timer" id="timer">00:00</div>
 
-            <!-- Ask AI Button -->
+            <!-- AI Button -->
             <button class="ai-btn" onclick="askAI()">
-                <svg class="ai-icon" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-5.5-2.5l7.51-3.49L17.5 6.5 9.99 9.99 6.5 17.5zm5.5-6.6c.61 0 1.1.49 1.1 1.1s-.49 1.1-1.1 1.1-1.1-.49-1.1-1.1.49-1.1 1.1-1.1z"/>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
+                    <path d="M12 2a10 10 0 0 1 10 10"></path>
+                    <path d="M2.05 10.5a10 10 0 0 1 9.95-8.5"></path>
                 </svg>
                 <span>Ask AI</span>
             </button>
 
-            <!-- Right buttons -->
-            <div class="right-buttons">
-                <div class="icon-btn settings" onclick="openSettings()" title="Settings">
-                    <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/>
+            <!-- Actions -->
+            <div class="actions">
+                <div class="icon-btn" onclick="openSettings()" title="Settings">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
                     </svg>
                 </div>
-                <div class="icon-btn minimize" onclick="minimizeWindow()" title="Minimize">
-                    <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 13H5v-2h14v2z"/>
+                <div class="icon-btn" onclick="minimizeWindow()" title="Minimize">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </div>
                 <div class="icon-btn close" onclick="closeApp()" title="Close">
-                    <svg class="btn-icon" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                        <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
                 </div>
             </div>
-            
-            <div id="recordingIndicator" class="recording-indicator"></div>
         </div>
 
-        <!-- Content display area -->
-        <div class="content-display" id="contentDisplay">
-            <div class="content-text content-placeholder" id="contentText">
-                Ctrl+Space me meeting assistant with minimal dependencies
+        <!-- Content Area -->
+        <div class="glass-panel content-area" id="contentArea">
+            <div class="placeholder" id="placeholder">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+                <p>Ready to assist. Press Ctrl+Space or click 'Ask AI'.</p>
             </div>
         </div>
     </div>
@@ -328,7 +390,7 @@
             updateTimer();
         });
 
-        // Timer functions
+        // Timer Logic
         function updateTimer() {
             const minutes = Math.floor(seconds / 60);
             const secs = seconds % 60;
@@ -336,6 +398,12 @@
             if (timerEl) {
                 timerEl.textContent = 
                     String(minutes).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+                
+                if (isRecording) {
+                    timerEl.classList.add('active');
+                } else {
+                    timerEl.classList.remove('active');
+                }
             }
         }
 
@@ -355,124 +423,95 @@
             }
         }
 
-        function resetTimer() {
-            stopTimer();
-            seconds = 0;
-            updateTimer();
-        }
-
-        // Button click handlers
-        function toggleEdit() {
-            // Toggle mic/recording functionality
+        // Actions
+        function toggleRecording() {
             isRecording = !isRecording;
-            const indicator = document.getElementById('recordingIndicator');
-
+            const btn = document.getElementById('recordBtn');
+            
             if (isRecording) {
-                indicator.classList.add('active');
+                btn.classList.add('active');
                 startTimer();
-                if (window.pywebview) {
-                    pywebview.api.toggle_mic(true);
-                }
+                if (window.pywebview) pywebview.api.toggle_mic(true);
             } else {
-                indicator.classList.remove('active');
+                btn.classList.remove('active');
                 stopTimer();
-                if (window.pywebview) {
-                    pywebview.api.toggle_mic(false);
-                }
+                if (window.pywebview) pywebview.api.toggle_mic(false);
             }
         }
 
         function askAI() {
-            if (window.pywebview) {
-                pywebview.api.ask_ai();
-            }
+            if (window.pywebview) pywebview.api.ask_ai();
         }
 
         function openSettings() {
-            if (window.pywebview) {
-                pywebview.api.open_settings();
-            }
+            if (window.pywebview) pywebview.api.open_settings();
         }
 
         function minimizeWindow() {
-            // Minimize window functionality
-            if (window.pywebview) {
-                pywebview.api.minimize_window();
-            }
+            if (window.pywebview) pywebview.api.minimize_window();
         }
 
         function closeApp() {
-            if (window.pywebview) {
-                pywebview.api.close_app();
-            }
+            if (window.pywebview) pywebview.api.close_app();
         }
 
-        // Content update functions (called by Python)
-        window.updateContent = function(text) {
-            const element = document.getElementById('contentText');
-            if (element) {
-                element.textContent = text;
-                element.classList.remove('content-placeholder');
-                const container = document.getElementById('contentDisplay');
-                if (container) {
-                    container.scrollTop = container.scrollHeight;
-                }
+        // Content Management
+        function addMessage(type, text) {
+            const container = document.getElementById('contentArea');
+            const placeholder = document.getElementById('placeholder');
+            
+            if (placeholder) placeholder.style.display = 'none';
+
+            const group = document.createElement('div');
+            group.className = 'message-group';
+
+            const label = document.createElement('div');
+            label.className = 'message-label';
+            label.textContent = type;
+
+            const content = document.createElement('div');
+            content.className = `message-content ${type.toLowerCase()}`;
+            content.textContent = text;
+
+            group.appendChild(label);
+            group.appendChild(content);
+            container.appendChild(group);
+
+            // Auto scroll
+            container.scrollTop = container.scrollHeight;
+        }
+
+        // Python Interop
+        window.updateAIResponse = (text) => addMessage('AI', text);
+        window.appendAIResponse = (text) => {
+            // Find last AI message or create new
+            const container = document.getElementById('contentArea');
+            const lastGroup = container.lastElementChild;
+            if (lastGroup && lastGroup.querySelector('.message-label').textContent === 'AI') {
+                const content = lastGroup.querySelector('.message-content');
+                content.textContent += text;
+                container.scrollTop = container.scrollHeight;
+            } else {
+                addMessage('AI', text);
             }
         };
-
-        window.appendContent = function(text) {
-            const element = document.getElementById('contentText');
-            if (element) {
-                element.textContent += text;
-                element.classList.remove('content-placeholder');
-                const container = document.getElementById('contentDisplay');
-                if (container) {
-                    container.scrollTop = container.scrollHeight;
-                }
-            }
+        
+        window.updateTranscript = (text) => {
+            // Optional: Debounce or limit transcript updates to avoid spam
+            // For now, just add it
+            // addMessage('TRANSCRIPT', text); 
+            // Actually, let's just update a status line or similar if we want to show live transcript
+            // But for the "Rich UI", maybe we only show finalized segments?
+            // Let's stick to the previous behavior but styled better.
+            // The previous behavior was replacing content. Let's append for history.
+            addMessage('TRANSCRIPT', text);
         };
 
-        // Legacy compatibility - map old functions to new ones
-        window.updateAIResponse = function(text) {
-            window.updateContent('AI: ' + text);
-        };
-
-        window.appendAIResponse = function(text) {
-            window.appendContent(text);
-        };
-
-        window.updateTranscript = function(text) {
-            window.updateContent('Transcript: ' + text);
-        };
-
-        window.updateTopicPath = function(path) {
-            window.updateContent('Topic: ' + path);
-        };
-
-        window.updateTopicGuidance = function(guidance) {
-            window.updateContent('Guidance: ' + guidance);
-        };
-
-        window.updateFlowStatus = function(status) {
-            window.updateContent('Status: ' + status);
-        };
-
-        window.startRecording = function() {
-            if (!isRecording) {
-                toggleEdit();
-            }
-        };
-
-        window.stopRecording = function() {
-            if (isRecording) {
-                toggleEdit();
-            }
-        };
-
-        // Handle pywebview ready
-        window.addEventListener('pywebviewready', function() {
-            console.log('PyWebView ready in overlay');
-        });
+        window.updateTopicPath = (path) => addMessage('TOPIC', path);
+        window.updateTopicGuidance = (guidance) => addMessage('GUIDANCE', guidance);
+        
+        // Legacy support
+        window.updateContent = (text) => addMessage('INFO', text);
     </script>
 </body>
 </html>

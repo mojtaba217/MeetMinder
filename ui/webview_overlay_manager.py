@@ -23,8 +23,8 @@ def get_resource_path(relative_path):
         # PyInstaller creates a temp folder and stores path in _MEIPASS
         base_path = sys._MEIPASS
     except Exception:
-        # Running as script, use current directory
-        base_path = Path(__file__).parent
+        # Running as script, use project root (parent of ui folder)
+        base_path = Path(__file__).parent.parent
     
     return Path(base_path) / relative_path
 

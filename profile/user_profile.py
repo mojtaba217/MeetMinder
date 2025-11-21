@@ -25,13 +25,14 @@ class UserProfile:
             self.projects = []
 
 class UserProfileManager:
-    def __init__(self, config):
+    def __init__(self, config, document_store=None):
         self.config = config
         self.profile = UserProfile()
         self.resume_path = Path(config.get('user_profile.resume_path', 'data/resume.md'))
         self.auto_reload = config.get('user_profile.auto_reload', True)
         self.last_modified = None
-        
+        self.document_store = document_store  # Optional document store for enhanced profile
+
         if config.get('user_profile.enabled', True):
             self.load_profile()
     
@@ -197,11 +198,38 @@ class UserProfileManager:
         """Get formatted profile summary for AI prompts"""
         if self.auto_reload:
             self.load_profile()
-            
+
         if not self.profile.summary:
             return "• No profile information available"
-            
+
         return self.profile.summary
+
+    async def get_profile_summary_async(self) -> str:
+        """Get profile summary with optional document enhancement"""
+        base_summary = self.get_profile_summary()
+
+        # If document store is available, enhance with document-based context
+        if self.document_store:
+            try:
+                # Query for resume-related documents
+                resume_docs = await self.document_store.query(
+                    "resume CV curriculum vitae profile background experience skills",
+                    top_k=2
+                )
+
+                if resume_docs:
+                    doc_contexts = []
+                    for chunk, similarity in resume_docs:
+                        if similarity > 0.7:  # Only include highly relevant chunks
+                            doc_contexts.append(f"From documents: {chunk.content[:300]}...")
+
+                    if doc_contexts:
+                        base_summary += "\n\nAdditional context from uploaded documents:\n" + "\n".join(doc_contexts)
+
+            except Exception as e:
+                print(f"Error getting document-enhanced profile: {e}")
+
+        return base_summary
     
     def _create_sample_resume(self):
         """Create a sample resume file"""

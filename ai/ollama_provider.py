@@ -155,3 +155,4 @@ Please provide a detailed analysis focusing on:
         # Note: This is a sync property, so we can't async fetch here
         # In practice, this would need to be called differently or cached
         return [self.model]  # Return configured model as minimum
+

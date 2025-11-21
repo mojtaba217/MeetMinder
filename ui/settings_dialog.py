@@ -70,6 +70,7 @@ class ModernSettingsDialog(QDialog):
         self.setup_assistant_tab()
         self.setup_prompts_tab()
         self.setup_knowledge_tab()
+        self.setup_documents_tab()
         self.setup_hotkeys_tab()
         self.setup_debug_tab()
         
@@ -1004,7 +1005,220 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
         self.tab_widget.addTab(tab, "🧠 Knowledge")
-    
+
+    def setup_documents_tab(self):
+        """Setup document management tab"""
+        tab = QScrollArea()
+        content = QWidget()
+
+        # Set proper size policy for content to expand
+        content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
+        content.setMinimumSize(self.scale(1200), self.scale(600))
+
+        layout = QVBoxLayout(content)
+        layout.setSpacing(self.scale(25))
+        layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
+
+        # Document Store Settings
+        doc_settings_group = QGroupBox("📚 Document Store Configuration")
+        doc_settings_group.setMinimumHeight(self.scale(200))
+        doc_settings_layout = QVBoxLayout()
+        doc_settings_layout.setSpacing(self.scale(15))
+
+        self.documents_enabled = QCheckBox("Enable document knowledge base")
+        self.documents_enabled.setMinimumHeight(self.scale(32))
+        self.documents_enabled.setToolTip("Enable RAG (Retrieval-Augmented Generation) with uploaded documents")
+        doc_settings_layout.addWidget(self.documents_enabled)
+
+        # Chunking settings
+        chunk_layout = QHBoxLayout()
+        chunk_layout.setSpacing(self.scale(15))
+
+        chunk_layout.addWidget(QLabel("Chunk Size:"))
+        self.chunk_size = QSpinBox()
+        self.chunk_size.setRange(500, 2000)
+        self.chunk_size.setValue(1000)
+        self.chunk_size.setMinimumHeight(self.scale(35))
+        chunk_layout.addWidget(self.chunk_size)
+
+        chunk_layout.addWidget(QLabel("Overlap:"))
+        self.chunk_overlap = QSpinBox()
+        self.chunk_overlap.setRange(0, 500)
+        self.chunk_overlap.setValue(200)
+        self.chunk_overlap.setMinimumHeight(self.scale(35))
+        chunk_layout.addWidget(self.chunk_overlap)
+
+        chunk_layout.addStretch()
+        doc_settings_layout.addLayout(chunk_layout)
+
+        # Max context chunks
+        max_chunks_layout = QHBoxLayout()
+        max_chunks_layout.addWidget(QLabel("Max Context Chunks:"))
+        self.max_context_chunks = QSpinBox()
+        self.max_context_chunks.setRange(1, 10)
+        self.max_context_chunks.setValue(5)
+        self.max_context_chunks.setMinimumHeight(self.scale(35))
+        max_chunks_layout.addWidget(self.max_context_chunks)
+        max_chunks_layout.addStretch()
+        doc_settings_layout.addLayout(max_chunks_layout)
+
+        doc_settings_group.setLayout(doc_settings_layout)
+        layout.addWidget(doc_settings_group)
+
+        # Embedding Configuration
+        embedding_group = QGroupBox("🧮 Embedding Provider")
+        embedding_group.setMinimumHeight(self.scale(150))
+        embedding_layout = QVBoxLayout()
+        embedding_layout.setSpacing(self.scale(15))
+
+        # Provider selection
+        provider_layout = QHBoxLayout()
+        provider_layout.addWidget(QLabel("Provider:"))
+        self.embedding_provider = QComboBox()
+        self.embedding_provider.addItems(["local", "openai"])
+        self.embedding_provider.setMinimumHeight(self.scale(35))
+        provider_layout.addWidget(self.embedding_provider)
+        provider_layout.addStretch()
+        embedding_layout.addLayout(provider_layout)
+
+        # Model selection (for local)
+        model_layout = QHBoxLayout()
+        model_layout.addWidget(QLabel("Model:"))
+        self.embedding_model = QComboBox()
+        self.embedding_model.addItems([
+            "all-MiniLM-L6-v2",
+            "all-mpnet-base-v2",
+            "e5-small-v2"
+        ])
+        self.embedding_model.setMinimumHeight(self.scale(35))
+        model_layout.addWidget(self.embedding_model)
+        model_layout.addStretch()
+        embedding_layout.addLayout(model_layout)
+
+        embedding_group.setLayout(embedding_layout)
+        layout.addWidget(embedding_group)
+
+        # Vector Backend Configuration
+        vector_group = QGroupBox("💾 Vector Storage")
+        vector_group.setMinimumHeight(self.scale(100))
+        vector_layout = QVBoxLayout()
+        vector_layout.setSpacing(self.scale(15))
+
+        backend_layout = QHBoxLayout()
+        backend_layout.addWidget(QLabel("Backend:"))
+        self.vector_backend = QComboBox()
+        self.vector_backend.addItems(["faiss", "pinecone"])
+        self.vector_backend.setMinimumHeight(self.scale(35))
+        backend_layout.addWidget(self.vector_backend)
+        backend_layout.addStretch()
+        vector_layout.addLayout(backend_layout)
+
+        vector_group.setLayout(vector_layout)
+        layout.addWidget(vector_group)
+
+        # Document Management
+        management_group = QGroupBox("📁 Document Management")
+        management_group.setMinimumHeight(self.scale(200))
+        management_layout = QVBoxLayout()
+        management_layout.setSpacing(self.scale(15))
+
+        # Upload button
+        upload_layout = QHBoxLayout()
+        self.upload_button = QPushButton("📤 Upload Document")
+        self.upload_button.setMinimumHeight(self.scale(40))
+        self.upload_button.clicked.connect(self.upload_document)
+        upload_layout.addWidget(self.upload_button)
+
+        self.refresh_button = QPushButton("🔄 Refresh List")
+        self.refresh_button.setMinimumHeight(self.scale(40))
+        self.refresh_button.clicked.connect(self.refresh_documents)
+        upload_layout.addWidget(self.refresh_button)
+
+        upload_layout.addStretch()
+        management_layout.addLayout(upload_layout)
+
+        # Document list placeholder
+        self.documents_list = QTextEdit()
+        self.documents_list.setMinimumHeight(self.scale(150))
+        self.documents_list.setPlaceholderText("Uploaded documents will appear here...")
+        self.documents_list.setReadOnly(True)
+        management_layout.addWidget(self.documents_list)
+
+        management_group.setLayout(management_layout)
+        layout.addWidget(management_group)
+
+        layout.addStretch()
+
+        # Set the widget to the scroll area and configure scroll area
+        tab.setWidget(content)
+        tab.setWidgetResizable(True)
+        tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+        tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
+
+        self.tab_widget.addTab(tab, "📚 Documents")
+
+    def upload_document(self):
+        """Handle document upload"""
+        file_dialog = QFileDialog()
+        file_dialog.setFileMode(QFileDialog.ExistingFile)
+        file_dialog.setNameFilter("Documents (*.pdf *.docx *.doc *.txt *.md *.pptx *.ppt *.xlsx *.xls *.py *.js *.java *.cpp *.c *.html *.css *.json *.xml)")
+
+        if file_dialog.exec_():
+            file_path = file_dialog.selectedFiles()[0]
+            if hasattr(self.parent(), 'ai_helper') and self.parent().ai_helper:
+                try:
+                    import asyncio
+                    doc_id = asyncio.run(self.parent().ai_helper.add_document_async(file_path))
+                    QMessageBox.information(self, "Document Uploaded",
+                                          f"Document uploaded successfully!\nID: {doc_id}\n\nProcessing in background...")
+                    self.refresh_documents()
+                except Exception as e:
+                    QMessageBox.warning(self, "Upload Failed", f"Failed to upload document: {str(e)}")
+            else:
+                QMessageBox.warning(self, "AI Helper Not Available",
+                                  "AI helper is not available. Please check your AI provider configuration.")
+
+    def refresh_documents(self):
+        """Refresh the document list"""
+        if hasattr(self.parent(), 'ai_helper') and self.parent().ai_helper:
+            try:
+                documents = self.parent().ai_helper.list_documents()
+                stats = self.parent().ai_helper.get_document_store_stats()
+
+                text = "📊 Document Store Statistics:\n"
+                if stats:
+                    text += f"Total Documents: {stats.get('total_documents', 0)}\n"
+                    text += f"Completed: {stats.get('completed_documents', 0)}\n"
+                    text += f"Failed: {stats.get('failed_documents', 0)}\n"
+                    text += f"Total Chunks: {stats.get('total_chunks', 0)}\n"
+                    text += f"Embedding: {stats.get('embedding_provider', 'none')}\n"
+                    text += f"Vector Backend: {stats.get('vector_backend', 'none')}\n\n"
+
+                text += "📁 Documents:\n"
+                if documents:
+                    for doc in documents:
+                        status_emoji = {
+                            "pending": "⏳",
+                            "processing": "🔄",
+                            "completed": "✅",
+                            "failed": "❌"
+                        }.get(doc.get('status', 'unknown'), "❓")
+
+                        text += f"{status_emoji} {doc.get('file_name', 'Unknown')} "
+                        text += f"(ID: {doc.get('id', 'N/A')[:8]}...)\n"
+                        text += f"   Status: {doc.get('status', 'unknown')}\n"
+                        if doc.get('error_message'):
+                            text += f"   Error: {doc.get('error_message')}\n"
+                        text += "\n"
+                else:
+                    text += "No documents uploaded yet.\n"
+
+                self.documents_list.setPlainText(text)
+            except Exception as e:
+                self.documents_list.setPlainText(f"Error loading documents: {str(e)}")
+        else:
+            self.documents_list.setPlainText("AI helper not available.")
+
     def setup_hotkeys_tab(self):
         """Setup hotkeys configuration tab"""
         tab = QScrollArea()
@@ -1577,6 +1791,23 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.save_transcriptions.setChecked(debug.get('save_transcriptions', False))
         self.save_audio_chunks.setChecked(debug.get('save_audio_chunks', False))
         self.max_debug_files.setValue(debug.get('max_debug_files', 100))
+
+        # Documents
+        documents = self.current_config.get('documents', {})
+        self.documents_enabled.setChecked(documents.get('enabled', True))
+        self.chunk_size.setValue(documents.get('chunk_size', 1000))
+        self.chunk_overlap.setValue(documents.get('chunk_overlap', 200))
+        self.max_context_chunks.setValue(documents.get('max_context_chunks', 5))
+
+        embedding = documents.get('embedding', {})
+        self.embedding_provider.setCurrentText(embedding.get('provider', 'local'))
+        self.embedding_model.setCurrentText(embedding.get('model', 'all-MiniLM-L6-v2'))
+
+        vector = documents.get('vector', {})
+        self.vector_backend.setCurrentText(vector.get('backend', 'faiss'))
+
+        # Refresh document list
+        self.refresh_documents()
         
         # Update visibility based on provider
         self.on_provider_changed(self.ai_provider_type.currentText())
@@ -1697,6 +1928,23 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                 'save_transcriptions': self.save_transcriptions.isChecked(),
                 'save_audio_chunks': self.save_audio_chunks.isChecked(),
                 'max_debug_files': self.max_debug_files.value()
+            },
+            'documents': {
+                'enabled': self.documents_enabled.isChecked(),
+                'data_dir': 'data/user_documents',
+                'chunk_size': self.chunk_size.value(),
+                'chunk_overlap': self.chunk_overlap.value(),
+                'max_context_chunks': self.max_context_chunks.value(),
+                'embedding': {
+                    'provider': self.embedding_provider.currentText(),
+                    'model': self.embedding_model.currentText(),
+                    'device': 'cpu'
+                },
+                'vector': {
+                    'backend': self.vector_backend.currentText(),
+                    'dimension': 384,
+                    'metric': 'cosine'
+                }
             }
         }
         

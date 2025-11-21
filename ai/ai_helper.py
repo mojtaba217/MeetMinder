@@ -10,6 +10,7 @@ from functools import lru_cache
 from dataclasses import dataclass
 from collections import defaultdict
 from core.config import AIProviderConfig, AssistantConfig
+from core.document_store import DocumentStore
 from .ollama_provider import OllamaProvider
 
 @dataclass
@@ -81,6 +82,18 @@ class AIHelper:
         self.custom_prompt_rules = ""
         self.ai_available = config is not None and config.type not in [None, "", "none"]
 
+        # Initialize document store for RAG
+        self.document_store = None
+        if config_manager and config_manager.get_document_config().enabled:
+            try:
+                doc_config = config_manager.get_document_config()
+                self.document_store = DocumentStore(doc_config.__dict__)
+                # Initialize document store asynchronously
+                asyncio.create_task(self._initialize_document_store())
+            except Exception as e:
+                print(f"Failed to initialize document store: {e}")
+                self.document_store = None
+
         # Performance optimizations - use advanced caching system
         try:
             from utils.performance_manager import performance_manager
@@ -115,6 +128,42 @@ class AIHelper:
             self._initialize_connection_pool()
         else:
             print("[AI] AI provider not configured - transcription-only mode")
+
+    async def _initialize_document_store(self):
+        """Initialize the document store asynchronously"""
+        if self.document_store:
+            success = await self.document_store.initialize()
+            if success:
+                print("[DOCS] Document store initialized successfully")
+                # Migrate existing resume.md if it exists and no documents yet
+                if self.config_manager and self.document_store.list_documents() == []:
+                    await self._migrate_resume_to_documents()
+            else:
+                print("[DOCS] Failed to initialize document store")
+                self.document_store = None
+
+    async def _migrate_resume_to_documents(self):
+        """Migrate existing resume.md to the document store"""
+        if not self.config_manager or not self.document_store:
+            return
+
+        resume_config = self.config_manager.get('user_profile', {})
+        resume_path = resume_config.get('resume_path', 'data/resume.md')
+
+        if Path(resume_path).exists():
+            try:
+                doc_id = await self.document_store.add_file(resume_path, {
+                    'type': 'resume',
+                    'auto_migrated': True,
+                    'description': 'Auto-migrated resume from legacy system'
+                })
+                success = await self.document_store.process_document(doc_id)
+                if success:
+                    print(f"[DOCS] Successfully migrated resume.md to document store (ID: {doc_id})")
+                else:
+                    print("[DOCS] Failed to process migrated resume.md")
+            except Exception as e:
+                print(f"[DOCS] Failed to migrate resume.md: {e}")
 
     def is_available(self) -> bool:
         """Check if AI provider is configured and available"""
@@ -214,7 +263,7 @@ class AIHelper:
             yield "Rate limit reached. Please wait before making another request."
             return
         
-        context_prompt = self._build_context_prompt(
+        context_prompt = await self._build_context_prompt(
             transcript, screen_context, clipboard_content, context_type
         )
         
@@ -370,7 +419,7 @@ class AIHelper:
         }
         return token_map.get(self.assistant_config.verbosity, 500)
     
-    def _build_context_prompt(self, 
+    async def _build_context_prompt(self, 
                             transcript: List[str], 
                             screen_context: str, 
                             clipboard_content: str,
@@ -380,7 +429,15 @@ class AIHelper:
         # Get user profile summary
         profile_summary = ""
         if self.profile_manager:
-            profile_summary = self.profile_manager.get_profile_summary()
+            # Try async version first (with document enhancement), fallback to sync
+            try:
+                import asyncio
+                if asyncio.iscoroutinefunction(self.profile_manager.get_profile_summary_async):
+                    profile_summary = await self.profile_manager.get_profile_summary_async()
+                else:
+                    profile_summary = self.profile_manager.get_profile_summary()
+            except Exception:
+                profile_summary = self.profile_manager.get_profile_summary()
         
         # Get topic matches and suggestions
         topic_guidance = ""
@@ -417,7 +474,10 @@ class AIHelper:
         
         # Apply input prioritization from assistant config
         prioritized_content = self._prioritize_audio_content(user_content, system_content)
-        
+
+        # Get relevant documents from document store
+        document_context = await self._get_relevant_documents(transcript, screen_context, clipboard_content, context_type)
+
         context_templates = {
             "meeting": f"""
 MEETING CONTEXT {"(Dual Audio Stream)" if has_dual_stream else ""}:
@@ -425,12 +485,14 @@ User Profile: {{profile}}
 {"Prioritized Content: " + prioritized_content if has_dual_stream else "Recent Conversation: " + str(transcript)}
 Active Window: {{screen_context}}
 Topic Guidance: {{topic_guidance}}
+Document Context: {{document_context}}
 
 {"DUAL STREAM ANALYSIS - System audio (meeting) prioritized:" if has_dual_stream else "Provide brief, actionable meeting assistance:"}
 1. {"Focus on system audio content (what others are saying) for primary context" if has_dual_stream else "Summarize key points from the conversation"}
 2. {"Use user voice to understand questions, reactions, or intended responses" if has_dual_stream else "Suggest 2-3 relevant responses or questions based on user's background"}
 3. {"Provide meeting assistance based on combined understanding" if has_dual_stream else "Identify any action items or decisions needed"}
-4. Consider topic guidance for conversation direction
+4. Consider topic guidance and relevant documents for conversation direction
+5. Reference user's document knowledge when applicable
 
 Response Style: {self.assistant_config.response_style if self.assistant_config else "professional"}
             """,
@@ -441,12 +503,14 @@ User Profile: {{profile}}
 Active Window: {{screen_context}}
 Clipboard: {{clipboard}}
 Topic Guidance: {{topic_guidance}}
+Document Context: {{document_context}}
 
 {"DUAL STREAM ANALYSIS - System audio prioritized for learning content:" if has_dual_stream else "Provide coding assistance based on user's skills:"}
 1. {"Analyze system audio for tutorial/educational content being consumed" if has_dual_stream else "Analyze current context and user's experience level"}
 2. {"Use user voice to understand questions or confusion points" if has_dual_stream else "Suggest code improvements or solutions"}
 3. {"Provide coding guidance that bridges tutorial content with user's questions" if has_dual_stream else "Recommend next steps or debugging approaches"}
-4. Use knowledge of user's background in recommendations
+4. Use knowledge of user's background and document knowledge in recommendations
+5. Reference relevant code examples from user's documents
 
 Response Style: {self.assistant_config.response_style if self.assistant_config else "professional"}
             """,
@@ -457,12 +521,14 @@ User Profile: {{profile}}
 Screen Context: {{screen_context}}
 Clipboard: {{clipboard}}
 Topic Guidance: {{topic_guidance}}
+Document Context: {{document_context}}
 
 {"DUAL STREAM ANALYSIS - System audio prioritized:" if has_dual_stream else "Provide helpful assistance:"}
 1. {"Primary focus: System audio content (what user is listening to/watching)" if has_dual_stream else "Analyze the current situation considering user's background"}
 2. {"Secondary focus: User voice for questions, reactions, or clarifications" if has_dual_stream else "Suggest 2-3 practical next steps relevant to user's skills"}
 3. {"Provide assistance that connects external content with user's needs" if has_dual_stream else "Offer relevant tips or information based on user's experience"}
-4. Consider topic guidance for additional context
+4. Consider topic guidance and relevant documents for additional context
+5. Reference user's document knowledge when applicable
 
 Response Style: {self.assistant_config.response_style if self.assistant_config else "professional"}
             """
@@ -478,7 +544,8 @@ Response Style: {self.assistant_config.response_style if self.assistant_config e
             transcript=formatted_transcript or "No recent audio",
             screen_context=screen_context or "Unknown",
             clipboard=clipboard_content[:200] if clipboard_content else "Empty",
-            topic_guidance=topic_guidance or "No specific topic guidance"
+            topic_guidance=topic_guidance or "No specific topic guidance",
+            document_context=document_context or "No relevant documents found"
         )
     
     def _prioritize_audio_content(self, user_content: List[str], system_content: List[str]) -> str:
@@ -571,6 +638,116 @@ Adjust your responses according to these settings."""
         else:
             print("[AI] AI provider disabled - switched to transcription-only mode")
     
+    async def _get_relevant_documents(self, transcript: List[str], screen_context: str,
+                                     clipboard_content: str, context_type: str) -> str:
+        """Get relevant documents from the document store"""
+        if not self.document_store:
+            return "No document knowledge base available"
+
+        try:
+            # Create a query from the current context
+            query_parts = []
+
+            # Add transcript content
+            if transcript:
+                # Combine recent transcript entries
+                transcript_text = " ".join(transcript[-3:])  # Last 3 entries
+                query_parts.append(transcript_text[:200])  # Limit length
+
+            # Add screen context
+            if screen_context:
+                query_parts.append(screen_context[:100])
+
+            # Add clipboard content
+            if clipboard_content:
+                query_parts.append(clipboard_content[:100])
+
+            query = " ".join(query_parts)
+
+            if not query.strip():
+                return "No searchable context available"
+
+            # Search for relevant documents
+            max_chunks = self.config_manager.get_document_config().max_context_chunks if self.config_manager else 3
+            results = await self.document_store.query(query, top_k=max_chunks)
+
+            if not results:
+                return "No relevant documents found"
+
+            # Format results for context
+            context_parts = []
+            for chunk, similarity in results:
+                # Include source information
+                source_info = f"From {chunk.metadata.get('file_name', 'document')}"
+                if chunk.metadata.get('document_id'):
+                    source_info += f" (chunk {chunk.chunk_index + 1}/{chunk.total_chunks})"
+
+                context_parts.append(f"{source_info}:\n{chunk.content[:500]}...")
+
+            return "\n\n".join(context_parts)
+
+        except Exception as e:
+            print(f"Error retrieving documents: {e}")
+            return "Error accessing document knowledge base"
+
+    async def add_document_async(self, file_path: str, metadata: Optional[Dict[str, Any]] = None) -> str:
+        """Add a document asynchronously using the task queue"""
+        if not self.document_store:
+            raise ValueError("Document store not available")
+
+        try:
+            from utils.performance_manager import performance_manager
+
+            # Add file to document store (synchronous metadata operation)
+            doc_id = await self.document_store.add_file(file_path, metadata)
+
+            # Queue background processing
+            await performance_manager.task_queue.submit(
+                priority=2,  # Medium priority
+                coro_or_func=self._process_document_background,
+                doc_id=doc_id
+            )
+
+            return doc_id
+        except Exception as e:
+            print(f"Failed to queue document processing: {e}")
+            raise
+
+    async def _process_document_background(self, doc_id: str) -> None:
+        """Background task to process a document"""
+        try:
+            if self.document_store:
+                success = await self.document_store.process_document(doc_id)
+                status = "completed" if success else "failed"
+                print(f"[DOCS] Background processing {status} for document {doc_id}")
+        except Exception as e:
+            print(f"[DOCS] Background processing failed for document {doc_id}: {e}")
+
+    async def delete_document_async(self, doc_id: str) -> bool:
+        """Delete a document asynchronously"""
+        if not self.document_store:
+            return False
+
+        try:
+            return await self.document_store.delete_document(doc_id)
+        except Exception as e:
+            print(f"Failed to delete document {doc_id}: {e}")
+            return False
+
+    def get_document_store_stats(self) -> Optional[Dict[str, Any]]:
+        """Get document store statistics"""
+        if self.document_store:
+            return asyncio.run(self.document_store.get_stats())
+        return None
+
+    def list_documents(self) -> List[Dict[str, Any]]:
+        """List all documents with their metadata"""
+        if not self.document_store:
+            return []
+
+        documents = self.document_store.list_documents()
+        return [doc.__dict__ for doc in documents]
+
     def update_assistant_config(self, new_assistant_config: AssistantConfig):
         """Update assistant configuration"""
         self.assistant_config = new_assistant_config

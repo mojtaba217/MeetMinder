@@ -80,7 +80,8 @@ class AIAssistantLightweight:
             except ValueError as config_error:
                 # Handle configuration errors with user-friendly dialog
                 error_msg = str(config_error)
-                print("❌ Configuration Error"                print(f"   {error_msg}")
+                print("❌ Configuration Error")
+                print(f"   {error_msg}")
                 print("\n🔧 Quick Fixes:")
                 print("   1. Check config.yaml syntax (use colons : not equals =)")
                 print("   2. For offline mode: transcription.provider: local_whisper")
