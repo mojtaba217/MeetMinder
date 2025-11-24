@@ -228,8 +228,7 @@ class WebviewOverlay:
         height = self.config.get('height', 380)
         
         # Get transparency and frameless settings
-        # Note: pywebview's built-in transparent doesn't work well, we'll apply it via Windows API
-        use_transparent = False  # Don't use pywebview's transparency, use Windows API instead
+        use_transparent = True  # Use pywebview's native transparency
         use_frameless = True  # Always use frameless for clean look
         
         # Create webview window
@@ -267,10 +266,9 @@ class WebviewOverlay:
                 if hwnd:
                     import win32gui
                     ex_style = win32gui.GetWindowLong(hwnd, win32con.GWL_EXSTYLE)
-                    if ex_style & win32con.WS_EX_LAYERED:
-                        print("[WEBVIEW] ✓ Transparency verified - window is layered")
-                    else:
-                        print("[WEBVIEW] ⚠ Warning: Transparency may not be applied correctly")
+                    # With transparent=True, pywebview might handle styles differently
+                    # but we can still check if it's working
+                    pass
                 
                 # Start screen sharing detector
                 if self.screen_sharing_detector:
@@ -481,32 +479,6 @@ class WebviewOverlay:
             
             print(f"[WEBVIEW] Current extended style: {ex_style}")
             print(f"[WEBVIEW] Current style: {style}")
-            
-            # Add layered window style for transparency
-            ex_style |= win32con.WS_EX_LAYERED
-            win32gui.SetWindowLong(hwnd, win32con.GWL_EXSTYLE, ex_style)
-            print("[WEBVIEW] Layered window style applied")
-            
-            # Set opacity (0-255)
-            # Using 242 (95%) as default for better visibility
-            opacity_value = int(self.opacity * 255)
-            print(f"[WEBVIEW] Setting opacity to {opacity_value}/255 ({self.opacity*100:.0f}%)")
-            
-            # Set the layered window attributes
-            result = windll.user32.SetLayeredWindowAttributes(
-                hwnd, 
-                0,  # Transparent color key (not used)
-                opacity_value,  # Alpha value
-                win32con.LWA_ALPHA  # Use alpha blending
-            )
-            
-            if result:
-                print(f"[WEBVIEW] ✓ Opacity successfully set to {self.opacity}")
-            else:
-                print(f"[WEBVIEW] ✗ Failed to set opacity (error code: {windll.kernel32.GetLastError()})")
-            
-            # IMPORTANT: Do NOT use WS_EX_TRANSPARENT as it makes window click-through
-            # Users need to be able to interact with buttons and controls
             
             # Set always on top
             if self.always_on_top:

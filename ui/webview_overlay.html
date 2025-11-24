@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,7 +10,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            --glass-bg: rgba(20, 25, 45, 0.75);
+            --glass-bg: rgba(20, 25, 45, 0.6);
             --glass-border: rgba(255, 255, 255, 0.1);
             --glass-highlight: rgba(255, 255, 255, 0.05);
             --accent-gradient: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
@@ -122,8 +123,15 @@
         }
 
         @keyframes pulse-wave {
-            0% { transform: translate(-50%, -50%) scale(0.8); opacity: 0.5; }
-            100% { transform: translate(-50%, -50%) scale(1.5); opacity: 0; }
+            0% {
+                transform: translate(-50%, -50%) scale(0.8);
+                opacity: 0.5;
+            }
+
+            100% {
+                transform: translate(-50%, -50%) scale(1.5);
+                opacity: 0;
+            }
         }
 
         /* Timer */
@@ -230,7 +238,8 @@
             display: flex;
             flex-direction: column;
             gap: 12px;
-            min-height: 0; /* Important for flex scrolling */
+            min-height: 0;
+            /* Important for flex scrolling */
         }
 
         .message-group {
@@ -241,8 +250,15 @@
         }
 
         @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
 
         .message-label {
@@ -320,6 +336,7 @@
         }
     </style>
 </head>
+
 <body>
     <div class="overlay-container">
         <!-- Control Bar -->
@@ -328,8 +345,9 @@
             <div class="record-btn" id="recordBtn" onclick="toggleRecording()" title="Toggle Microphone">
                 <div class="record-wave"></div>
                 <svg class="record-icon" viewBox="0 0 24 24">
-                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z"/>
-                    <path d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z"/>
+                    <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
+                    <path
+                        d="M17 11c0 2.76-2.24 5-5 5s-5-2.24-5-5H5c0 3.53 2.61 6.43 6 6.92V21h2v-3.08c3.39-.49 6-3.39 6-6.92h-2z" />
                 </svg>
             </div>
 
@@ -338,7 +356,8 @@
 
             <!-- AI Button -->
             <button class="ai-btn" onclick="askAI()">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                    stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
                     <path d="M12 2a10 10 0 0 1 10 10"></path>
                     <path d="M2.05 10.5a10 10 0 0 1 9.95-8.5"></path>
@@ -349,18 +368,23 @@
             <!-- Actions -->
             <div class="actions">
                 <div class="icon-btn" onclick="openSettings()" title="Settings">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
-                        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+                        <path
+                            d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z">
+                        </path>
                     </svg>
                 </div>
                 <div class="icon-btn" onclick="minimizeWindow()" title="Minimize">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </div>
                 <div class="icon-btn close" onclick="closeApp()" title="Close">
-                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                        stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
                         <line x1="6" y1="6" x2="18" y2="18"></line>
                     </svg>
@@ -371,7 +395,8 @@
         <!-- Content Area -->
         <div class="glass-panel content-area" id="contentArea">
             <div class="placeholder" id="placeholder">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
+                    stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
                 <p>Ready to assist. Press Ctrl+Space or click 'Ask AI'.</p>
@@ -385,7 +410,7 @@
         let seconds = 0;
 
         // Initialize
-        window.addEventListener('load', function() {
+        window.addEventListener('load', function () {
             console.log('MeetMinder overlay loaded');
             updateTimer();
         });
@@ -396,9 +421,9 @@
             const secs = seconds % 60;
             const timerEl = document.getElementById('timer');
             if (timerEl) {
-                timerEl.textContent = 
+                timerEl.textContent =
                     String(minutes).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
-                
+
                 if (isRecording) {
                     timerEl.classList.add('active');
                 } else {
@@ -427,7 +452,7 @@
         function toggleRecording() {
             isRecording = !isRecording;
             const btn = document.getElementById('recordBtn');
-            
+
             if (isRecording) {
                 btn.classList.add('active');
                 startTimer();
@@ -459,7 +484,7 @@
         function addMessage(type, text) {
             const container = document.getElementById('contentArea');
             const placeholder = document.getElementById('placeholder');
-            
+
             if (placeholder) placeholder.style.display = 'none';
 
             const group = document.createElement('div');
@@ -495,7 +520,7 @@
                 addMessage('AI', text);
             }
         };
-        
+
         window.updateTranscript = (text) => {
             // Optional: Debounce or limit transcript updates to avoid spam
             // For now, just add it
@@ -509,9 +534,10 @@
 
         window.updateTopicPath = (path) => addMessage('TOPIC', path);
         window.updateTopicGuidance = (guidance) => addMessage('GUIDANCE', guidance);
-        
+
         // Legacy support
         window.updateContent = (text) => addMessage('INFO', text);
     </script>
 </body>
+
 </html>

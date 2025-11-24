@@ -1,6 +1,6 @@
 import yaml
 import os
-from typing import Dict, Any, Optional, Union
+from typing import Dict, Any, Optional, Union, List
 from dataclasses import dataclass, field
 from pathlib import Path
 import json
@@ -80,6 +80,30 @@ class AssistantConfig:
     auto_hide_behavior: str = "timer"  # timer, manual, never
     input_prioritization: str = "system_audio"  # mic, system_audio, balanced
     response_style: str = "professional"  # professional, casual, technical
+
+@dataclass
+class DocumentConfig:
+    enabled: bool = True
+    data_dir: str = "data/user_documents"
+    chunk_size: int = 1000
+    chunk_overlap: int = 200
+    max_context_chunks: int = 5
+    embedding: Dict[str, Any] = None
+    vector: Dict[str, Any] = None
+
+    def __post_init__(self):
+        if self.embedding is None:
+            self.embedding = {
+                'provider': 'local',
+                'model': 'all-MiniLM-L6-v2',
+                'device': 'cpu'
+            }
+        if self.vector is None:
+            self.vector = {
+                'backend': 'faiss',
+                'dimension': 384,
+                'metric': 'cosine'
+            }
 
 @dataclass
 class UIConfig:
@@ -271,7 +295,7 @@ class ConfigManager:
     def get_hotkeys_config(self) -> HotkeysConfig:
         """Get hotkeys configuration"""
         hotkeys_config = self._config.get('hotkeys', {})
-        
+
         return HotkeysConfig(
             trigger_assistance=hotkeys_config.get('trigger_assistance', 'ctrl+space'),
             take_screenshot=hotkeys_config.get('take_screenshot', 'ctrl+h'),
@@ -282,6 +306,11 @@ class ConfigManager:
             move_down=hotkeys_config.get('move_down', 'alt+down'),
             emergency_reset=hotkeys_config.get('emergency_reset', 'ctrl+shift+r')
         )
+
+    def get_document_config(self) -> DocumentConfig:
+        """Get document store configuration"""
+        document_config = self._config.get('documents', {})
+        return DocumentConfig(**document_config)
     
     def get(self, key: str, default=None):
         """Get configuration value by key (supports dot notation)"""

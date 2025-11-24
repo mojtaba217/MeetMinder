@@ -123,18 +123,26 @@ class MeetMinderApplication:
         
         # Configuration management
         self.config = ConfigManager()
-        
-        # Profile and topic management
-        self.profile_manager = UserProfileManager(self.config.get_profile_config())
+
+        # Topic management (doesn't depend on others)
         self.topic_manager = TopicGraphManager(self.config.get_topic_graph_config())
-        
-        # AI components with lazy loading
+
+        # AI components with lazy loading (initialize early for document store)
         self.ai_helper = AIHelper(
             self.config.get_ai_provider_config(),
-            profile_manager=self.profile_manager,
+            profile_manager=None,  # Will set later
             topic_manager=self.topic_manager,
             config_manager=self.config
         )
+
+        # Profile management (can now use document store from ai_helper)
+        self.profile_manager = UserProfileManager(
+            self.config.get_profile_config(),
+            document_store=self.ai_helper.document_store
+        )
+
+        # Update AI helper with profile manager
+        self.ai_helper.profile_manager = self.profile_manager
         
         self.topic_analyzer = LiveTopicAnalyzer(
             topic_manager=self.topic_manager,
