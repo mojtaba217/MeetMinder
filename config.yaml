@@ -54,6 +54,33 @@ audio:
   processing_interval_seconds: 1.6
   sample_rate: 44100
   silence_threshold_seconds: 30
+  # Enhanced noise reduction for meeting rooms
+  noise_reduction:
+    enabled: true
+    mode: aggressive  # mild, moderate, or aggressive
+    spectral_subtraction:
+      enabled: true
+      alpha: 2.5  # Over-subtraction factor (higher = more aggressive)
+      beta: 0.005  # Spectral floor (lower = more aggressive)
+    wiener_filtering:
+      enabled: true
+      snr_threshold: 4.0  # SNR threshold in dB
+    pre_emphasis:
+      enabled: true
+      coefficient: 0.97  # Pre-emphasis coefficient (0.95-0.97)
+    multi_band_gate:
+      enabled: true
+      bands: 8  # Number of frequency bands
+      # Thresholds for each band (customize based on environment)
+      thresholds: [0.01, 0.01, 0.015, 0.02, 0.02, 0.025, 0.03, 0.03]
+  # Voice Activity Detection to filter non-speech
+  vad:
+    enabled: true
+    provider: webrtc  # webrtc (lightweight) or silero (accurate) or energy (fallback)
+    aggressiveness: 2  # 0=least aggressive, 3=most aggressive (for webrtc)
+    min_speech_duration_ms: 250  # Minimum speech duration to process
+    padding_duration_ms: 300  # Context padding around speech
+    frame_duration_ms: 30  # Frame duration for VAD (10, 20, or 30 for webrtc)
   system_audio_monitoring:
     audio_filtering:
       filter_non_speech: true
@@ -77,7 +104,10 @@ audio:
       zoom: true
   transcript_segments_max: 50
   whisper:
-    model_size: base
+    model_size: base  # base, small, medium (medium recommended for best accuracy in noise)
+    # Optimized parameters for noisy environments
+    temperature: 0.0  # More deterministic, less hallucinations
+    beam_size: 5
   whisper_language: en
 context:
   meeting_mode:

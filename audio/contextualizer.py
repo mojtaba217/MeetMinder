@@ -6,6 +6,8 @@ from collections import deque
 import time
 from typing import List, Callable
 from core.config import AudioConfig
+from audio.vad_processor import VADProcessor
+from audio.audio_preprocessor import AudioPreprocessor
 
 class AudioContextualizer:
     def __init__(self, config: AudioConfig, topic_manager=None, whisper_model=None, whisper_language="en"):
@@ -28,8 +30,37 @@ class AudioContextualizer:
             self.whisper_model = None
             print(f"[AUDIO] Configured for lazy Whisper model loading (saves ~500MB at startup)")
         
+        # Initialize enhanced audio preprocessor
+        noise_config = getattr(config, 'noise_reduction', {})
+        self.preprocessor = AudioPreprocessor(
+            sample_rate=16000,
+            enable_spectral_subtraction=noise_config.get('spectral_subtraction', {}).get('enabled', True),
+            enable_wiener_filter=noise_config.get('wiener_filtering', {}).get('enabled', True),
+            enable_pre_emphasis=noise_config.get('pre_emphasis', {}).get('enabled', True),
+            enable_multi_band_gate=noise_config.get('multi_band_gate', {}).get('enabled', True),
+            noise_reduction_mode=noise_config.get('mode', 'aggressive')
+        )
+        print(f"[AUDIO] Enhanced audio preprocessor initialized (mode: {noise_config.get('mode', 'aggressive')})")
+        
+        # Initialize VAD processor
+        vad_config = getattr(config, 'vad', {})
+        if vad_config.get('enabled', True):
+            self.vad_processor = VADProcessor(
+                provider=vad_config.get('provider', 'webrtc'),
+                aggressiveness=vad_config.get('aggressiveness', 2),
+                sample_rate=16000,
+                frame_duration_ms=vad_config.get('frame_duration_ms', 30),
+                min_speech_duration_ms=vad_config.get('min_speech_duration_ms', 250),
+                padding_duration_ms=vad_config.get('padding_duration_ms', 300)
+            )
+            print(f"[AUDIO] VAD processor initialized ({vad_config.get('provider', 'webrtc')})")
+        else:
+            self.vad_processor = None
+            print("[AUDIO] VAD disabled")
+        
         self.last_audio_time = time.time()
         self.context_change_callbacks = []
+        self.noise_profile_built = False
     
     def _get_whisper_model(self):
         """Get Whisper model using lazy loading"""
@@ -110,7 +141,7 @@ class AudioContextualizer:
             print(f"Failed to initialize audio: {e}")
     
     def _audio_processing_loop(self):
-        """Process audio using configured interval"""
+        """Process audio using configured interval with enhanced preprocessing and VAD"""
         processing_chunks = int(self.config.processing_interval_seconds * 
                               self.config.sample_rate / self.config.chunk_size)
         
@@ -120,11 +151,38 @@ class AudioContextualizer:
                 recent_audio = np.concatenate(list(self.audio_buffer)[-processing_chunks:])
                 
                 try:
-                    # Convert to float32 for Whisper
+                    # Convert to float32
                     audio_float = recent_audio.astype(np.float32) / 32768.0
                     
+                    # Apply enhanced preprocessing
+                    preprocessed_audio = self.preprocessor.preprocess(
+                        audio_float,
+                        original_sample_rate=self.config.sample_rate
+                    )
+                    
+                    # Apply VAD filtering if enabled
+                    if self.vad_processor:
+                        filtered_audio, has_speech = self.vad_processor.filter_audio(preprocessed_audio)
+                        
+                        if not has_speech:
+                            # No speech detected, skip transcription
+                            time.sleep(self.config.processing_interval_seconds)
+                            continue
+                        
+                        audio_to_transcribe = filtered_audio
+                    else:
+                        audio_to_transcribe = preprocessed_audio
+                    
+                    # Skip if audio too short after filtering
+                    if len(audio_to_transcribe) < 16000:  # Less than 1 second at 16kHz
+                        time.sleep(self.config.processing_interval_seconds)
+                        continue
+                    
                     # Transcribe using Whisper with language setting
-                    result = self._get_whisper_model().transcribe(audio_float, language=self.whisper_language)
+                    result = self._get_whisper_model().transcribe(
+                        audio_to_transcribe,
+                        language=self.whisper_language
+                    )
                     text = result['text'].strip()
                     
                     if text and len(text) > 5:
@@ -152,9 +210,27 @@ class AudioContextualizer:
             time.sleep(self.config.processing_interval_seconds)
     
     def _silence_detection_loop(self):
-        """Detect silence for solo work mode activation"""
+        """Detect silence for solo work mode activation and noise profiling"""
         while self.is_recording:
             time_since_audio = time.time() - self.last_audio_time
+            
+            # Build noise profile during first silence period
+            if not self.noise_profile_built and len(self.audio_buffer) > 10:
+                try:
+                    # Get a sample of recent audio (likely ambient noise)
+                    noise_sample = np.concatenate(list(self.audio_buffer)[-10:])
+                    noise_float = noise_sample.astype(np.float32) / 32768.0
+                    
+                    # Build noise profile
+                    self.preprocessor.preprocess(
+                        noise_float,
+                        original_sample_rate=self.config.sample_rate,
+                        is_noise_sample=True
+                    )
+                    self.noise_profile_built = True
+                    print("[AUDIO] Initial noise profile built")
+                except Exception as e:
+                    print(f"[AUDIO] Error building noise profile: {e}")
             
             if time_since_audio > self.config.silence_threshold_seconds:
                 # Trigger solo work mode

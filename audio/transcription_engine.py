@@ -46,7 +46,7 @@ class WhisperLocalEngine(TranscriptionEngine):
             self.model = None
     
     def transcribe(self, audio_data: np.ndarray, sample_rate: int = 16000) -> str:
-        """Transcribe audio using local Whisper"""
+        """Transcribe audio using local Whisper with optimized parameters for noisy environments"""
         if not self.model:
             return ""
         
@@ -67,12 +67,26 @@ class WhisperLocalEngine(TranscriptionEngine):
                 except ImportError:
                     print("⚠️  Librosa not available for resampling")
             
-            # Transcribe
-            result = self.model.transcribe(audio_data, language=self.language)
+            # Transcribe with optimized parameters for noisy environments
+            result = self.model.transcribe(
+                audio_data,
+                language=self.language,
+                # Optimizations for noisy environments:
+                initial_prompt="This is a clear, professional meeting conversation.",
+                condition_on_previous_text=True,  # Use context from previous segments
+                temperature=0.0,  # More deterministic, less hallucinations
+                compression_ratio_threshold=2.4,  # Reject segments with too many repetitions
+                logprob_threshold=-1.0,  # Filter low confidence segments
+                no_speech_threshold=0.6,  # Higher threshold for noisy environments
+                # Additional parameters
+                beam_size=5,  # Beam search for better accuracy
+                best_of=5,  # Consider multiple candidates
+            )
             return result['text'].strip()
             
         except Exception as e:
             print(f"[ERROR] Whisper transcription error: {e}")
+            return ""
             return ""
     
     def is_available(self) -> bool:
