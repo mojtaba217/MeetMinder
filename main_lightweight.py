@@ -26,6 +26,7 @@ from utils.error_handler import handle_errors, MeetMinderError
 
 # Import core components
 from core.config import ConfigManager
+from core.document_store import DocumentStore
 from profile.user_profile import UserProfileManager
 from profile.topic_graph import TopicGraphManager
 from ai.ai_helper import AIHelper
@@ -151,11 +152,17 @@ class AIAssistantLightweight:
             self.overlay.set_settings_callback(self._handle_settings)
             self.overlay.set_close_app_callback(self._handle_close_app)
             
-            # 7. Screen Capture
+            # 7. Document Store
+            print("[DOCS] Initializing document store...")
+            self.document_store = DocumentStore(self.config.get('document_store', {}))
+            # Initialize async in background
+            self.thread_pool.submit(lambda: asyncio.run(self.document_store.initialize()))
+
+            # 8. Screen Capture
             print("[SCREEN] Initializing screen capture...")
             self.screen_capture = ScreenCapture()
 
-            # 8. Audio Contextualizer
+            # 9. Audio Contextualizer
             print("[AUDIO] Initializing audio processing...")
             audio_config = self.config.get_audio_config()
             print(f"[AUDIO] Config mode: {audio_config.mode}")
@@ -353,8 +360,26 @@ class AIAssistantLightweight:
                     config = app.config
                     overlay_config = config.get('ui', {}).get('overlay', {})
                     profile = app.profile_manager.profile if app.profile_manager.profile else None
+                    
+                    # Get documents
+                    documents = []
+                    if hasattr(app, 'document_store'):
+                        docs = app.document_store.list_documents()
+                        documents = [
+                            {
+                                'id': d.id,
+                                'name': d.file_name,
+                                'size': d.file_size,
+                                'status': d.status,
+                                'chunks': d.chunks_count,
+                                'active': d.metadata.get('active', True),
+                                'type': d.mime_type
+                            }
+                            for d in docs
+                        ]
 
                     return {
+                        'documents': documents,
                         'ai': {
                             'type': config.get('ai_provider.type', 'azure_openai'),
                             'api_key': config.get('ai_provider.azure_openai.api_key', ''),
@@ -545,8 +570,79 @@ class AIAssistantLightweight:
                         settings_window_ref[0].destroy()
                     return True
                 except Exception as e:
-                    logger.error(f"[SETTINGS] Error closing: {e}")
                     return False
+
+            def upload_document(self):
+                """Handle document upload"""
+                try:
+                    app = app_ref
+                    if not hasattr(app, 'document_store'):
+                        return {'success': False, 'error': 'Document store not initialized'}
+                    
+                    # Open file dialog
+                    file_types = ('Document Files (*.pdf;*.txt;*.md;*.docx)', 'All Files (*.*)')
+                    result = settings_window_ref[0].create_file_dialog(
+                        webview.OPEN_DIALOG, 
+                        allow_multiple=True, 
+                        file_types=file_types
+                    )
+                    
+                    if not result:
+                        return {'success': False, 'message': 'No file selected'}
+                    
+                    uploaded_docs = []
+                    for file_path in result:
+                        # Add file to document store
+                        # Run async method in thread pool
+                        future = app.thread_pool.submit(
+                            lambda p=file_path: asyncio.run(app.document_store.add_file(p, {'active': True}))
+                        )
+                        doc_id = future.result()
+                        
+                        # Trigger processing
+                        app.thread_pool.submit(
+                            lambda d=doc_id: asyncio.run(app.document_store.process_document(d))
+                        )
+                        uploaded_docs.append(doc_id)
+                        
+                    return {'success': True, 'count': len(uploaded_docs)}
+                except Exception as e:
+                    logger.error(f"[SETTINGS] Error uploading document: {e}")
+                    return {'success': False, 'error': str(e)}
+
+            def toggle_document(self, doc_id, active):
+                """Toggle document active status"""
+                try:
+                    app = app_ref
+                    if not hasattr(app, 'document_store'):
+                        return {'success': False}
+                        
+                    doc = app.document_store.get_document_info(doc_id)
+                    if doc:
+                        doc.metadata['active'] = active
+                        app.document_store._save_metadata()
+                        return {'success': True}
+                    return {'success': False, 'error': 'Document not found'}
+                except Exception as e:
+                    logger.error(f"[SETTINGS] Error toggling document: {e}")
+                    return {'success': False, 'error': str(e)}
+
+            def delete_document(self, doc_id):
+                """Delete document"""
+                try:
+                    app = app_ref
+                    if not hasattr(app, 'document_store'):
+                        return {'success': False}
+                        
+                    # Run async delete in thread pool
+                    future = app.thread_pool.submit(
+                        lambda: asyncio.run(app.document_store.delete_document(doc_id))
+                    )
+                    success = future.result()
+                    return {'success': success}
+                except Exception as e:
+                    logger.error(f"[SETTINGS] Error deleting document: {e}")
+                    return {'success': False, 'error': str(e)}
         
         # Open settings window in new thread
         def open_settings_window():

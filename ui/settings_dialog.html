@@ -1,10 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>MeetMinder Settings</title>
     <style>
+        :root {
+            --primary-color: #667eea;
+            --secondary-color: #764ba2;
+            --bg-color: #f8f9fa;
+            --sidebar-bg: #ffffff;
+            --text-color: #333;
+            --border-color: #e0e0e0;
+            --hover-color: #f0f4ff;
+            --danger-color: #ff6b6b;
+            --success-color: #4caf50;
+        }
+
         * {
             margin: 0;
             padding: 0;
@@ -12,78 +25,180 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
-            color: #333;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: var(--bg-color);
+            color: var(--text-color);
+            height: 100vh;
+            display: flex;
+            overflow: hidden;
+            user-select: none;
         }
 
-        .settings-container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 20px;
-            padding: 30px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-height: 80vh;
-            overflow-y: auto;
+        /* Title Bar */
+        .title-bar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 32px;
+            background: var(--sidebar-bg);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 15px;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 1000;
+            -webkit-app-region: drag;
         }
 
-        .settings-header {
-            margin-bottom: 30px;
-            padding-bottom: 20px;
-            border-bottom: 2px solid #667eea;
-        }
-
-        .settings-header h1 {
-            font-size: 28px;
-            color: #667eea;
-            margin-bottom: 5px;
-        }
-
-        .settings-header p {
+        .title-bar-title {
+            font-size: 12px;
+            font-weight: 600;
             color: #666;
+        }
+
+        .title-bar-controls {
+            -webkit-app-region: no-drag;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 18px;
+            color: #666;
+            cursor: pointer;
+            padding: 0 5px;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--danger-color);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 240px;
+            background: var(--sidebar-bg);
+            border-right: 1px solid var(--border-color);
+            padding-top: 50px;
+            /* Space for title bar */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar-header {
+            padding: 20px;
+            margin-bottom: 10px;
+        }
+
+        .sidebar-header h1 {
+            font-size: 20px;
+            font-weight: 700;
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .nav-item {
+            padding: 12px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #666;
+            font-weight: 500;
+            transition: all 0.2s ease;
             font-size: 14px;
         }
 
-        .settings-section {
+        .nav-item:hover {
+            background: var(--hover-color);
+            color: var(--primary-color);
+        }
+
+        .nav-item.active {
+            background: var(--hover-color);
+            color: var(--primary-color);
+            border-right: 3px solid var(--primary-color);
+        }
+
+        .nav-icon {
+            width: 20px;
+            text-align: center;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            padding: 50px 40px 40px 40px;
+            overflow-y: auto;
+        }
+
+        .section-content {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .section-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(5px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .section-header {
             margin-bottom: 30px;
         }
 
         .section-title {
-            font-size: 18px;
+            font-size: 24px;
             font-weight: 600;
-            color: #333;
-            margin-bottom: 15px;
-            padding-bottom: 8px;
-            border-bottom: 1px solid #e0e0e0;
+            margin-bottom: 8px;
+        }
+
+        .section-subtitle {
+            color: #666;
+            font-size: 14px;
+        }
+
+        /* Form Elements */
+        .setting-group {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
         }
 
         .setting-item {
             margin-bottom: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 10px;
-            transition: all 0.3s ease;
         }
 
-        .setting-item:hover {
-            background: #f0f0f0;
+        .setting-item:last-child {
+            margin-bottom: 0;
         }
 
         .setting-label {
             display: block;
             font-weight: 500;
-            color: #333;
             margin-bottom: 8px;
             font-size: 14px;
         }
 
-        .setting-description {
-            display: block;
+        .setting-desc {
             font-size: 12px;
-            color: #666;
-            margin-bottom: 10px;
+            color: #888;
+            margin-bottom: 8px;
+            display: block;
         }
 
         input[type="text"],
@@ -91,489 +206,499 @@
         select,
         textarea {
             width: 100%;
-            padding: 10px 15px;
-            border: 2px solid #ddd;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
             border-radius: 8px;
             font-size: 14px;
-            transition: border-color 0.3s ease;
+            transition: border-color 0.2s;
             font-family: inherit;
         }
 
-        input[type="text"]:focus,
-        input[type="number"]:focus,
+        input:focus,
         select:focus,
         textarea:focus {
             outline: none;
-            border-color: #667eea;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
-        textarea {
-            resize: vertical;
-            min-height: 80px;
+        /* Toggle Switch */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
         }
 
-        .checkbox-wrapper {
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 24px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked+.slider {
+            background-color: var(--primary-color);
+        }
+
+        input:checked+.slider:before {
+            transform: translateX(20px);
+        }
+
+        .setting-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        /* Document Management */
+        .upload-zone {
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-bottom: 20px;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary-color);
+            background: var(--hover-color);
+        }
+
+        .upload-icon {
+            font-size: 32px;
+            color: var(--primary-color);
+            margin-bottom: 10px;
+        }
+
+        .doc-list {
+            display: grid;
+            gap: 10px;
+        }
+
+        .doc-card {
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.2s;
+        }
+
+        .doc-card:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        }
+
+        .doc-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .doc-icon {
+            font-size: 20px;
+            color: #666;
+        }
+
+        .doc-details h4 {
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 2px;
+        }
+
+        .doc-meta {
+            font-size: 11px;
+            color: #888;
+        }
+
+        .doc-actions {
             display: flex;
             align-items: center;
             gap: 10px;
         }
 
-        input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: #667eea;
-        }
-
-        .hotkey-input {
-            display: inline-block;
-            width: 200px;
-            padding: 8px 12px;
-            border: 2px solid #667eea;
-            border-radius: 6px;
-            background: white;
-            font-weight: 600;
-            color: #667eea;
-            text-align: center;
-        }
-
-        .button-group {
-            display: flex;
-            gap: 15px;
-            margin-top: 30px;
-            justify-content: flex-end;
-        }
-
-        button {
-            padding: 12px 30px;
+        .btn-icon {
+            background: none;
             border: none;
-            border-radius: 10px;
-            font-size: 14px;
-            font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
+            color: #888;
+            padding: 5px;
+            border-radius: 4px;
+            transition: all 0.2s;
         }
 
-        .btn-save {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        .btn-icon:hover {
+            background: #f0f0f0;
+            color: var(--text-color);
+        }
+
+        .btn-icon.delete:hover {
+            background: #ffebee;
+            color: var(--danger-color);
+        }
+
+        /* Action Bar */
+        .action-bar {
+            position: fixed;
+            bottom: 0;
+            left: 240px;
+            right: 0;
+            padding: 20px 40px;
+            background: white;
+            border-top: 1px solid var(--border-color);
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 14px;
+            cursor: pointer;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
             color: white;
         }
 
-        .btn-save:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        .btn-primary:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
         }
 
-        .btn-cancel {
-            background: #e0e0e0;
+        .btn-secondary {
+            background: #f0f0f0;
             color: #333;
         }
 
-        .btn-cancel:hover {
-            background: #d0d0d0;
+        .btn-secondary:hover {
+            background: #e0e0e0;
         }
 
-        .btn-reset {
-            background: #ff6b6b;
-            color: white;
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
         }
 
-        .btn-reset:hover {
-            background: #ff5252;
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        .info-box {
-            background: #e3f2fd;
-            border-left: 4px solid #2196f3;
-            padding: 15px;
-            border-radius: 8px;
-            margin-top: 15px;
-            font-size: 13px;
-            color: #1976d2;
+        ::-webkit-scrollbar-thumb {
+            background: #ccc;
+            border-radius: 3px;
         }
 
-        .success-message {
-            background: #4caf50;
-            color: white;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            display: none;
-            animation: slideDown 0.3s ease;
-        }
-
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
-
-        .model-selector {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 15px;
-            margin-top: 10px;
-        }
-
-        .model-option {
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-        }
-
-        .model-option:hover {
-            border-color: #667eea;
-            background: #f8f9ff;
-        }
-
-        .model-option.selected {
-            border-color: #667eea;
-            background: #667eea;
-            color: white;
-        }
-
-        .model-option .model-name {
-            font-weight: 600;
-            margin-bottom: 5px;
-        }
-
-        .model-option .model-desc {
-            font-size: 12px;
-            opacity: 0.8;
-        }
-
-        /* Scrollbar styling */
-        .settings-container::-webkit-scrollbar {
-            width: 8px;
-        }
-
-        .settings-container::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-        }
-
-        .settings-container::-webkit-scrollbar-thumb {
-            background: #667eea;
-            border-radius: 10px;
-        }
-
-        .settings-container::-webkit-scrollbar-thumb:hover {
-            background: #764ba2;
+        ::-webkit-scrollbar-thumb:hover {
+            background: #999;
         }
     </style>
 </head>
+
 <body>
-    <div class="settings-container">
-        <div class="settings-header">
-            <h1>⚙️ Settings</h1>
-            <p>Configure your MeetMinder experience</p>
-        </div>
-
-        <div id="successMessage" class="success-message">
-            Settings saved successfully!
-        </div>
-
-        <!-- AI Configuration -->
-        <div class="settings-section">
-            <div class="section-title">🤖 AI Configuration</div>
-            
-            <div class="setting-item">
-                <label class="setting-label">AI Provider</label>
-                <span class="setting-description">Choose your AI service provider</span>
-                <select id="aiProvider">
-                    <option value="azure_openai">Azure OpenAI</option>
-                    <option value="openai">OpenAI</option>
-                    <option value="google_gemini">Google Gemini</option>
-                </select>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">API Key</label>
-                <span class="setting-description">Your AI service API key (keep this secure)</span>
-                <input type="text" id="apiKey" placeholder="sk-...">
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Model</label>
-                <span class="setting-description">Select the AI model to use</span>
-                <input type="text" id="aiModel" placeholder="gpt-4">
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Response Style</label>
-                <select id="responseStyle">
-                    <option value="concise">Concise</option>
-                    <option value="detailed">Detailed</option>
-                    <option value="balanced">Balanced</option>
-                </select>
-            </div>
-        </div>
-
-        <!-- Audio Settings -->
-        <div class="settings-section">
-            <div class="section-title">🎤 Audio Settings</div>
-            
-            <div class="setting-item">
-                <label class="setting-label">Audio Mode</label>
-                <select id="audioMode">
-                    <option value="single_stream">Microphone Only</option>
-                    <option value="dual_stream">Microphone + System Audio</option>
-                </select>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Sample Rate (Hz)</label>
-                <select id="sampleRate">
-                    <option value="22050">22050</option>
-                    <option value="44100">44100</option>
-                    <option value="48000">48000</option>
-                </select>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Whisper Language</label>
-                <span class="setting-description">Language for speech recognition</span>
-                <select id="whisperLanguage">
-                    <option value="en">English</option>
-                    <option value="es">Spanish</option>
-                    <option value="fr">French</option>
-                    <option value="de">German</option>
-                    <option value="zh">Chinese</option>
-                    <option value="ja">Japanese</option>
-                    <option value="ko">Korean</option>
-                    <option value="auto">Auto-detect</option>
-                </select>
-            </div>
-
-            <div class="setting-item">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="autoTranscribe">
-                    <label class="setting-label" for="autoTranscribe">Auto-start transcription on launch</label>
-                </div>
-            </div>
-        </div>
-
-        <!-- Hotkey Settings -->
-        <div class="settings-section">
-            <div class="section-title">⌨️ Hotkeys</div>
-            
-            <div class="setting-item">
-                <label class="setting-label">Trigger AI Assistance</label>
-                <input type="text" id="hotkeyTrigger" class="hotkey-input" value="ctrl+space" readonly>
-                <span class="setting-description">Click and press your desired key combination</span>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Toggle Overlay</label>
-                <input type="text" id="hotkeyToggle" class="hotkey-input" value="ctrl+b" readonly>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Take Screenshot</label>
-                <input type="text" id="hotkeyScreenshot" class="hotkey-input" value="ctrl+h" readonly>
-            </div>
-        </div>
-
-        <!-- UI Settings -->
-        <div class="settings-section">
-            <div class="section-title">🎨 Interface</div>
-            
-            <div class="setting-item">
-                <label class="setting-label">Window Width (pixels)</label>
-                <span class="setting-description">Overlay window width</span>
-                <input type="number" id="windowWidth" min="400" max="2000" value="800" step="10">
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Window Height (pixels)</label>
-                <span class="setting-description">Overlay window height</span>
-                <input type="number" id="windowHeight" min="200" max="1200" value="380" step="10">
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Overlay Position</label>
-                <select id="overlayPosition">
-                    <option value="top_center">Top Center</option>
-                    <option value="top_right">Top Right</option>
-                    <option value="top_left">Top Left</option>
-                    <option value="center">Center</option>
-                </select>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Window Opacity</label>
-                <span class="setting-description">0.0 = fully transparent, 1.0 = fully opaque</span>
-                <input type="number" id="overlayOpacity" min="0.1" max="1.0" step="0.05" value="0.9">
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Auto-hide Timer (seconds)</label>
-                <span class="setting-description">Hide overlay after inactivity (0 = disabled)</span>
-                <input type="number" id="autoHideSeconds" min="0" max="60" value="0">
-            </div>
-
-            <div class="setting-item">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="alwaysOnTop">
-                    <label class="setting-label" for="alwaysOnTop">Keep overlay always on top</label>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="hideFromSharing">
-                    <label class="setting-label" for="hideFromSharing">Hide from screen sharing (Zoom, Teams, etc.)</label>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="hideForScreenshots">
-                    <label class="setting-label" for="hideForScreenshots">Hide for screenshots</label>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="showTranscript">
-                    <label class="setting-label" for="showTranscript">Show live transcript</label>
-                </div>
-            </div>
-
-            <div class="info-box">
-                ℹ️ Changes to window size and position will take effect on next restart
-            </div>
-        </div>
-
-        <!-- User Profile -->
-        <div class="settings-section">
-            <div class="section-title">👤 User Profile</div>
-            
-            <div class="setting-item">
-                <label class="setting-label">Your Name</label>
-                <input type="text" id="userName" placeholder="Your name">
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Your Title/Role</label>
-                <input type="text" id="userTitle" placeholder="Software Engineer">
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Skills (comma-separated)</label>
-                <textarea id="userSkills" placeholder="Python, JavaScript, Machine Learning"></textarea>
-            </div>
-        </div>
-
-        <!-- Advanced Settings -->
-        <div class="settings-section">
-            <div class="section-title">⚡ Advanced</div>
-            
-            <div class="setting-item">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="enableCache">
-                    <label class="setting-label" for="enableCache">Enable AI response caching</label>
-                </div>
-                <span class="setting-description">Cache AI responses for faster repeated queries</span>
-            </div>
-
-            <div class="setting-item">
-                <div class="checkbox-wrapper">
-                    <input type="checkbox" id="enableLogging">
-                    <label class="setting-label" for="enableLogging">Enable detailed logging</label>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">Max Conversation History</label>
-                <input type="number" id="maxHistory" min="5" max="50" value="20">
-            </div>
-        </div>
-
-        <div class="info-box">
-            ℹ️ <strong>Note:</strong> Some settings require application restart to take effect. 
-            Your API keys are stored securely in the local configuration file.
-        </div>
-
-        <!-- Buttons -->
-        <div class="button-group">
-            <button class="btn-reset" onclick="resetSettings()">Reset to Defaults</button>
-            <button class="btn-cancel" onclick="closeSettings()">Cancel</button>
-            <button class="btn-save" onclick="saveSettings()">Save Changes</button>
+    <!-- Title Bar -->
+    <div class="title-bar">
+        <div class="title-bar-title">MeetMinder Settings</div>
+        <div class="title-bar-controls">
+            <button class="close-btn" onclick="closeSettings()">×</button>
         </div>
     </div>
 
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1>MeetMinder</h1>
+        </div>
+        <nav>
+            <div class="nav-item active" onclick="switchTab('general')">
+                <span class="nav-icon">⚙️</span> General
+            </div>
+            <div class="nav-item" onclick="switchTab('ai')">
+                <span class="nav-icon">🤖</span> AI & Model
+            </div>
+            <div class="nav-item" onclick="switchTab('audio')">
+                <span class="nav-icon">🎤</span> Audio
+            </div>
+            <div class="nav-item" onclick="switchTab('documents')">
+                <span class="nav-icon">📚</span> Documents
+            </div>
+            <div class="nav-item" onclick="switchTab('profile')">
+                <span class="nav-icon">👤</span> Profile
+            </div>
+        </nav>
+    </div>
+
+    <!-- Main Content -->
+    <div class="main-content">
+        <!-- General Tab -->
+        <div id="general" class="section-content active">
+            <div class="section-header">
+                <h2 class="section-title">General Settings</h2>
+                <p class="section-subtitle">Configure interface and application behavior</p>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item setting-row">
+                    <div>
+                        <label class="setting-label">Always on Top</label>
+                        <span class="setting-desc">Keep overlay visible above other windows</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="alwaysOnTop">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item setting-row">
+                    <div>
+                        <label class="setting-label">Hide from Screen Sharing</label>
+                        <span class="setting-desc">Invisible to Zoom/Teams/Meet</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="hideFromSharing">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item">
+                    <label class="setting-label">Overlay Opacity</label>
+                    <input type="range" id="overlayOpacity" min="0.1" max="1.0" step="0.05" style="width: 100%">
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">Auto-hide Timer (seconds)</label>
+                    <input type="number" id="autoHideSeconds" min="0" max="60">
+                </div>
+            </div>
+        </div>
+
+        <!-- AI Tab -->
+        <div id="ai" class="section-content">
+            <div class="section-header">
+                <h2 class="section-title">AI Configuration</h2>
+                <p class="section-subtitle">Manage your AI provider and model settings</p>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item">
+                    <label class="setting-label">AI Provider</label>
+                    <select id="aiProvider">
+                        <option value="azure_openai">Azure OpenAI</option>
+                        <option value="openai">OpenAI</option>
+                        <option value="google_gemini">Google Gemini</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">API Key</label>
+                    <input type="password" id="apiKey" placeholder="sk-...">
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">Model Name</label>
+                    <input type="text" id="aiModel" placeholder="gpt-4">
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item">
+                    <label class="setting-label">Response Style</label>
+                    <select id="responseStyle">
+                        <option value="concise">Concise</option>
+                        <option value="balanced">Balanced</option>
+                        <option value="detailed">Detailed</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Tab -->
+        <div id="audio" class="section-content">
+            <div class="section-header">
+                <h2 class="section-title">Audio Settings</h2>
+                <p class="section-subtitle">Configure microphone and transcription</p>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item">
+                    <label class="setting-label">Audio Input Mode</label>
+                    <select id="audioMode">
+                        <option value="single_stream">Microphone Only</option>
+                        <option value="dual_stream">Microphone + System Audio</option>
+                    </select>
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">Whisper Language</label>
+                    <select id="whisperLanguage">
+                        <option value="en">English</option>
+                        <option value="auto">Auto-detect</option>
+                        <option value="es">Spanish</option>
+                        <option value="fr">French</option>
+                        <option value="de">German</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item setting-row">
+                    <div>
+                        <label class="setting-label">Auto-start Transcription</label>
+                        <span class="setting-desc">Start listening when app launches</span>
+                    </div>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="autoTranscribe">
+                        <span class="slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- Documents Tab -->
+        <div id="documents" class="section-content">
+            <div class="section-header">
+                <h2 class="section-title">Knowledge Base</h2>
+                <p class="section-subtitle">Manage documents for context-aware answers</p>
+            </div>
+
+            <div class="upload-zone" onclick="uploadDocument()">
+                <div class="upload-icon">📄</div>
+                <h3>Click to Upload Documents</h3>
+                <p style="color: #888; font-size: 13px; margin-top: 5px;">
+                    Support for PDF, TXT, MD, DOCX
+                </p>
+            </div>
+
+            <div class="doc-list" id="documentList">
+                <!-- Documents will be populated here -->
+                <div class="doc-card" style="justify-content: center; color: #888; padding: 30px;">
+                    Loading documents...
+                </div>
+            </div>
+        </div>
+
+        <!-- Profile Tab -->
+        <div id="profile" class="section-content">
+            <div class="section-header">
+                <h2 class="section-title">User Profile</h2>
+                <p class="section-subtitle">Personalize AI responses for your role</p>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item">
+                    <label class="setting-label">Full Name</label>
+                    <input type="text" id="userName" placeholder="Your name">
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">Job Title</label>
+                    <input type="text" id="userTitle" placeholder="e.g. Software Engineer">
+                </div>
+                <div class="setting-item">
+                    <label class="setting-label">Skills & Expertise</label>
+                    <textarea id="userSkills" placeholder="Python, Project Management, etc." rows="3"></textarea>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+        <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+    </div>
+
     <script>
-        // Load current settings
+        let currentSettings = {};
+
+        // Tab Switching
+        function switchTab(tabId) {
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.section-content').forEach(el => el.classList.remove('active'));
+
+            event.currentTarget.classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Load Settings
         function loadSettings() {
             pywebview.api.get_settings().then(settings => {
-                if (settings) {
-                    // AI Settings
-                    if (settings.ai) {
-                        document.getElementById('aiProvider').value = settings.ai.type || 'azure_openai';
-                        document.getElementById('apiKey').value = settings.ai.api_key || '';
-                        document.getElementById('aiModel').value = settings.ai.model || 'gpt-4';
-                        document.getElementById('responseStyle').value = settings.ai.response_style || 'balanced';
-                    }
+                currentSettings = settings;
 
-                    // Audio Settings
-                    if (settings.audio) {
-                        document.getElementById('audioMode').value = settings.audio.mode || 'single_stream';
-                        document.getElementById('sampleRate').value = settings.audio.sample_rate || '44100';
-                        document.getElementById('whisperLanguage').value = settings.audio.language || 'en';
-                        document.getElementById('autoTranscribe').checked = settings.audio.auto_start || false;
-                    }
-
-                    // Hotkeys
-                    if (settings.hotkeys) {
-                        document.getElementById('hotkeyTrigger').value = settings.hotkeys.trigger_assistance || 'ctrl+space';
-                        document.getElementById('hotkeyToggle').value = settings.hotkeys.toggle_overlay || 'ctrl+b';
-                        document.getElementById('hotkeyScreenshot').value = settings.hotkeys.take_screenshot || 'ctrl+h';
-                    }
-
-                    // UI Settings
-                    if (settings.ui) {
-                        document.getElementById('windowWidth').value = settings.ui.width || 800;
-                        document.getElementById('windowHeight').value = settings.ui.height || 380;
-                        document.getElementById('overlayPosition').value = settings.ui.position || 'top_center';
-                        document.getElementById('overlayOpacity').value = settings.ui.opacity || 0.9;
-                        document.getElementById('autoHideSeconds').value = settings.ui.auto_hide_seconds || 0;
-                        document.getElementById('alwaysOnTop').checked = settings.ui.always_on_top !== false;
-                        document.getElementById('hideFromSharing').checked = settings.ui.hide_from_sharing !== false;
-                        document.getElementById('hideForScreenshots').checked = settings.ui.hide_for_screenshots || false;
-                        document.getElementById('showTranscript').checked = settings.ui.show_transcript || false;
-                    }
-
-                    // User Profile
-                    if (settings.user_profile) {
-                        document.getElementById('userName').value = settings.user_profile.name || '';
-                        document.getElementById('userTitle').value = settings.user_profile.title || '';
-                        document.getElementById('userSkills').value = settings.user_profile.skills ? settings.user_profile.skills.join(', ') : '';
-                    }
-
-                    // Advanced
-                    if (settings.advanced) {
-                        document.getElementById('enableCache').checked = settings.advanced.enable_cache !== false;
-                        document.getElementById('enableLogging').checked = settings.advanced.enable_logging || false;
-                        document.getElementById('maxHistory').value = settings.advanced.max_history || 20;
-                    }
+                // General
+                if (settings.ui) {
+                    document.getElementById('alwaysOnTop').checked = settings.ui.always_on_top;
+                    document.getElementById('hideFromSharing').checked = settings.ui.hide_from_sharing;
+                    document.getElementById('overlayOpacity').value = settings.ui.opacity;
+                    document.getElementById('autoHideSeconds').value = settings.ui.auto_hide_seconds;
                 }
-            }).catch(error => {
-                console.error('Error loading settings:', error);
+
+                // AI
+                if (settings.ai) {
+                    document.getElementById('aiProvider').value = settings.ai.type;
+                    document.getElementById('apiKey').value = settings.ai.api_key;
+                    document.getElementById('aiModel').value = settings.ai.model;
+                    document.getElementById('responseStyle').value = settings.ai.response_style;
+                }
+
+                // Audio
+                if (settings.audio) {
+                    document.getElementById('audioMode').value = settings.audio.mode;
+                    document.getElementById('whisperLanguage').value = settings.audio.language;
+                    document.getElementById('autoTranscribe').checked = settings.audio.auto_start;
+                }
+
+                // Profile
+                if (settings.user_profile) {
+                    document.getElementById('userName').value = settings.user_profile.name;
+                    document.getElementById('userTitle').value = settings.user_profile.title;
+                    document.getElementById('userSkills').value = settings.user_profile.skills.join(', ');
+                }
+
+                // Documents
+                renderDocuments(settings.documents || []);
             });
         }
 
-        // Save settings
+        // Save Settings
         function saveSettings() {
-            const settings = {
+            const newSettings = {
+                ui: {
+                    always_on_top: document.getElementById('alwaysOnTop').checked,
+                    hide_from_sharing: document.getElementById('hideFromSharing').checked,
+                    opacity: parseFloat(document.getElementById('overlayOpacity').value),
+                    auto_hide_seconds: parseInt(document.getElementById('autoHideSeconds').value)
+                },
                 ai: {
                     type: document.getElementById('aiProvider').value,
                     api_key: document.getElementById('apiKey').value,
@@ -582,115 +707,100 @@
                 },
                 audio: {
                     mode: document.getElementById('audioMode').value,
-                    sample_rate: parseInt(document.getElementById('sampleRate').value),
                     language: document.getElementById('whisperLanguage').value,
                     auto_start: document.getElementById('autoTranscribe').checked
-                },
-                hotkeys: {
-                    trigger_assistance: document.getElementById('hotkeyTrigger').value,
-                    toggle_overlay: document.getElementById('hotkeyToggle').value,
-                    take_screenshot: document.getElementById('hotkeyScreenshot').value
-                },
-                ui: {
-                    width: parseInt(document.getElementById('windowWidth').value),
-                    height: parseInt(document.getElementById('windowHeight').value),
-                    position: document.getElementById('overlayPosition').value,
-                    opacity: parseFloat(document.getElementById('overlayOpacity').value),
-                    auto_hide_seconds: parseInt(document.getElementById('autoHideSeconds').value),
-                    always_on_top: document.getElementById('alwaysOnTop').checked,
-                    hide_from_sharing: document.getElementById('hideFromSharing').checked,
-                    hide_for_screenshots: document.getElementById('hideForScreenshots').checked,
-                    show_transcript: document.getElementById('showTranscript').checked
                 },
                 user_profile: {
                     name: document.getElementById('userName').value,
                     title: document.getElementById('userTitle').value,
                     skills: document.getElementById('userSkills').value.split(',').map(s => s.trim()).filter(s => s)
-                },
-                advanced: {
-                    enable_cache: document.getElementById('enableCache').checked,
-                    enable_logging: document.getElementById('enableLogging').checked,
-                    max_history: parseInt(document.getElementById('maxHistory').value)
                 }
             };
 
-            pywebview.api.save_settings(settings).then(result => {
+            pywebview.api.save_settings(newSettings).then(result => {
                 if (result.success) {
-                    showSuccessMessage();
-                    setTimeout(() => {
-                        pywebview.api.close_settings();
-                    }, 500);
+                    closeSettings();
+                } else {
+                    alert('Error saving settings: ' + result.error);
                 }
-            }).catch(error => {
-                console.error('Error saving settings:', error);
-                alert('Error saving settings: ' + error);
             });
         }
 
-        // Reset to defaults
-        function resetSettings() {
-            if (confirm('Are you sure you want to reset all settings to defaults?')) {
-                pywebview.api.reset_settings().then(() => {
-                    loadSettings();
-                    showSuccessMessage('Settings reset to defaults!');
+        // Document Management
+        function renderDocuments(docs) {
+            const container = document.getElementById('documentList');
+            if (!docs || docs.length === 0) {
+                container.innerHTML = `
+                    <div class="doc-card" style="justify-content: center; color: #888; padding: 30px; flex-direction: column; text-align: center;">
+                        <span style="font-size: 24px; margin-bottom: 10px;">📂</span>
+                        No documents yet. Upload some to get started!
+                    </div>`;
+                return;
+            }
+
+            container.innerHTML = docs.map(doc => `
+                <div class="doc-card">
+                    <div class="doc-info">
+                        <span class="doc-icon">📄</span>
+                        <div class="doc-details">
+                            <h4>${doc.name}</h4>
+                            <div class="doc-meta">
+                                ${(doc.size / 1024).toFixed(1)} KB • ${doc.status} • ${doc.chunks} chunks
+                            </div>
+                        </div>
+                    </div>
+                    <div class="doc-actions">
+                        <label class="toggle-switch" style="transform: scale(0.8);">
+                            <input type="checkbox" 
+                                   ${doc.active ? 'checked' : ''} 
+                                   onchange="toggleDocument('${doc.id}', this.checked)">
+                            <span class="slider"></span>
+                        </label>
+                        <button class="btn-icon delete" onclick="deleteDocument('${doc.id}')" title="Delete">
+                            🗑️
+                        </button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function uploadDocument() {
+            pywebview.api.upload_document().then(result => {
+                if (result.success) {
+                    loadSettings(); // Reload to show new docs
+                } else if (result.error) {
+                    alert('Upload failed: ' + result.error);
+                }
+            });
+        }
+
+        function toggleDocument(docId, active) {
+            pywebview.api.toggle_document(docId, active);
+        }
+
+        function deleteDocument(docId) {
+            if (confirm('Are you sure you want to delete this document?')) {
+                pywebview.api.delete_document(docId).then(result => {
+                    if (result.success) {
+                        loadSettings();
+                    }
                 });
             }
         }
 
-        // Close settings
         function closeSettings() {
-            try {
-                pywebview.api.close_settings();
-            } catch (e) {
-                console.error('Error closing settings:', e);
+            pywebview.api.close_settings();
+        }
+
+        // Initialize
+        window.addEventListener('pywebviewready', loadSettings);
+        // Fallback for dev
+        setTimeout(() => {
+            if (!window.pywebview) {
+                console.log("Dev mode: pywebview not found");
             }
-        }
-
-        // Show success message
-        function showSuccessMessage(message = 'Settings saved successfully!') {
-            const successMsg = document.getElementById('successMessage');
-            successMsg.textContent = message;
-            successMsg.style.display = 'block';
-            setTimeout(() => {
-                successMsg.style.display = 'none';
-            }, 3000);
-        }
-
-        // Hotkey capture
-        document.querySelectorAll('.hotkey-input').forEach(input => {
-            input.addEventListener('click', function() {
-                this.value = 'Press keys...';
-                this.style.background = '#fff3cd';
-            });
-
-            input.addEventListener('keydown', function(e) {
-                e.preventDefault();
-                const keys = [];
-                if (e.ctrlKey) keys.push('ctrl');
-                if (e.altKey) keys.push('alt');
-                if (e.shiftKey) keys.push('shift');
-                if (e.metaKey) keys.push('meta');
-                
-                const key = e.key.toLowerCase();
-                if (!['control', 'alt', 'shift', 'meta'].includes(key)) {
-                    keys.push(key);
-                }
-                
-                this.value = keys.join('+');
-                this.style.background = 'white';
-            });
-        });
-
-        // Load settings on page load
-        window.addEventListener('pywebviewready', function() {
-            loadSettings();
-        });
-
-        // Fallback if pywebviewready doesn't fire
-        setTimeout(loadSettings, 100);
+        }, 1000);
     </script>
 </body>
+
 </html>
-
-
-
