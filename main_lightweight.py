@@ -4,13 +4,31 @@ MeetMinder Lightweight - Real-time AI meeting assistant with minimal dependencie
 Uses webview instead of PyQt5 for drastically reduced build size (15-30MB vs 150MB+)
 """
 
+import os
+import sys
+from pathlib import Path
+
+# Add bootstrap dependencies directory to path if running from bootstrap launcher
+# This must be done BEFORE any other imports
+if 'PYTHONPATH' in os.environ:
+    # Bootstrap launcher sets PYTHONPATH to deps directory
+    deps_dir = os.environ['PYTHONPATH']
+    if deps_dir and deps_dir not in sys.path:
+        sys.path.insert(0, deps_dir)
+        print(f"[BOOTSTRAP] Added deps directory to path: {deps_dir}")
+else:
+    # Check if we're in a bootstrap installation
+    localappdata = os.getenv('LOCALAPPDATA')
+    if localappdata:
+        deps_dir = Path(localappdata) / 'MeetMinder' / 'deps'
+        if deps_dir.exists() and str(deps_dir) not in sys.path:
+            sys.path.insert(0, str(deps_dir))
+            print(f"[BOOTSTRAP] Added deps directory to path: {deps_dir}")
+
 import asyncio
 import threading
 import time
-import sys
-import os
 import warnings
-from pathlib import Path
 from typing import Optional, Dict, Any
 import whisper
 from concurrent.futures import ThreadPoolExecutor
