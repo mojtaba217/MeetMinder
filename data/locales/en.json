@@ -1,0 +1,411 @@
+{
+  "ui": {
+    "overlay": {
+      "title": "MeetMinder",
+      "ask_ai": "🤖 Ask AI",
+      "toggle_mic": "Toggle microphone recording",
+      "settings": "Open settings",
+      "hide": "Hide",
+      "show": "Show",
+      "close": "Close application",
+      "expand": "Expand details",
+      "collapse": "Collapse details",
+      "timer": "00:00",
+      "shortcut": "Ctrl+Space"
+    },
+    "buttons": {
+      "ask_ai": "🤖 Ask AI",
+      "mic": "🎤",
+      "settings": "⚙️",
+      "hide": "Hide",
+      "show": "Show",
+      "close": "✕",
+      "expand": "▼",
+      "collapse": "▲"
+    },
+    "sections": {
+      "ai_response": "🤖 AI Response",
+      "live_transcript": "📝 Live Transcript (System Audio)",
+      "topic_analysis": "🧠 Topic Analysis",
+      "guidance": "💡 Guidance",
+      "flow": "🔄 Flow"
+    },
+    "status": {
+      "no_active_topic": "No active topic",
+      "start_speaking": "Start speaking to get guidance",
+      "waiting": "Ready to assist. Press Ctrl+Space or click 'Ask AI'.",
+      "analyzing": "🤔 Analyzing context...",
+      "processing": "⏳ Processing...",
+      "waiting_audio": "Waiting for system audio...",
+      "transcript_enabled": "Transcript enabled - waiting for system audio...",
+      "screenshot_saved": "📸 Screenshot saved: {path}",
+      "screenshot_taken": "📸 Screenshot taken!",
+      "error": "Error: {error}",
+      "high_cpu": "⚠️ High CPU usage: {usage}%",
+      "critical_memory": "🚨 Critical memory usage: {percent}% - cleaning up...",
+      "high_memory": "⚠️ Memory usage: {percent}% - optimizing..."
+    },
+    "tooltips": {
+      "ask_ai": "Trigger AI assistance (Ctrl+Space)",
+      "mic": "Toggle microphone recording (Ctrl+M)",
+      "settings": "Open settings (Ctrl+,)",
+      "hide": "Hide overlay",
+      "show": "Show overlay",
+      "close": "Close application",
+      "expand": "Expand/collapse details"
+    }
+  },
+  "settings": {
+    "title": "MeetMinder Settings",
+    "tabs": {
+      "ai_provider": "🤖 AI Provider",
+      "audio": "🎤 Audio",
+      "interface": "🖥️ Interface",
+      "assistant": "🧠 Assistant",
+      "prompts": "📝 Prompts",
+      "knowledge": "🧠 Knowledge",
+      "documents": "📚 Documents",
+      "hotkeys": "⌨️ Hotkeys",
+      "debug": "🐛 Debug"
+    },
+    "buttons": {
+      "save": "💾 Save Settings",
+      "save_changes": "Save Changes",
+      "cancel": "❌ Cancel",
+      "reset": "🔄 Reset to Defaults"
+    },
+    "nav": {
+      "general": "General",
+      "ai": "AI & Model",
+      "audio": "Audio",
+      "documents": "Documents",
+      "profile": "Profile"
+    },
+    "general": {
+      "title": "General Settings",
+      "subtitle": "Configure interface and application behavior",
+      "always_on_top": "Always on Top",
+      "always_on_top_desc": "Keep overlay visible above other windows",
+      "hide_from_sharing_desc": "Invisible to Zoom/Teams/Meet",
+      "overlay_opacity": "Overlay Opacity",
+      "auto_hide_timer": "Auto-hide Timer (seconds)"
+    },
+    "ai": {
+      "title": "AI Configuration",
+      "subtitle": "Manage your AI provider and model settings",
+      "response_concise": "Concise",
+      "response_balanced": "Balanced",
+      "response_detailed": "Detailed"
+    },
+    "language": {
+      "label": "Interface Language",
+      "tooltip": "Select the interface language"
+    },
+    "theme": {
+      "label": "Theme:",
+      "dark": "Dark Mode",
+      "light": "Light Mode",
+      "tooltip": "Choose between light and dark theme"
+    },
+    "size_multiplier": {
+      "label": "Size Multiplier:"
+    },
+    "show_transcript": {
+      "label": "Show live transcript in expanded view"
+    },
+    "hide_from_sharing": {
+      "label": "Hide from screen sharing"
+    },
+    "auto_hide": {
+      "label": "Auto-hide Timer:",
+      "suffix": " seconds (0 = disabled)"
+    },
+    "screen_sharing": {
+      "label": "Enable screen sharing detection",
+      "tooltip": "Automatically hide overlay when screen sharing apps are detected"
+    },
+    "hide_screenshots": {
+      "label": "Hide overlay for screenshots/debugging",
+      "tooltip": "Temporarily hide the entire overlay for taking clean screenshots or debugging UI issues"
+    },
+    "background_opacity": {
+      "label": "Background Opacity:"
+    },
+    "blur_effects": {
+      "label": "Enable blur effects",
+      "tooltip": "Apply blur effects to background for professional look"
+    },
+    "smooth_animations": {
+      "label": "Enable smooth animations",
+      "tooltip": "Use smooth animations for transitions and resizing"
+    },
+    "auto_width": {
+      "label": "Enable auto-width adjustment",
+      "tooltip": "Automatically adjust overlay width based on content"
+    },
+    "dynamic_transparency": {
+      "label": "Enable dynamic transparency",
+      "tooltip": "Adjust transparency based on activity and context"
+    },
+    "appearance": {
+      "title": "🎨 Appearance"
+    },
+    "enhanced_features": {
+      "title": "🚀 Enhanced Features"
+    },
+    "ai_provider": {
+      "title": "🤖 AI Provider",
+      "provider_label": "AI Provider",
+      "azure": {
+        "title": "🔷 Azure OpenAI Configuration",
+        "endpoint": "Endpoint:",
+        "endpoint_placeholder": "https://your-resource.openai.azure.com/",
+        "api_key": "API Key",
+        "api_key_placeholder": "sk-...",
+        "model": "Model Name",
+        "model_placeholder": "gpt-4",
+        "deployment": "Deployment:",
+        "deployment_placeholder": "your-deployment-name",
+        "api_version": "API Version:"
+      },
+      "openai": {
+        "title": "🟢 OpenAI Configuration",
+        "api_key": "API Key:",
+        "api_key_placeholder": "Your OpenAI API key",
+        "model": "Model:",
+        "model_placeholder": "gpt-4"
+      },
+      "gemini": {
+        "title": "🔴 Google Gemini Configuration",
+        "api_key": "API Key:",
+        "api_key_placeholder": "Your Gemini API key",
+        "model": "Model:",
+        "model_placeholder": "gemini-2.0-flash",
+        "project_id": "Project ID:",
+        "project_id_placeholder": "your-project-id"
+      },
+      "deepseek": {
+        "title": "🧠 DeepSeek Configuration",
+        "api_key": "API Key:",
+        "api_key_placeholder": "Your DeepSeek API key",
+        "base_url": "Base URL:",
+        "base_url_placeholder": "https://api.deepseek.com",
+        "model": "Model:",
+        "model_placeholder": "deepseek-coder"
+      },
+      "claude": {
+        "title": "🎭 Claude Configuration",
+        "api_key": "API Key:",
+        "api_key_placeholder": "Your Anthropic API key",
+        "base_url": "Base URL:",
+        "base_url_placeholder": "https://api.anthropic.com",
+        "model": "Model:",
+        "model_placeholder": "claude-3-sonnet-20240229"
+      }
+    },
+    "audio": {
+      "title": "🎤 Audio Configuration",
+      "subtitle": "Configure microphone and transcription",
+      "mode": "Audio Mode:",
+      "whisper_language": "Whisper Language",
+      "auto_start": "Auto-start Transcription",
+      "auto_start_desc": "Start listening when app launches",
+      "mode_single": "Microphone Only",
+      "mode_dual": "Microphone + System Audio",
+      "language_english": "English",
+      "language_auto": "Auto-detect",
+      "language_spanish": "Spanish",
+      "language_french": "French",
+      "language_german": "German",
+      "buffer_duration": "Buffer Duration:",
+      "buffer_suffix": " minutes",
+      "processing_interval": "Processing Interval:",
+      "system_audio": {
+        "title": "🔊 System Audio Monitoring",
+        "full_monitoring": "Monitor all system audio (overrides specific app selection)",
+        "select_apps": "Select specific applications to monitor:",
+        "meeting_apps": "📞 Meeting & Communication Apps (Enabled by Default)",
+        "other_apps": "🖥️ Other Applications (Disabled by Default)",
+        "custom_app": "Enter custom application name (e.g., MyApp.exe)",
+        "add_custom": "➕ Add",
+        "filtering": "🎛️ Audio Filtering:",
+        "filter_music": "🎵 Filter out music and non-speech audio (recommended)",
+        "filter_music_tooltip": "Uses AI to detect and ignore music, sound effects, and other non-speech audio",
+        "speech_sensitivity": "Speech Detection Sensitivity:",
+        "monitoring_status": "📊 Currently monitoring: Loading..."
+      },
+      "transcription": {
+        "title": "📝 Transcription Settings",
+        "provider": "Provider:",
+        "whisper": {
+          "title": "🤖 Local Whisper Configuration",
+          "model_size": "Model Size:"
+        },
+        "google_speech": {
+          "title": "🔴 Google Speech-to-Text Configuration",
+          "json_file": "Service Account JSON File:",
+          "browse": "Browse",
+          "json_content": "Or paste JSON content:",
+          "json_placeholder": "{\n  \"type\": \"service_account\",\n  \"project_id\": \"your-project\",\n  \"private_key_id\": \"...\",\n  ...\n}"
+        },
+        "azure_speech": {
+          "title": "🔷 Azure Speech Services Configuration",
+          "api_key": "API Key:",
+          "api_key_placeholder": "Your Azure Speech API key",
+          "region": "Region:",
+          "region_placeholder": "eastus",
+          "endpoint": "Custom Endpoint:",
+          "endpoint_placeholder": "https://your-region.api.cognitive.microsoft.com/ (optional)",
+          "language": "Language:"
+        },
+        "openai_whisper": {
+          "title": "🟢 OpenAI Whisper API Configuration",
+          "api_key": "API Key:",
+          "api_key_placeholder": "Your OpenAI API key",
+          "model": "Model:",
+          "language": "Language:"
+        }
+      }
+    },
+    "assistant": {
+      "title": "🧠 Assistant Behavior",
+      "activation_mode": "Activation Mode:",
+      "verbosity": "Response Verbosity:",
+      "response_style": "Response Style:",
+      "input_priority": "Input Priority:"
+    },
+    "prompts": {
+      "title": "📝 AI Prompt Configuration",
+      "info": "Customize the MeetMinder assistant's behavior and response style:",
+      "placeholder": "Enter system prompt that defines the MeetMinder assistant's behavior, tone, and expertise...",
+      "load_file": "📁 Load from File",
+      "save_file": "💾 Save to File",
+      "reset_default": "🔄 Reset to Default"
+    },
+    "knowledge": {
+      "title": "🧠 Knowledge Graph",
+      "enable": "Enable topic analysis and suggestions",
+      "matching_threshold": "Matching Threshold:",
+      "max_matches": "Max Suggestions:",
+      "topic_definitions": "Topic Definitions:",
+      "topic_definitions_placeholder": "Example topic definitions:\n\nMeeting Management: Strategies for organizing and running effective meetings\nProject Planning: Techniques for project planning and execution\nTechnical Discussions: Handling technical topics and problem-solving\nClient Communication: Best practices for client interactions\n\nEnter one topic per line with format: Topic Name: Description",
+      "import_topics": "📁 Import Topics",
+      "export_topics": "💾 Export Topics",
+      "clear_all": "🗑️ Clear All"
+    },
+    "documents": {
+      "title": "📚 Document Store Configuration",
+      "title_short": "Knowledge Base",
+      "subtitle": "Manage documents for context-aware answers",
+      "upload_documents": "Click to Upload Documents",
+      "support_formats": "Support for PDF, TXT, MD, DOCX",
+      "loading": "Loading documents...",
+      "no_documents": "No documents yet. Upload some to get started!",
+      "enabled": "Enable document storage and retrieval",
+      "chunk_size": "Chunk Size:",
+      "chunk_overlap": "Chunk Overlap:",
+      "max_context": "Max Context Chunks:",
+      "embedding_provider": "Embedding Provider:",
+      "embedding_model": "Embedding Model:",
+      "vector_backend": "Vector Backend:",
+      "uploaded_documents": "Uploaded documents will appear here...",
+      "upload": "📤 Upload Document",
+      "refresh_list": "🔄 Refresh List",
+      "delete": "🗑️ Delete",
+      "delete_confirm": "Are you sure you want to delete this document?",
+      "upload_failed": "Upload failed: {error}",
+      "error_saving": "Error saving settings: {error}",
+      "kb": "KB",
+      "chunks": "chunks",
+      "embedding_provider_title": "🧮 Embedding Provider",
+      "vector_storage_title": "💾 Vector Storage",
+      "management_title": "📁 Document Management",
+      "statistics_title": "📊 Document Store Statistics:",
+      "total_documents": "Total Documents:",
+      "completed": "Completed:",
+      "failed": "Failed:",
+      "total_chunks": "Total Chunks:",
+      "embedding": "Embedding:",
+      "vector_backend_label": "Vector Backend:",
+      "documents_list_title": "📁 Documents:",
+      "unknown": "Unknown",
+      "status_label": "Status:",
+      "error_label": "Error:",
+      "no_documents_uploaded": "No documents uploaded yet.",
+      "error_loading": "Error loading documents: {error}",
+      "status": {
+        "active": "Active",
+        "inactive": "Inactive",
+        "processing": "Processing",
+        "ready": "Ready",
+        "error": "Error"
+      }
+    },
+    "profile": {
+      "title": "User Profile",
+      "subtitle": "Personalize AI responses for your role",
+      "full_name": "Full Name",
+      "job_title": "Job Title",
+      "skills": "Skills & Expertise",
+      "placeholder_name": "Your name",
+      "placeholder_title": "e.g. Software Engineer",
+      "placeholder_skills": "Python, Project Management, etc."
+    },
+    "hotkeys": {
+      "title": "⌨️ Global Hotkeys",
+      "trigger_ai": "Trigger AI:",
+      "toggle_overlay": "Toggle Overlay:",
+      "screenshot": "Screenshot:",
+      "emergency_reset": "Emergency Reset:",
+      "toggle_hide": "Toggle Hide Overlay:",
+      "toggle_hide_placeholder": "e.g., Ctrl+H"
+    },
+    "debug": {
+      "enabled": "Enable debug mode",
+      "verbose_logging": "Verbose logging",
+      "save_transcriptions": "Save transcriptions to files",
+      "save_audio": "Save audio chunks to files",
+      "max_files": "Max Debug Files:"
+    }
+  },
+  "messages": {
+    "loading": "🚀 Loading MeetMinder...\nPlease wait...",
+    "initializing": "Initializing MeetMinder...",
+    "ready": "✅ MeetMinder is now running!",
+    "error": "Error: {error}",
+    "settings_saved": "Settings saved successfully!",
+    "settings_reset": "Settings reset to defaults",
+    "document_uploaded": "Document Uploaded",
+    "upload_failed": "Upload Failed",
+    "upload_failed_msg": "Failed to upload document: {error}",
+    "ai_helper_not_available": "AI Helper Not Available",
+    "ai_helper_not_available_msg": "AI helper is not available. Please check your AI provider configuration.",
+    "topics_imported": "Import Topics",
+    "topics_exported": "Export Topics",
+    "success": "Success",
+    "invalid_json": "Invalid JSON",
+    "invalid_json_msg": "The selected file does not contain valid JSON.",
+    "error_loading_file": "Error",
+    "error_loading_file_msg": "Failed to load file: {error}",
+    "invalid_input": "Invalid Input",
+    "invalid_input_msg": "Please enter an application name.",
+    "already_added": "Already Added",
+    "already_added_msg": "'{name}' is already in the list.",
+    "application_added": "Application Added",
+    "application_added_msg": "'{name}' has been added to the monitoring list.\n\nNote: The application will be monitored on the next audio capture restart.",
+    "document_uploaded_msg": "Document uploaded successfully!\nID: {doc_id}\n\nProcessing in background...",
+    "ai_helper_not_available_msg": "AI helper is not available. Please check your AI provider configuration.",
+    "prompt_saved": "Prompt saved successfully!",
+    "error_saving_file": "Failed to save file: {error}",
+    "topics_imported": "Topics imported successfully!",
+    "topics_exported": "Topics exported successfully!",
+    "error_exporting": "Failed to export topics: {error}",
+    "clear_topics": "Clear Topics",
+    "clear_topics_msg": "Are you sure you want to clear all topic definitions?",
+    "reset_confirm": "Reset Settings",
+    "reset_confirm_msg": "Are you sure you want to reset all settings to defaults?",
+    "warning": "Warning",
+    "warning_save_prompt": "Failed to save prompt file: {error}",
+    "warning_save_topics": "Failed to save topic definitions: {error}"
+  }
+}

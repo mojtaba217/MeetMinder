@@ -1,0 +1,371 @@
+{
+  "ui": {
+    "overlay": {
+      "title": "MeetMinder",
+      "ask_ai": "🤖 AIに質問",
+      "toggle_mic": "マイク録音の切り替え",
+      "settings": "設定を開く",
+      "hide": "非表示",
+      "show": "表示",
+      "close": "アプリケーションを閉じる",
+      "expand": "詳細を展開",
+      "collapse": "詳細を折りたたむ",
+      "timer": "00:00",
+      "shortcut": "Ctrl+スペース"
+    },
+    "buttons": {
+      "ask_ai": "🤖 AIに質問",
+      "mic": "🎤",
+      "settings": "⚙️",
+      "hide": "非表示",
+      "show": "表示",
+      "close": "✕",
+      "expand": "▼",
+      "collapse": "▲"
+    },
+    "sections": {
+      "ai_response": "🤖 AI応答",
+      "live_transcript": "📝 ライブ文字起こし（システム音声）",
+      "topic_analysis": "🧠 トピック分析",
+      "guidance": "💡 ガイダンス",
+      "flow": "🔄 フロー"
+    },
+    "status": {
+      "no_active_topic": "アクティブなトピックなし",
+      "start_speaking": "話し始めてガイダンスを取得",
+      "waiting": "待機中",
+      "analyzing": "🤔 コンテキストを分析中...",
+      "processing": "⏳ 処理中...",
+      "waiting_audio": "システム音声を待機中...",
+      "transcript_enabled": "文字起こしが有効 - システム音声を待機中...",
+      "screenshot_saved": "📸 スクリーンショットを保存しました：{path}",
+      "screenshot_taken": "📸 スクリーンショットを撮影しました！",
+      "error": "エラー：{error}"
+    },
+    "tooltips": {
+      "ask_ai": "AIアシスタンスをトリガー（Ctrl+スペース）",
+      "mic": "マイク録音の切り替え（Ctrl+M）",
+      "settings": "設定を開く（Ctrl+,）",
+      "hide": "オーバーレイを非表示",
+      "show": "オーバーレイを表示",
+      "close": "アプリケーションを閉じる",
+      "expand": "詳細を展開/折りたたむ"
+    }
+  },
+  "settings": {
+    "title": "MeetMinder 設定",
+    "tabs": {
+      "ai_provider": "🤖 AIプロバイダー",
+      "audio": "🎤 オーディオ",
+      "interface": "🖥️ インターフェース",
+      "assistant": "🧠 アシスタント",
+      "prompts": "📝 プロンプト",
+      "knowledge": "🧠 知識",
+      "documents": "📚 ドキュメント",
+      "hotkeys": "⌨️ ホットキー",
+      "debug": "🐛 デバッグ"
+    },
+    "buttons": {
+      "save": "💾 設定を保存",
+      "save_changes": "変更を保存",
+      "cancel": "❌ キャンセル",
+      "reset": "🔄 デフォルトにリセット"
+    },
+    "nav": {
+      "general": "一般",
+      "ai": "AIとモデル",
+      "audio": "オーディオ",
+      "documents": "ドキュメント",
+      "profile": "プロフィール"
+    },
+    "general": {
+      "title": "一般設定",
+      "subtitle": "インターフェースとアプリケーションの動作を設定",
+      "always_on_top": "常に最前面",
+      "always_on_top_desc": "オーバーレイを他のウィンドウの上に表示し続ける",
+      "hide_from_sharing_desc": "Zoom/Teams/Meetで非表示",
+      "overlay_opacity": "オーバーレイの不透明度",
+      "auto_hide_timer": "自動非表示タイマー（秒）"
+    },
+    "ai": {
+      "title": "AI設定",
+      "subtitle": "AIプロバイダーとモデル設定を管理",
+      "response_concise": "簡潔",
+      "response_balanced": "バランス",
+      "response_detailed": "詳細"
+    },
+    "language": {
+      "label": "インターフェース言語",
+      "tooltip": "インターフェース言語を選択"
+    },
+    "theme": {
+      "label": "テーマ：",
+      "dark": "ダークモード",
+      "light": "ライトモード",
+      "tooltip": "ライトとダークのテーマを選択"
+    },
+    "size_multiplier": {
+      "label": "サイズ倍率："
+    },
+    "show_transcript": {
+      "label": "展開ビューでライブ文字起こしを表示"
+    },
+    "hide_from_sharing": {
+      "label": "画面共有から非表示"
+    },
+    "auto_hide": {
+      "label": "自動非表示タイマー：",
+      "suffix": " 秒（0 = 無効）"
+    },
+    "screen_sharing": {
+      "label": "画面共有検出を有効化",
+      "tooltip": "画面共有アプリが検出されたときにオーバーレイを自動的に非表示にする"
+    },
+    "hide_screenshots": {
+      "label": "スクリーンショット/デバッグ用にオーバーレイを非表示",
+      "tooltip": "クリーンなスクリーンショットを撮るか、UIの問題をデバッグするために、オーバーレイ全体を一時的に非表示にする"
+    },
+    "background_opacity": {
+      "label": "背景の不透明度："
+    },
+    "blur_effects": {
+      "label": "ぼかし効果を有効化",
+      "tooltip": "プロフェッショナルな外観のために背景にぼかし効果を適用"
+    },
+    "smooth_animations": {
+      "label": "スムーズなアニメーションを有効化",
+      "tooltip": "遷移とリサイズにスムーズなアニメーションを使用"
+    },
+    "auto_width": {
+      "label": "自動幅調整を有効化",
+      "tooltip": "コンテンツに基づいてオーバーレイの幅を自動調整"
+    },
+    "dynamic_transparency": {
+      "label": "動的透明度を有効化",
+      "tooltip": "アクティビティとコンテキストに基づいて透明度を調整"
+    },
+    "ai_provider": {
+      "title": "🤖 AIプロバイダー",
+      "provider_label": "AIプロバイダー",
+      "azure": {
+        "title": "🔷 Azure OpenAI設定",
+        "endpoint": "エンドポイント：",
+        "endpoint_placeholder": "https://your-resource.openai.azure.com/",
+        "api_key": "APIキー",
+        "api_key_placeholder": "sk-...",
+        "model": "モデル名",
+        "model_placeholder": "gpt-4",
+        "deployment": "デプロイメント：",
+        "deployment_placeholder": "your-deployment-name",
+        "api_version": "APIバージョン："
+      },
+      "openai": {
+        "title": "🟢 OpenAI設定",
+        "api_key": "APIキー：",
+        "api_key_placeholder": "OpenAI APIキー",
+        "model": "モデル：",
+        "model_placeholder": "gpt-4"
+      },
+      "gemini": {
+        "title": "🔴 Google Gemini設定",
+        "api_key": "APIキー：",
+        "api_key_placeholder": "Gemini APIキー",
+        "model": "モデル：",
+        "model_placeholder": "gemini-2.0-flash",
+        "project_id": "プロジェクトID：",
+        "project_id_placeholder": "your-project-id"
+      }
+    },
+    "audio": {
+      "title": "🎤 オーディオ設定",
+      "subtitle": "マイクと文字起こしを設定",
+      "mode": "オーディオ入力モード",
+      "whisper_language": "Whisper言語",
+      "auto_start": "自動文字起こし開始",
+      "auto_start_desc": "アプリ起動時にリスニングを開始",
+      "mode_single": "マイクのみ",
+      "mode_dual": "マイク + システム音声",
+      "language_english": "英語",
+      "language_auto": "自動検出",
+      "language_spanish": "スペイン語",
+      "language_french": "フランス語",
+      "language_german": "ドイツ語",
+      "buffer_duration": "バッファー時間：",
+      "buffer_suffix": " 分",
+      "processing_interval": "処理間隔：",
+      "system_audio": {
+        "title": "🔊 システム音声監視",
+        "full_monitoring": "すべてのシステム音声を監視（特定アプリの選択を上書き）",
+        "select_apps": "監視する特定のアプリケーションを選択：",
+        "meeting_apps": "📞 会議・通信アプリ（デフォルトで有効）",
+        "other_apps": "🖥️ その他のアプリケーション（デフォルトで無効）",
+        "custom_app": "カスタムアプリケーション名を入力（例：MyApp.exe）",
+        "add_custom": "➕ 追加",
+        "filtering": "🎛️ オーディオフィルタリング：",
+        "filter_music": "🎵 音楽と非音声オーディオをフィルタリング（推奨）",
+        "filter_music_tooltip": "AIを使用して音楽、効果音、その他の非音声オーディオを検出して無視",
+        "speech_sensitivity": "音声検出感度：",
+        "monitoring_status": "📊 現在監視中：読み込み中..."
+      },
+      "transcription": {
+        "title": "📝 文字起こし設定",
+        "provider": "プロバイダー：",
+        "whisper": {
+          "title": "🤖 ローカルWhisper設定",
+          "model_size": "モデルサイズ："
+        },
+        "google_speech": {
+          "title": "🔴 Google Speech-to-Text設定",
+          "json_file": "サービスアカウントJSONファイル：",
+          "browse": "参照",
+          "json_content": "またはJSONコンテンツを貼り付け：",
+          "json_placeholder": "{\n  \"type\": \"service_account\",\n  \"project_id\": \"your-project\",\n  \"private_key_id\": \"...\",\n  ...\n}"
+        },
+        "azure_speech": {
+          "title": "🔷 Azure音声サービス設定",
+          "api_key": "APIキー：",
+          "api_key_placeholder": "Azure音声APIキー",
+          "region": "リージョン：",
+          "region_placeholder": "eastus",
+          "endpoint": "カスタムエンドポイント：",
+          "endpoint_placeholder": "https://your-region.api.cognitive.microsoft.com/ （オプション）",
+          "language": "言語："
+        },
+        "openai_whisper": {
+          "title": "🟢 OpenAI Whisper API設定",
+          "api_key": "APIキー：",
+          "api_key_placeholder": "OpenAI APIキー",
+          "model": "モデル：",
+          "language": "言語："
+        }
+      }
+    },
+    "assistant": {
+      "title": "🧠 アシスタントの動作",
+      "activation_mode": "アクティベーションモード：",
+      "verbosity": "応答の詳細度：",
+      "response_style": "応答スタイル",
+      "input_priority": "入力優先度："
+    },
+    "prompts": {
+      "title": "📝 AIプロンプト設定",
+      "info": "MeetMinderアシスタントの動作と応答スタイルをカスタマイズ：",
+      "placeholder": "MeetMinderアシスタントの動作、トーン、専門知識を定義するシステムプロンプトを入力...",
+      "load_file": "📁 ファイルから読み込む",
+      "save_file": "💾 ファイルに保存",
+      "reset_default": "🔄 デフォルトにリセット"
+    },
+    "knowledge": {
+      "title": "🧠 ナレッジグラフ",
+      "enable": "トピック分析と提案を有効化",
+      "matching_threshold": "マッチング閾値：",
+      "max_matches": "最大提案数：",
+      "topic_definitions": "トピック定義：",
+      "topic_definitions_placeholder": "トピック定義の例：\n\n会議管理：効果的な会議を組織し、実行するための戦略\nプロジェクト計画：プロジェクト計画と実行の技術\n技術的議論：技術トピックと問題解決の処理\nクライアントコミュニケーション：クライアントとのやり取りのベストプラクティス\n\n1行に1つのトピックを入力、形式：トピック名：説明",
+      "import_topics": "📁 トピックをインポート",
+      "export_topics": "💾 トピックをエクスポート",
+      "clear_all": "🗑️ すべてクリア"
+    },
+    "documents": {
+      "title": "📚 ドキュメントストア設定",
+      "title_short": "ナレッジベース",
+      "subtitle": "コンテキスト対応の回答のためにドキュメントを管理",
+      "upload_documents": "クリックしてドキュメントをアップロード",
+      "support_formats": "PDF、TXT、MD、DOCXをサポート",
+      "loading": "ドキュメントを読み込み中...",
+      "no_documents": "まだドキュメントがありません。いくつかアップロードして始めましょう！",
+      "enabled": "ドキュメントストレージと検索を有効化",
+      "chunk_size": "チャンクサイズ：",
+      "chunk_overlap": "チャンクオーバーラップ：",
+      "max_context": "最大コンテキストチャンク：",
+      "embedding_provider": "埋め込みプロバイダー：",
+      "embedding_model": "埋め込みモデル：",
+      "vector_backend": "ベクトルバックエンド：",
+      "uploaded_documents": "アップロードされたドキュメントがここに表示されます...",
+      "upload": "📤 ドキュメントをアップロード",
+      "refresh_list": "🔄 リストを更新",
+      "delete": "🗑️ 削除",
+      "delete_confirm": "このドキュメントを削除してもよろしいですか？",
+      "upload_failed": "アップロードに失敗しました：{error}",
+      "error_saving": "設定の保存中にエラーが発生しました：{error}",
+      "kb": "KB",
+      "chunks": "チャンク",
+      "embedding_provider_title": "🧮 埋め込みプロバイダー",
+      "vector_storage_title": "💾 ベクトルストレージ",
+      "management_title": "📁 ドキュメント管理",
+      "statistics_title": "📊 ドキュメントストア統計：",
+      "total_documents": "総ドキュメント数：",
+      "completed": "完了：",
+      "failed": "失敗：",
+      "total_chunks": "総チャンク数：",
+      "embedding": "埋め込み：",
+      "vector_backend_label": "ベクトルバックエンド：",
+      "documents_list_title": "📁 ドキュメント：",
+      "unknown": "不明",
+      "status_label": "ステータス：",
+      "error_label": "エラー：",
+      "no_documents_uploaded": "まだドキュメントがアップロードされていません。",
+      "error_loading": "ドキュメントの読み込みエラー：{error}",
+      "status": {
+        "active": "アクティブ",
+        "inactive": "非アクティブ",
+        "processing": "処理中",
+        "ready": "準備完了",
+        "error": "エラー"
+      }
+    },
+    "profile": {
+      "title": "ユーザープロフィール",
+      "subtitle": "役割に合わせてAI応答をパーソナライズ",
+      "full_name": "フルネーム",
+      "job_title": "職位",
+      "skills": "スキルと専門知識",
+      "placeholder_name": "お名前",
+      "placeholder_title": "例：ソフトウェアエンジニア",
+      "placeholder_skills": "Python、プロジェクト管理など"
+    },
+    "hotkeys": {
+      "title": "⌨️ グローバルホットキー",
+      "trigger_ai": "AIをトリガー：",
+      "toggle_overlay": "オーバーレイを切り替え：",
+      "screenshot": "スクリーンショット：",
+      "emergency_reset": "緊急リセット：",
+      "toggle_hide": "オーバーレイを非表示に切り替え：",
+      "toggle_hide_placeholder": "例：Ctrl+H"
+    },
+    "debug": {
+      "enabled": "デバッグモードを有効化",
+      "verbose_logging": "詳細ログ",
+      "save_transcriptions": "転写をファイルに保存",
+      "save_audio": "オーディオチャンクをファイルに保存",
+      "max_files": "最大デバッグファイル数：",
+      "title": "🐛 デバッグとログ"
+    }
+  },
+  "messages": {
+    "loading": "🚀 MeetMinderを読み込み中...\nお待ちください...",
+    "initializing": "MeetMinderを初期化中...",
+    "ready": "✅ MeetMinderが実行中です！",
+    "error": "エラー：{error}",
+    "settings_saved": "設定が正常に保存されました！",
+    "settings_reset": "設定がデフォルトにリセットされました",
+    "document_uploaded": "ドキュメントがアップロードされました",
+    "upload_failed": "アップロード失敗",
+    "upload_failed_msg": "ドキュメントのアップロードに失敗しました：{error}",
+    "ai_helper_not_available": "AIヘルパーが利用できません",
+    "ai_helper_not_available_msg": "AIヘルパーは利用できません。AIプロバイダーの設定を確認してください。",
+    "topics_imported": "トピックをインポート",
+    "topics_exported": "トピックをエクスポート",
+    "success": "成功",
+    "invalid_json": "無効なJSON",
+    "invalid_json_msg": "選択したファイルに有効なJSONが含まれていません。",
+    "error_loading_file": "エラー",
+    "error_loading_file_msg": "ファイルの読み込みエラー：{error}",
+    "invalid_input": "無効な入力",
+    "invalid_input_msg": "アプリケーション名を入力してください。",
+    "already_added": "既に追加済み",
+    "already_added_msg": "'{name}' は既にリストにあります。",
+    "application_added": "アプリケーションが追加されました"
+  }
+}
+

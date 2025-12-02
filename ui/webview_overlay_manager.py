@@ -7,12 +7,22 @@ import webview
 import threading
 import time
 import sys
+import json
 from typing import Dict, Any, Callable, Optional
 from pathlib import Path
 import win32gui
 import win32con
 import win32api
 from ctypes import windll
+
+# Import translation system
+try:
+    from utils.translation_manager import get_translation_manager, t
+    TRANSLATIONS_AVAILABLE = True
+except ImportError:
+    TRANSLATIONS_AVAILABLE = False
+    def t(key: str, default: str = None, **kwargs) -> str:
+        return default or key
 
 DPI_AWARENESS_SET = False
 
@@ -178,11 +188,158 @@ class WebviewOverlay:
         with open(html_path, 'r', encoding='utf-8') as f:
             self.html_content = f.read()
         
+        # Initialize translations
+        self.translations = {}
+        if TRANSLATIONS_AVAILABLE:
+            self._load_translations()
+        
         print("[WEBVIEW] Webview overlay initialized")
         print(f"[WEBVIEW] Always on top: {self.always_on_top}")
         print(f"[WEBVIEW] Hide from sharing: {self.hide_from_sharing}")
         print(f"[WEBVIEW] Auto-hide: {self.auto_hide_seconds}s")
         print(f"[WEBVIEW] Position: {self.position}")
+    
+    def _load_translations(self):
+        """Load current translations"""
+        if not TRANSLATIONS_AVAILABLE:
+            return
+        
+        try:
+            translation_manager = get_translation_manager()
+            # Get all UI translations matching the locale structure
+            self.translations = {
+                # Buttons
+                'ui.buttons.ask_ai': translation_manager.t('ui.buttons.ask_ai', '🤖 Ask AI'),
+                'ui.buttons.hide': translation_manager.t('ui.buttons.hide', 'Hide'),
+                'ui.buttons.show': translation_manager.t('ui.buttons.show', 'Show'),
+                'ui.buttons.close': translation_manager.t('ui.buttons.close', '✕'),
+                
+                # Tooltips
+                'ui.tooltips.ask_ai': translation_manager.t('ui.tooltips.ask_ai', 'Trigger AI assistance (Ctrl+Space)'),
+                'ui.tooltips.mic': translation_manager.t('ui.tooltips.mic', 'Toggle microphone recording (Ctrl+M)'),
+                'ui.tooltips.settings': translation_manager.t('ui.tooltips.settings', 'Open settings (Ctrl+,)'),
+                'ui.tooltips.hide': translation_manager.t('ui.tooltips.hide', 'Hide overlay'),
+                'ui.tooltips.show': translation_manager.t('ui.tooltips.show', 'Show overlay'),
+                'ui.tooltips.close': translation_manager.t('ui.tooltips.close', 'Close application'),
+                
+                # Overlay
+                'ui.overlay.timer': translation_manager.t('ui.overlay.timer', '00:00'),
+                'ui.overlay.shortcut': translation_manager.t('ui.overlay.shortcut', 'Ctrl+Space'),
+                
+                # Status
+                'ui.status.waiting': translation_manager.t('ui.status.waiting', 'Ready to assist. Press Ctrl+Space or click \'Ask AI\'.'),
+                'ui.status.no_active_topic': translation_manager.t('ui.status.no_active_topic', 'No active topic'),
+                'ui.status.start_speaking': translation_manager.t('ui.status.start_speaking', 'Start speaking to get guidance'),
+                'ui.status.analyzing': translation_manager.t('ui.status.analyzing', '🤔 Analyzing context...'),
+                'ui.status.processing': translation_manager.t('ui.status.processing', '⏳ Processing...'),
+            }
+        except Exception as e:
+            print(f"[WEBVIEW] Error loading translations: {e}")
+            # Use defaults
+            self.translations = {
+                'ui.buttons.ask_ai': '🤖 Ask AI',
+                'ui.buttons.hide': 'Hide',
+                'ui.buttons.show': 'Show',
+                'ui.buttons.close': '✕',
+                'ui.tooltips.ask_ai': 'Trigger AI assistance (Ctrl+Space)',
+                'ui.tooltips.mic': 'Toggle microphone recording (Ctrl+M)',
+                'ui.tooltips.settings': 'Open settings (Ctrl+,)',
+                'ui.tooltips.hide': 'Hide overlay',
+                'ui.tooltips.show': 'Show overlay',
+                'ui.tooltips.close': 'Close application',
+                'ui.overlay.timer': '00:00',
+                'ui.overlay.shortcut': 'Ctrl+Space',
+                'ui.status.waiting': 'Ready to assist. Press Ctrl+Space or click \'Ask AI\'.',
+                'ui.status.no_active_topic': 'No active topic',
+                'ui.status.start_speaking': 'Start speaking to get guidance',
+                'ui.status.analyzing': '🤔 Analyzing context...',
+                'ui.status.processing': '⏳ Processing...',
+            }
+    
+    def initialize_translations(self):
+        """Initialize translations in the HTML content"""
+        self._load_translations()
+        self._inject_translations()
+    
+    def _inject_translations(self):
+        """Inject translations into HTML content"""
+        if not self.translations:
+            return
+        
+        try:
+            # Inject translations as JavaScript object
+            translations_js = json.dumps(self.translations, ensure_ascii=False)
+            script_tag = f"""
+    <script>
+        // Translations injected by Python
+        window.translations = {translations_js};
+        
+        // Translation helper function
+        window.t = function(key, defaultValue) {{
+            return window.translations[key] || defaultValue || key;
+        }};
+        
+        // Apply translations on page load
+        document.addEventListener('DOMContentLoaded', function() {{
+            updateAllTranslations();
+        }});
+        
+        // Function to update all translations
+        function updateAllTranslations() {{
+            // Update elements with data-translate attribute
+            document.querySelectorAll('[data-translate]').forEach(el => {{
+                const key = el.getAttribute('data-translate');
+                const translation = window.t(key, '');
+                if (translation) {{
+                    el.textContent = translation;
+                }}
+            }});
+            
+            // Update elements with data-translate-title attribute
+            document.querySelectorAll('[data-translate-title]').forEach(el => {{
+                const key = el.getAttribute('data-translate-title');
+                const translation = window.t(key, '');
+                if (translation) {{
+                    el.title = translation;
+                }}
+            }});
+        }}
+        
+        // Expose update function globally
+        window.updateAllTranslations = updateAllTranslations;
+    </script>
+"""
+            # Insert before closing </body> tag
+            if '</body>' in self.html_content:
+                self.html_content = self.html_content.replace('</body>', script_tag + '\n    </body>')
+            else:
+                # If no body tag, append before closing </html>
+                self.html_content = self.html_content.replace('</html>', script_tag + '\n</html>')
+        except Exception as e:
+            print(f"[WEBVIEW] Error injecting translations: {e}")
+    
+    def refresh_translations(self):
+        """Refresh translations after language change"""
+        if not TRANSLATIONS_AVAILABLE:
+            return
+        
+        try:
+            self._load_translations()
+            if self.window:
+                # Update translations in the running window
+                translations_js = json.dumps(self.translations, ensure_ascii=False)
+                update_script = f"""
+                    window.translations = {translations_js};
+                    
+                    // Update all translations
+                    if (window.updateAllTranslations) {{
+                        window.updateAllTranslations();
+                    }}
+                """
+                self.window.evaluate_js(update_script)
+                print("[WEBVIEW] Translations refreshed")
+        except Exception as e:
+            print(f"[WEBVIEW] Error refreshing translations: {e}")
     
     def _initialize_dpi_awareness(self):
         global DPI_AWARENESS_SET
@@ -223,6 +380,10 @@ class WebviewOverlay:
     
     def start(self):
         """Start the webview window"""
+        # Inject translations before creating window
+        if TRANSLATIONS_AVAILABLE:
+            self._inject_translations()
+        
         # Window configuration
         width = self.config.get('width', 800)
         height = self.config.get('height', 380)
