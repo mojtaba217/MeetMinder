@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>MeetMinder Settings</title>
+    <title id="pageTitle">MeetMinder Settings</title>
     <style>
         :root {
             --primary-color: #667eea;
@@ -203,6 +203,8 @@
 
         input[type="text"],
         input[type="number"],
+        input[type="password"],
+        input[type="range"],
         select,
         textarea {
             width: 100%;
@@ -212,6 +214,22 @@
             font-size: 14px;
             transition: border-color 0.2s;
             font-family: inherit;
+            user-select: auto;
+            -webkit-user-select: auto;
+            pointer-events: auto;
+            cursor: pointer;
+        }
+        
+        select {
+            cursor: pointer;
+            background-color: white;
+            appearance: auto;
+            -webkit-appearance: menulist;
+            -moz-appearance: menulist;
+        }
+        
+        select:focus {
+            cursor: pointer;
         }
 
         input:focus,
@@ -425,13 +443,96 @@
         ::-webkit-scrollbar-thumb:hover {
             background: #999;
         }
+
+        /* Custom Select Dropdown */
+        .custom-select-wrapper {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select {
+            position: relative;
+            width: 100%;
+        }
+
+        .custom-select-trigger {
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background-color: white;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: border-color 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .custom-select-trigger:hover {
+            border-color: var(--primary-color);
+        }
+
+        .custom-select-trigger.active {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .custom-select-arrow {
+            font-size: 10px;
+            color: #666;
+            transition: transform 0.2s;
+        }
+
+        .custom-select-trigger.active .custom-select-arrow {
+            transform: rotate(180deg);
+        }
+
+        .custom-select-options {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            margin-top: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        }
+
+        .custom-select-options.show {
+            display: block;
+        }
+
+        .custom-select-option {
+            padding: 10px 12px;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .custom-select-option:hover {
+            background-color: var(--hover-color);
+        }
+
+        .custom-select-option.selected {
+            background-color: var(--primary-color);
+            color: white;
+        }
     </style>
 </head>
 
 <body>
     <!-- Title Bar -->
     <div class="title-bar">
-        <div class="title-bar-title">MeetMinder Settings</div>
+        <div class="title-bar-title" id="settingsTitle">MeetMinder Settings</div>
         <div class="title-bar-controls">
             <button class="close-btn" onclick="closeSettings()">×</button>
         </div>
@@ -443,20 +544,20 @@
             <h1>MeetMinder</h1>
         </div>
         <nav>
-            <div class="nav-item active" onclick="switchTab('general')">
-                <span class="nav-icon">⚙️</span> General
+            <div class="nav-item active" onclick="switchTab('general')" data-translate="nav_general">
+                <span class="nav-icon">⚙️</span> <span class="nav-text">General</span>
             </div>
-            <div class="nav-item" onclick="switchTab('ai')">
-                <span class="nav-icon">🤖</span> AI & Model
+            <div class="nav-item" onclick="switchTab('ai')" data-translate="nav_ai">
+                <span class="nav-icon">🤖</span> <span class="nav-text">AI & Model</span>
             </div>
-            <div class="nav-item" onclick="switchTab('audio')">
-                <span class="nav-icon">🎤</span> Audio
+            <div class="nav-item" onclick="switchTab('audio')" data-translate="nav_audio">
+                <span class="nav-icon">🎤</span> <span class="nav-text">Audio</span>
             </div>
-            <div class="nav-item" onclick="switchTab('documents')">
-                <span class="nav-icon">📚</span> Documents
+            <div class="nav-item" onclick="switchTab('documents')" data-translate="nav_documents">
+                <span class="nav-icon">📚</span> <span class="nav-text">Documents</span>
             </div>
-            <div class="nav-item" onclick="switchTab('profile')">
-                <span class="nav-icon">👤</span> Profile
+            <div class="nav-item" onclick="switchTab('profile')" data-translate="nav_profile">
+                <span class="nav-icon">👤</span> <span class="nav-text">Profile</span>
             </div>
         </nav>
     </div>
@@ -466,15 +567,15 @@
         <!-- General Tab -->
         <div id="general" class="section-content active">
             <div class="section-header">
-                <h2 class="section-title">General Settings</h2>
-                <p class="section-subtitle">Configure interface and application behavior</p>
+                <h2 class="section-title" data-translate="general_title">General Settings</h2>
+                <p class="section-subtitle" data-translate="general_subtitle">Configure interface and application behavior</p>
             </div>
 
             <div class="setting-group">
                 <div class="setting-item setting-row">
                     <div>
-                        <label class="setting-label">Always on Top</label>
-                        <span class="setting-desc">Keep overlay visible above other windows</span>
+                        <label class="setting-label" data-translate="always_on_top">Always on Top</label>
+                        <span class="setting-desc" data-translate="always_on_top_desc">Keep overlay visible above other windows</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="alwaysOnTop">
@@ -484,8 +585,8 @@
 
                 <div class="setting-item setting-row">
                     <div>
-                        <label class="setting-label">Hide from Screen Sharing</label>
-                        <span class="setting-desc">Invisible to Zoom/Teams/Meet</span>
+                        <label class="setting-label" data-translate="hide_from_sharing">Hide from Screen Sharing</label>
+                        <span class="setting-desc" data-translate="hide_from_sharing_desc">Invisible to Zoom/Teams/Meet</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="hideFromSharing">
@@ -496,11 +597,30 @@
 
             <div class="setting-group">
                 <div class="setting-item">
-                    <label class="setting-label">Overlay Opacity</label>
+                    <label class="setting-label" id="uiLanguageLabel" data-translate="interface_language">Interface Language</label>
+                    <div class="custom-select-wrapper">
+                        <div class="custom-select" id="uiLanguageSelect">
+                            <div class="custom-select-trigger">
+                                <span id="uiLanguageDisplay"></span>
+                                <span class="custom-select-arrow">▼</span>
+                            </div>
+                            <div class="custom-select-options" id="uiLanguageOptions">
+                                <!-- Options will be populated dynamically from available_languages -->
+                            </div>
+                        </div>
+                        <input type="hidden" id="uiLanguage" value="en">
+                    </div>
+                    <span class="setting-desc" style="display: block; margin-top: 5px; color: #888; font-size: 12px;" data-translate="select_language">Select the interface language</span>
+                </div>
+            </div>
+
+            <div class="setting-group">
+                <div class="setting-item">
+                    <label class="setting-label" data-translate="overlay_opacity">Overlay Opacity</label>
                     <input type="range" id="overlayOpacity" min="0.1" max="1.0" step="0.05" style="width: 100%">
                 </div>
                 <div class="setting-item">
-                    <label class="setting-label">Auto-hide Timer (seconds)</label>
+                    <label class="setting-label" data-translate="auto_hide_timer">Auto-hide Timer (seconds)</label>
                     <input type="number" id="autoHideSeconds" min="0" max="60">
                 </div>
             </div>
@@ -509,36 +629,36 @@
         <!-- AI Tab -->
         <div id="ai" class="section-content">
             <div class="section-header">
-                <h2 class="section-title">AI Configuration</h2>
-                <p class="section-subtitle">Manage your AI provider and model settings</p>
+                <h2 class="section-title" data-translate="ai_title">AI Configuration</h2>
+                <p class="section-subtitle" data-translate="ai_subtitle">Manage your AI provider and model settings</p>
             </div>
 
             <div class="setting-group">
                 <div class="setting-item">
-                    <label class="setting-label">AI Provider</label>
+                    <label class="setting-label" data-translate="ai_provider">AI Provider</label>
                     <select id="aiProvider">
-                        <option value="azure_openai">Azure OpenAI</option>
-                        <option value="openai">OpenAI</option>
-                        <option value="google_gemini">Google Gemini</option>
+                        <option value="azure_openai" data-translate-text="ai_provider_azure">Azure OpenAI</option>
+                        <option value="openai" data-translate-text="ai_provider_openai">OpenAI</option>
+                        <option value="google_gemini" data-translate-text="ai_provider_gemini">Google Gemini</option>
                     </select>
                 </div>
                 <div class="setting-item">
-                    <label class="setting-label">API Key</label>
-                    <input type="password" id="apiKey" placeholder="sk-...">
+                    <label class="setting-label" data-translate="api_key">API Key</label>
+                    <input type="password" id="apiKey" data-translate-placeholder="placeholder_api_key" placeholder="sk-...">
                 </div>
                 <div class="setting-item">
-                    <label class="setting-label">Model Name</label>
-                    <input type="text" id="aiModel" placeholder="gpt-4">
+                    <label class="setting-label" data-translate="model_name">Model Name</label>
+                    <input type="text" id="aiModel" data-translate-placeholder="placeholder_model" placeholder="gpt-4">
                 </div>
             </div>
 
             <div class="setting-group">
                 <div class="setting-item">
-                    <label class="setting-label">Response Style</label>
+                    <label class="setting-label" data-translate="response_style">Response Style</label>
                     <select id="responseStyle">
-                        <option value="concise">Concise</option>
-                        <option value="balanced">Balanced</option>
-                        <option value="detailed">Detailed</option>
+                        <option value="concise" data-translate-text="response_concise">Concise</option>
+                        <option value="balanced" data-translate-text="response_balanced">Balanced</option>
+                        <option value="detailed" data-translate-text="response_detailed">Detailed</option>
                     </select>
                 </div>
             </div>
@@ -547,26 +667,26 @@
         <!-- Audio Tab -->
         <div id="audio" class="section-content">
             <div class="section-header">
-                <h2 class="section-title">Audio Settings</h2>
-                <p class="section-subtitle">Configure microphone and transcription</p>
+                <h2 class="section-title" data-translate="audio_title">Audio Settings</h2>
+                <p class="section-subtitle" data-translate="audio_subtitle">Configure microphone and transcription</p>
             </div>
 
             <div class="setting-group">
                 <div class="setting-item">
-                    <label class="setting-label">Audio Input Mode</label>
+                    <label class="setting-label" data-translate="audio_mode">Audio Input Mode</label>
                     <select id="audioMode">
-                        <option value="single_stream">Microphone Only</option>
-                        <option value="dual_stream">Microphone + System Audio</option>
+                        <option value="single_stream" data-translate-text="audio_mode_single">Microphone Only</option>
+                        <option value="dual_stream" data-translate-text="audio_mode_dual">Microphone + System Audio</option>
                     </select>
                 </div>
                 <div class="setting-item">
-                    <label class="setting-label">Whisper Language</label>
+                    <label class="setting-label" data-translate="whisper_language">Whisper Language</label>
                     <select id="whisperLanguage">
-                        <option value="en">English</option>
-                        <option value="auto">Auto-detect</option>
-                        <option value="es">Spanish</option>
-                        <option value="fr">French</option>
-                        <option value="de">German</option>
+                        <option value="en" data-translate-text="language_english">English</option>
+                        <option value="auto" data-translate-text="language_auto">Auto-detect</option>
+                        <option value="es" data-translate-text="language_spanish">Spanish</option>
+                        <option value="fr" data-translate-text="language_french">French</option>
+                        <option value="de" data-translate-text="language_german">German</option>
                     </select>
                 </div>
             </div>
@@ -574,8 +694,8 @@
             <div class="setting-group">
                 <div class="setting-item setting-row">
                     <div>
-                        <label class="setting-label">Auto-start Transcription</label>
-                        <span class="setting-desc">Start listening when app launches</span>
+                        <label class="setting-label" data-translate="auto_start">Auto-start Transcription</label>
+                        <span class="setting-desc" data-translate="auto_start_desc">Start listening when app launches</span>
                     </div>
                     <label class="toggle-switch">
                         <input type="checkbox" id="autoTranscribe">
@@ -588,21 +708,21 @@
         <!-- Documents Tab -->
         <div id="documents" class="section-content">
             <div class="section-header">
-                <h2 class="section-title">Knowledge Base</h2>
-                <p class="section-subtitle">Manage documents for context-aware answers</p>
+                <h2 class="section-title" data-translate="documents_title">Knowledge Base</h2>
+                <p class="section-subtitle" data-translate="documents_subtitle">Manage documents for context-aware answers</p>
             </div>
 
             <div class="upload-zone" onclick="uploadDocument()">
                 <div class="upload-icon">📄</div>
-                <h3>Click to Upload Documents</h3>
-                <p style="color: #888; font-size: 13px; margin-top: 5px;">
+                <h3 data-translate="upload_documents">Click to Upload Documents</h3>
+                <p style="color: #888; font-size: 13px; margin-top: 5px;" data-translate="support_formats">
                     Support for PDF, TXT, MD, DOCX
                 </p>
             </div>
 
             <div class="doc-list" id="documentList">
                 <!-- Documents will be populated here -->
-                <div class="doc-card" style="justify-content: center; color: #888; padding: 30px;">
+                <div class="doc-card" style="justify-content: center; color: #888; padding: 30px;" data-translate="loading_documents">
                     Loading documents...
                 </div>
             </div>
@@ -611,22 +731,22 @@
         <!-- Profile Tab -->
         <div id="profile" class="section-content">
             <div class="section-header">
-                <h2 class="section-title">User Profile</h2>
-                <p class="section-subtitle">Personalize AI responses for your role</p>
+                <h2 class="section-title" data-translate="profile_title">User Profile</h2>
+                <p class="section-subtitle" data-translate="profile_subtitle">Personalize AI responses for your role</p>
             </div>
 
             <div class="setting-group">
                 <div class="setting-item">
-                    <label class="setting-label">Full Name</label>
-                    <input type="text" id="userName" placeholder="Your name">
+                    <label class="setting-label" data-translate="full_name">Full Name</label>
+                    <input type="text" id="userName" data-translate-placeholder="placeholder_name" placeholder="Your name">
                 </div>
                 <div class="setting-item">
-                    <label class="setting-label">Job Title</label>
-                    <input type="text" id="userTitle" placeholder="e.g. Software Engineer">
+                    <label class="setting-label" data-translate="job_title">Job Title</label>
+                    <input type="text" id="userTitle" data-translate-placeholder="placeholder_title" placeholder="e.g. Software Engineer">
                 </div>
                 <div class="setting-item">
-                    <label class="setting-label">Skills & Expertise</label>
-                    <textarea id="userSkills" placeholder="Python, Project Management, etc." rows="3"></textarea>
+                    <label class="setting-label" data-translate="skills">Skills & Expertise</label>
+                    <textarea id="userSkills" data-translate-placeholder="placeholder_skills" placeholder="Python, Project Management, etc." rows="3"></textarea>
                 </div>
             </div>
         </div>
@@ -634,12 +754,137 @@
 
     <!-- Action Bar -->
     <div class="action-bar">
-        <button class="btn btn-secondary" onclick="closeSettings()">Cancel</button>
-        <button class="btn btn-primary" onclick="saveSettings()">Save Changes</button>
+        <button class="btn btn-secondary" onclick="closeSettings()" data-translate="cancel">Cancel</button>
+        <button class="btn btn-primary" onclick="saveSettings()" data-translate="save">Save Changes</button>
     </div>
 
     <script>
         let currentSettings = {};
+
+        // Custom Dropdown Functionality
+        // Language map will be populated from available_languages in settings
+        let languageMap = {};
+
+        function initCustomDropdown() {
+            const select = document.getElementById('uiLanguageSelect');
+            if (!select) {
+                console.error('Language select element not found');
+                return;
+            }
+            
+            const trigger = select.querySelector('.custom-select-trigger');
+            const options = select.querySelector('.custom-select-options');
+            const display = select.querySelector('#uiLanguageDisplay');
+            const hiddenInput = document.getElementById('uiLanguage');
+            
+            if (!trigger || !options || !display || !hiddenInput) {
+                console.error('Language dropdown elements not found');
+                return;
+            }
+
+            // Update language map from settings if available
+            function updateLanguageMap(availableLanguages) {
+                if (availableLanguages) {
+                    languageMap = availableLanguages;
+                    // Rebuild options with updated names
+                    rebuildOptions();
+                }
+            }
+
+            // Rebuild dropdown options with current language map
+            function rebuildOptions() {
+                options.innerHTML = '';
+                Object.keys(languageMap).forEach(langCode => {
+                    const option = document.createElement('div');
+                    option.className = 'custom-select-option';
+                    option.setAttribute('data-value', langCode);
+                    option.textContent = languageMap[langCode];
+                    options.appendChild(option);
+                });
+                
+                // Reattach event listeners
+                attachOptionListeners();
+            }
+
+            // Attach event listeners to options
+            function attachOptionListeners() {
+                options.querySelectorAll('.custom-select-option').forEach(option => {
+                    option.addEventListener('click', function(e) {
+                        e.stopPropagation();
+                        const value = this.getAttribute('data-value');
+                        const text = this.textContent;
+                        
+                        // Update display and hidden input
+                        display.textContent = text;
+                        hiddenInput.value = value;
+                        
+                        // Update selected state
+                        options.querySelectorAll('.custom-select-option').forEach(opt => {
+                            opt.classList.remove('selected');
+                        });
+                        this.classList.add('selected');
+                        
+                        // Close dropdown
+                        trigger.classList.remove('active');
+                        options.classList.remove('show');
+                    });
+                });
+            }
+
+            // Initial attach
+            attachOptionListeners();
+
+            // Toggle dropdown
+            trigger.addEventListener('click', function(e) {
+                e.stopPropagation();
+                const isActive = trigger.classList.contains('active');
+                
+                // Close all other dropdowns
+                document.querySelectorAll('.custom-select-trigger').forEach(t => {
+                    if (t !== trigger) {
+                        t.classList.remove('active');
+                        t.parentElement.querySelector('.custom-select-options').classList.remove('show');
+                    }
+                });
+                
+                // Toggle this dropdown
+                trigger.classList.toggle('active');
+                options.classList.toggle('show');
+            });
+
+            // Set initial value
+            function setValue(value) {
+                if (!value) return;
+                
+                // Ensure options are built if languageMap exists
+                if (Object.keys(languageMap).length > 0 && options.children.length === 0) {
+                    rebuildOptions();
+                }
+                
+                if (languageMap[value]) {
+                    display.textContent = languageMap[value];
+                    if (hiddenInput) hiddenInput.value = value;
+                    
+                    // Update selected state in options
+                    options.querySelectorAll('.custom-select-option').forEach(opt => {
+                        opt.classList.remove('selected');
+                        if (opt.getAttribute('data-value') === value) {
+                            opt.classList.add('selected');
+                        }
+                    });
+                } else if (hiddenInput) {
+                    // Fallback: just set the value even if not in map
+                    hiddenInput.value = value;
+                }
+            }
+
+            // Expose functions
+            select.updateLanguageMap = updateLanguageMap;
+            select.setValue = setValue;
+            
+            // Don't build options yet - wait for available_languages from API
+            // Options will be built when updateLanguageMap is called
+        }
 
         // Tab Switching
         function switchTab(tabId) {
@@ -654,35 +899,92 @@
         function loadSettings() {
             pywebview.api.get_settings().then(settings => {
                 currentSettings = settings;
+                
+                // Store translations for later use
+                if (settings.translations) {
+                    currentSettings.translations = settings.translations;
+                }
+
+                // Update language map if available (must be first to populate dropdown)
+                if (settings.available_languages && Object.keys(settings.available_languages).length > 0) {
+                    languageMap = settings.available_languages;
+                    const select = document.getElementById('uiLanguageSelect');
+                    if (select && select.updateLanguageMap) {
+                        select.updateLanguageMap(settings.available_languages);
+                    }
+                } else {
+                    // Fallback: if no languages provided, show warning
+                    console.warn('No available languages found in settings');
+                }
+
+                // Update all UI translations
+                if (settings.translations) {
+                    updateAllTexts(settings.translations);
+                }
 
                 // General
                 if (settings.ui) {
-                    document.getElementById('alwaysOnTop').checked = settings.ui.always_on_top;
-                    document.getElementById('hideFromSharing').checked = settings.ui.hide_from_sharing;
-                    document.getElementById('overlayOpacity').value = settings.ui.opacity;
-                    document.getElementById('autoHideSeconds').value = settings.ui.auto_hide_seconds;
+                    const alwaysOnTopEl = document.getElementById('alwaysOnTop');
+                    const hideFromSharingEl = document.getElementById('hideFromSharing');
+                    const overlayOpacityEl = document.getElementById('overlayOpacity');
+                    const autoHideSecondsEl = document.getElementById('autoHideSeconds');
+                    
+                    if (alwaysOnTopEl) alwaysOnTopEl.checked = settings.ui.always_on_top || false;
+                    if (hideFromSharingEl) hideFromSharingEl.checked = settings.ui.hide_from_sharing || false;
+                    if (overlayOpacityEl) overlayOpacityEl.value = settings.ui.opacity || 0.9;
+                    if (autoHideSecondsEl) autoHideSecondsEl.value = settings.ui.auto_hide_seconds || 0;
+                    
+                    if (settings.ui.language) {
+                        const select = document.getElementById('uiLanguageSelect');
+                        if (select && select.setValue) {
+                            select.setValue(settings.ui.language);
+                        } else {
+                            const hiddenInput = document.getElementById('uiLanguage');
+                            const display = document.getElementById('uiLanguageDisplay');
+                            if (hiddenInput) hiddenInput.value = settings.ui.language;
+                            // Set initial display text from language map
+                            if (display && languageMap && languageMap[settings.ui.language]) {
+                                display.textContent = languageMap[settings.ui.language];
+                            } else if (display) {
+                                display.textContent = settings.ui.language; // Fallback
+                            }
+                        }
+                    }
                 }
 
                 // AI
                 if (settings.ai) {
-                    document.getElementById('aiProvider').value = settings.ai.type;
-                    document.getElementById('apiKey').value = settings.ai.api_key;
-                    document.getElementById('aiModel').value = settings.ai.model;
-                    document.getElementById('responseStyle').value = settings.ai.response_style;
+                    const aiProviderEl = document.getElementById('aiProvider');
+                    const apiKeyEl = document.getElementById('apiKey');
+                    const aiModelEl = document.getElementById('aiModel');
+                    const responseStyleEl = document.getElementById('responseStyle');
+                    
+                    if (aiProviderEl) aiProviderEl.value = settings.ai.type || 'azure_openai';
+                    if (apiKeyEl) apiKeyEl.value = settings.ai.api_key || '';
+                    if (aiModelEl) aiModelEl.value = settings.ai.model || 'gpt-4';
+                    if (responseStyleEl) responseStyleEl.value = settings.ai.response_style || 'balanced';
                 }
 
                 // Audio
                 if (settings.audio) {
-                    document.getElementById('audioMode').value = settings.audio.mode;
-                    document.getElementById('whisperLanguage').value = settings.audio.language;
-                    document.getElementById('autoTranscribe').checked = settings.audio.auto_start;
+                    const audioModeEl = document.getElementById('audioMode');
+                    const whisperLanguageEl = document.getElementById('whisperLanguage');
+                    const autoTranscribeEl = document.getElementById('autoTranscribe');
+                    
+                    if (audioModeEl) audioModeEl.value = settings.audio.mode || 'single_stream';
+                    if (whisperLanguageEl) whisperLanguageEl.value = settings.audio.language || 'en';
+                    if (autoTranscribeEl) autoTranscribeEl.checked = settings.audio.auto_start || false;
                 }
 
                 // Profile
                 if (settings.user_profile) {
-                    document.getElementById('userName').value = settings.user_profile.name;
-                    document.getElementById('userTitle').value = settings.user_profile.title;
-                    document.getElementById('userSkills').value = settings.user_profile.skills.join(', ');
+                    const userNameEl = document.getElementById('userName');
+                    const userTitleEl = document.getElementById('userTitle');
+                    const userSkillsEl = document.getElementById('userSkills');
+                    
+                    if (userNameEl) userNameEl.value = settings.user_profile.name || '';
+                    if (userTitleEl) userTitleEl.value = settings.user_profile.title || '';
+                    if (userSkillsEl) userSkillsEl.value = (settings.user_profile.skills || []).join(', ');
                 }
 
                 // Documents
@@ -690,62 +992,242 @@
             });
         }
 
+        // Initialize custom dropdown on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initCustomDropdown();
+            loadSettings();
+        });
+        
+        // Also try to load settings when pywebview is ready
+        if (window.pywebview) {
+            loadSettings();
+        }
+
         // Save Settings
         function saveSettings() {
+            // Get all elements with null checks
+            const alwaysOnTopEl = document.getElementById('alwaysOnTop');
+            const hideFromSharingEl = document.getElementById('hideFromSharing');
+            const overlayOpacityEl = document.getElementById('overlayOpacity');
+            const autoHideSecondsEl = document.getElementById('autoHideSeconds');
+            const uiLanguageEl = document.getElementById('uiLanguage');
+            const aiProviderEl = document.getElementById('aiProvider');
+            const apiKeyEl = document.getElementById('apiKey');
+            const aiModelEl = document.getElementById('aiModel');
+            const responseStyleEl = document.getElementById('responseStyle');
+            const audioModeEl = document.getElementById('audioMode');
+            const whisperLanguageEl = document.getElementById('whisperLanguage');
+            const autoTranscribeEl = document.getElementById('autoTranscribe');
+            const userNameEl = document.getElementById('userName');
+            const userTitleEl = document.getElementById('userTitle');
+            const userSkillsEl = document.getElementById('userSkills');
+
             const newSettings = {
                 ui: {
-                    always_on_top: document.getElementById('alwaysOnTop').checked,
-                    hide_from_sharing: document.getElementById('hideFromSharing').checked,
-                    opacity: parseFloat(document.getElementById('overlayOpacity').value),
-                    auto_hide_seconds: parseInt(document.getElementById('autoHideSeconds').value)
+                    always_on_top: alwaysOnTopEl ? alwaysOnTopEl.checked : false,
+                    hide_from_sharing: hideFromSharingEl ? hideFromSharingEl.checked : false,
+                    opacity: overlayOpacityEl ? parseFloat(overlayOpacityEl.value) || 0.9 : 0.9,
+                    auto_hide_seconds: autoHideSecondsEl ? parseInt(autoHideSecondsEl.value) || 0 : 0,
+                    language: uiLanguageEl ? uiLanguageEl.value : 'en'
                 },
                 ai: {
-                    type: document.getElementById('aiProvider').value,
-                    api_key: document.getElementById('apiKey').value,
-                    model: document.getElementById('aiModel').value,
-                    response_style: document.getElementById('responseStyle').value
+                    type: aiProviderEl ? aiProviderEl.value : 'azure_openai',
+                    api_key: apiKeyEl ? apiKeyEl.value : '',
+                    model: aiModelEl ? aiModelEl.value : 'gpt-4',
+                    response_style: responseStyleEl ? responseStyleEl.value : 'balanced'
                 },
                 audio: {
-                    mode: document.getElementById('audioMode').value,
-                    language: document.getElementById('whisperLanguage').value,
-                    auto_start: document.getElementById('autoTranscribe').checked
+                    mode: audioModeEl ? audioModeEl.value : 'single_stream',
+                    language: whisperLanguageEl ? whisperLanguageEl.value : 'en',
+                    auto_start: autoTranscribeEl ? autoTranscribeEl.checked : false
                 },
                 user_profile: {
-                    name: document.getElementById('userName').value,
-                    title: document.getElementById('userTitle').value,
-                    skills: document.getElementById('userSkills').value.split(',').map(s => s.trim()).filter(s => s)
+                    name: userNameEl ? userNameEl.value : '',
+                    title: userTitleEl ? userTitleEl.value : '',
+                    skills: userSkillsEl ? userSkillsEl.value.split(',').map(s => s.trim()).filter(s => s) : []
                 }
             };
 
             pywebview.api.save_settings(newSettings).then(result => {
                 if (result.success) {
-                    closeSettings();
+                    // Check if language changed (either from result flag or by comparing)
+                    const languageChanged = result.language_changed || 
+                        (newSettings.ui.language && currentSettings.ui && 
+                         newSettings.ui.language !== currentSettings.ui.language);
+                    
+                    if (languageChanged) {
+                        // Language changed - reload settings to get new translations
+                        console.log(`Language changed to ${newSettings.ui.language}, reloading settings...`);
+                        // Small delay to ensure backend has updated language
+                        setTimeout(() => {
+                            loadSettings();
+                        }, 150);
+                    } else {
+                        closeSettings();
+                    }
                 } else {
-                    alert('Error saving settings: ' + result.error);
+                    const translations = currentSettings.translations || {};
+                    const errorMsg = translations.error_saving || 'Error saving settings: {error}';
+                    alert(errorMsg.replace('{error}', result.error || 'Unknown error'));
                 }
             });
+        }
+
+        // Function to update all static texts based on translations
+        function updateAllTexts(translations) {
+            if (!translations) {
+                console.warn('No translations provided to updateAllTexts');
+                return;
+            }
+            
+            console.log('Updating texts with translations:', Object.keys(translations).length, 'keys');
+
+            // Update title
+            const titleEl = document.getElementById('settingsTitle');
+            if (titleEl && translations.title) {
+                titleEl.textContent = translations.title;
+            }
+            
+            // Update page title
+            const pageTitleEl = document.getElementById('pageTitle');
+            if (pageTitleEl && translations.title) {
+                pageTitleEl.textContent = translations.title;
+            }
+
+            // Update navigation items
+            document.querySelectorAll('.nav-item[data-translate]').forEach(item => {
+                const key = item.getAttribute('data-translate');
+                const textEl = item.querySelector('.nav-text');
+                if (textEl && translations[key]) {
+                    let text = translations[key];
+                    // Remove emoji if present (single emoji at start)
+                    text = text.replace(/^[\u{1F300}-\u{1F9FF}]+\s*/u, '');
+                    textEl.textContent = text;
+                }
+            });
+
+            // Update section titles and subtitles
+            document.querySelectorAll('.section-title[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (translations[key]) {
+                    // Remove emoji if present, but keep the text
+                    let text = translations[key];
+                    // Remove emoji pattern (single emoji at start)
+                    text = text.replace(/^[\u{1F300}-\u{1F9FF}]+\s*/u, '');
+                    el.textContent = text;
+                }
+            });
+
+            document.querySelectorAll('.section-subtitle[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (translations[key]) {
+                    el.textContent = translations[key];
+                }
+            });
+
+            // Update setting labels
+            document.querySelectorAll('.setting-label[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (translations[key]) {
+                    el.textContent = translations[key];
+                }
+            });
+
+            // Update setting descriptions
+            document.querySelectorAll('.setting-desc[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (translations[key]) {
+                    el.textContent = translations[key];
+                }
+            });
+
+            // Update buttons
+            document.querySelectorAll('button[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (translations[key]) {
+                    let text = translations[key];
+                    // Remove emoji if present (single emoji at start)
+                    text = text.replace(/^[\u{1F300}-\u{1F9FF}]+\s*/u, '');
+                    el.textContent = text;
+                }
+            });
+
+            // Update other elements with data-translate (h3, p, span, etc.)
+            document.querySelectorAll('[data-translate]:not(.nav-item):not(.section-title):not(.section-subtitle):not(.setting-label):not(.setting-desc):not(button):not(label)').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (translations[key]) {
+                    el.textContent = translations[key];
+                }
+            });
+
+            // Update labels with data-translate attribute (including uiLanguageLabel)
+            document.querySelectorAll('label[data-translate]').forEach(el => {
+                const key = el.getAttribute('data-translate');
+                if (translations[key]) {
+                    el.textContent = translations[key];
+                }
+            });
+
+            // Update select option text
+            document.querySelectorAll('option[data-translate-text]').forEach(option => {
+                const key = option.getAttribute('data-translate-text');
+                if (translations[key]) {
+                    option.textContent = translations[key];
+                }
+            });
+
+            // Update input placeholders
+            document.querySelectorAll('[data-translate-placeholder]').forEach(input => {
+                const key = input.getAttribute('data-translate-placeholder');
+                if (translations[key]) {
+                    input.placeholder = translations[key];
+                }
+            });
+
+            // Update loading documents text
+            const loadingDocs = document.querySelector('#documentList .doc-card[data-translate="loading_documents"]');
+            if (loadingDocs && translations.loading_documents) {
+                loadingDocs.textContent = translations.loading_documents;
+            }
         }
 
         // Document Management
         function renderDocuments(docs) {
             const container = document.getElementById('documentList');
             if (!docs || docs.length === 0) {
+                const noDocsMsg = currentSettings.translations?.no_documents || 'No documents yet. Upload some to get started!';
                 container.innerHTML = `
                     <div class="doc-card" style="justify-content: center; color: #888; padding: 30px; flex-direction: column; text-align: center;">
                         <span style="font-size: 24px; margin-bottom: 10px;">📂</span>
-                        No documents yet. Upload some to get started!
+                        ${noDocsMsg}
                     </div>`;
                 return;
             }
 
-            container.innerHTML = docs.map(doc => `
+            const translations = currentSettings.translations || {};
+            const kbLabel = translations.kb || 'KB';
+            const chunksLabel = translations.chunks_label || 'chunks';
+            const deleteTitle = translations.delete_button || 'Delete';
+            
+            // Status translation mapping
+            const statusMap = {
+                'active': translations.status_active || 'Active',
+                'inactive': translations.status_inactive || 'Inactive',
+                'processing': translations.status_processing || 'Processing',
+                'ready': translations.status_ready || 'Ready',
+                'error': translations.status_error || 'Error'
+            };
+            
+            container.innerHTML = docs.map(doc => {
+                const translatedStatus = statusMap[doc.status?.toLowerCase()] || doc.status;
+                return `
                 <div class="doc-card">
                     <div class="doc-info">
                         <span class="doc-icon">📄</span>
                         <div class="doc-details">
                             <h4>${doc.name}</h4>
                             <div class="doc-meta">
-                                ${(doc.size / 1024).toFixed(1)} KB • ${doc.status} • ${doc.chunks} chunks
+                                ${(doc.size / 1024).toFixed(1)} ${kbLabel} • ${translatedStatus} • ${doc.chunks} ${chunksLabel}
                             </div>
                         </div>
                     </div>
@@ -756,12 +1238,13 @@
                                    onchange="toggleDocument('${doc.id}', this.checked)">
                             <span class="slider"></span>
                         </label>
-                        <button class="btn-icon delete" onclick="deleteDocument('${doc.id}')" title="Delete">
+                        <button class="btn-icon delete" onclick="deleteDocument('${doc.id}')" title="${deleteTitle}">
                             🗑️
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function uploadDocument() {
@@ -769,7 +1252,9 @@
                 if (result.success) {
                     loadSettings(); // Reload to show new docs
                 } else if (result.error) {
-                    alert('Upload failed: ' + result.error);
+                    const translations = currentSettings.translations || {};
+                    const errorMsg = translations.upload_failed || 'Upload failed: {error}';
+                    alert(errorMsg.replace('{error}', result.error || 'Unknown error'));
                 }
             });
         }
@@ -779,7 +1264,9 @@
         }
 
         function deleteDocument(docId) {
-            if (confirm('Are you sure you want to delete this document?')) {
+            const translations = currentSettings.translations || {};
+            const confirmMsg = translations.delete_confirm || 'Are you sure you want to delete this document?';
+            if (confirm(confirmMsg)) {
                 pywebview.api.delete_document(docId).then(result => {
                     if (result.success) {
                         loadSettings();

@@ -1,0 +1,371 @@
+{
+  "ui": {
+    "overlay": {
+      "title": "MeetMinder",
+      "ask_ai": "🤖 AI에게 질문",
+      "toggle_mic": "마이크 녹음 전환",
+      "settings": "설정 열기",
+      "hide": "숨기기",
+      "show": "표시",
+      "close": "애플리케이션 닫기",
+      "expand": "세부 정보 확장",
+      "collapse": "세부 정보 접기",
+      "timer": "00:00",
+      "shortcut": "Ctrl+스페이스"
+    },
+    "buttons": {
+      "ask_ai": "🤖 AI에게 질문",
+      "mic": "🎤",
+      "settings": "⚙️",
+      "hide": "숨기기",
+      "show": "표시",
+      "close": "✕",
+      "expand": "▼",
+      "collapse": "▲"
+    },
+    "sections": {
+      "ai_response": "🤖 AI 응답",
+      "live_transcript": "📝 실시간 전사 (시스템 오디오)",
+      "topic_analysis": "🧠 주제 분석",
+      "guidance": "💡 안내",
+      "flow": "🔄 흐름"
+    },
+    "status": {
+      "no_active_topic": "활성 주제 없음",
+      "start_speaking": "안내를 받으려면 말하기 시작하세요",
+      "waiting": "대기 중",
+      "analyzing": "🤔 컨텍스트 분석 중...",
+      "processing": "⏳ 처리 중...",
+      "waiting_audio": "시스템 오디오 대기 중...",
+      "transcript_enabled": "전사 활성화됨 - 시스템 오디오 대기 중...",
+      "screenshot_saved": "📸 스크린샷 저장됨: {path}",
+      "screenshot_taken": "📸 스크린샷 촬영됨!",
+      "error": "오류: {error}"
+    },
+    "tooltips": {
+      "ask_ai": "AI 지원 트리거 (Ctrl+스페이스)",
+      "mic": "마이크 녹음 전환 (Ctrl+M)",
+      "settings": "설정 열기 (Ctrl+,)",
+      "hide": "오버레이 숨기기",
+      "show": "오버레이 표시",
+      "close": "애플리케이션 닫기",
+      "expand": "세부 정보 확장/접기"
+    }
+  },
+  "settings": {
+    "title": "MeetMinder 설정",
+    "tabs": {
+      "ai_provider": "🤖 AI 제공자",
+      "audio": "🎤 오디오",
+      "interface": "🖥️ 인터페이스",
+      "assistant": "🧠 어시스턴트",
+      "prompts": "📝 프롬프트",
+      "knowledge": "🧠 지식",
+      "documents": "📚 문서",
+      "hotkeys": "⌨️ 단축키",
+      "debug": "🐛 디버그"
+    },
+    "buttons": {
+      "save": "💾 설정 저장",
+      "save_changes": "변경 사항 저장",
+      "cancel": "❌ 취소",
+      "reset": "🔄 기본값으로 재설정"
+    },
+    "nav": {
+      "general": "일반",
+      "ai": "AI 및 모델",
+      "audio": "오디오",
+      "documents": "문서",
+      "profile": "프로필"
+    },
+    "general": {
+      "title": "일반 설정",
+      "subtitle": "인터페이스 및 애플리케이션 동작 구성",
+      "always_on_top": "항상 맨 위",
+      "always_on_top_desc": "오버레이를 다른 창 위에 표시 유지",
+      "hide_from_sharing_desc": "Zoom/Teams/Meet에서 숨김",
+      "overlay_opacity": "오버레이 불투명도",
+      "auto_hide_timer": "자동 숨김 타이머(초)"
+    },
+    "ai": {
+      "title": "AI 구성",
+      "subtitle": "AI 제공자 및 모델 설정 관리",
+      "response_concise": "간결",
+      "response_balanced": "균형",
+      "response_detailed": "상세"
+    },
+    "language": {
+      "label": "인터페이스 언어",
+      "tooltip": "인터페이스 언어 선택"
+    },
+    "theme": {
+      "label": "테마:",
+      "dark": "다크 모드",
+      "light": "라이트 모드",
+      "tooltip": "라이트 및 다크 테마 중 선택"
+    },
+    "size_multiplier": {
+      "label": "크기 배율:"
+    },
+    "show_transcript": {
+      "label": "확장 보기에서 라이브 전사 표시"
+    },
+    "hide_from_sharing": {
+      "label": "화면 공유에서 숨기기"
+    },
+    "screen_sharing": {
+      "label": "화면 공유 감지 활성화",
+      "tooltip": "화면 공유 앱이 감지되면 오버레이를 자동으로 숨기기"
+    },
+    "hide_screenshots": {
+      "label": "스크린샷/디버깅용 오버레이 숨기기",
+      "tooltip": "깨끗한 스크린샷을 찍거나 UI 문제를 디버깅하기 위해 전체 오버레이를 일시적으로 숨기기"
+    },
+    "background_opacity": {
+      "label": "배경 불투명도:"
+    },
+    "blur_effects": {
+      "label": "블러 효과 활성화",
+      "tooltip": "전문적인 외관을 위해 배경에 블러 효과 적용"
+    },
+    "smooth_animations": {
+      "label": "부드러운 애니메이션 활성화",
+      "tooltip": "전환 및 크기 조정에 부드러운 애니메이션 사용"
+    },
+    "auto_width": {
+      "label": "자동 너비 조정 활성화",
+      "tooltip": "콘텐츠에 따라 오버레이 너비 자동 조정"
+    },
+    "dynamic_transparency": {
+      "label": "동적 투명도 활성화",
+      "tooltip": "활동 및 컨텍스트에 따라 투명도 조정"
+    },
+    "auto_hide": {
+      "label": "자동 숨김 타이머:",
+      "suffix": " 초(0 = 비활성화)"
+    },
+    "ai_provider": {
+      "title": "🤖 AI 제공자",
+      "provider_label": "AI 제공자",
+      "azure": {
+        "title": "🔷 Azure OpenAI 구성",
+        "endpoint": "엔드포인트:",
+        "endpoint_placeholder": "https://your-resource.openai.azure.com/",
+        "api_key": "API 키",
+        "api_key_placeholder": "sk-...",
+        "model": "모델 이름",
+        "model_placeholder": "gpt-4",
+        "deployment": "배포:",
+        "deployment_placeholder": "your-deployment-name",
+        "api_version": "API 버전:"
+      },
+      "openai": {
+        "title": "🟢 OpenAI 구성",
+        "api_key": "API 키:",
+        "api_key_placeholder": "OpenAI API 키",
+        "model": "모델:",
+        "model_placeholder": "gpt-4"
+      },
+      "gemini": {
+        "title": "🔴 Google Gemini 구성",
+        "api_key": "API 키:",
+        "api_key_placeholder": "Gemini API 키",
+        "model": "모델:",
+        "model_placeholder": "gemini-2.0-flash",
+        "project_id": "프로젝트 ID:",
+        "project_id_placeholder": "your-project-id"
+      }
+    },
+    "audio": {
+      "title": "🎤 오디오 구성",
+      "subtitle": "마이크 및 전사 설정",
+      "mode": "오디오 입력 모드",
+      "whisper_language": "Whisper 언어",
+      "auto_start": "자동 전사 시작",
+      "auto_start_desc": "앱 시작 시 듣기 시작",
+      "mode_single": "마이크만",
+      "mode_dual": "마이크 + 시스템 오디오",
+      "language_english": "영어",
+      "language_auto": "자동 감지",
+      "language_spanish": "스페인어",
+      "language_french": "프랑스어",
+      "language_german": "독일어",
+      "buffer_duration": "버퍼 지속 시간:",
+      "buffer_suffix": " 분",
+      "processing_interval": "처리 간격:",
+      "system_audio": {
+        "title": "🔊 시스템 오디오 모니터링",
+        "full_monitoring": "모든 시스템 오디오 모니터링(특정 앱 선택 덮어쓰기)",
+        "select_apps": "모니터링할 특정 애플리케이션 선택:",
+        "meeting_apps": "📞 회의 및 통신 앱(기본적으로 활성화)",
+        "other_apps": "🖥️ 기타 애플리케이션(기본적으로 비활성화)",
+        "custom_app": "사용자 지정 애플리케이션 이름 입력(예: MyApp.exe)",
+        "add_custom": "➕ 추가",
+        "filtering": "🎛️ 오디오 필터링:",
+        "filter_music": "🎵 음악 및 비음성 오디오 필터링(권장)",
+        "filter_music_tooltip": "AI를 사용하여 음악, 사운드 효과 및 기타 비음성 오디오 감지 및 무시",
+        "speech_sensitivity": "음성 감지 민감도:",
+        "monitoring_status": "📊 현재 모니터링 중: 로드 중..."
+      },
+      "transcription": {
+        "title": "📝 전사 설정",
+        "provider": "제공자:",
+        "whisper": {
+          "title": "🤖 로컬 Whisper 구성",
+          "model_size": "모델 크기:"
+        },
+        "google_speech": {
+          "title": "🔴 Google Speech-to-Text 구성",
+          "json_file": "서비스 계정 JSON 파일:",
+          "browse": "찾아보기",
+          "json_content": "또는 JSON 내용 붙여넣기:",
+          "json_placeholder": "{\n  \"type\": \"service_account\",\n  \"project_id\": \"your-project\",\n  \"private_key_id\": \"...\",\n  ...\n}"
+        },
+        "azure_speech": {
+          "title": "🔷 Azure 음성 서비스 구성",
+          "api_key": "API 키:",
+          "api_key_placeholder": "Azure 음성 API 키",
+          "region": "지역:",
+          "region_placeholder": "eastus",
+          "endpoint": "사용자 지정 엔드포인트:",
+          "endpoint_placeholder": "https://your-region.api.cognitive.microsoft.com/ (선택 사항)",
+          "language": "언어:"
+        },
+        "openai_whisper": {
+          "title": "🟢 OpenAI Whisper API 구성",
+          "api_key": "API 키:",
+          "api_key_placeholder": "OpenAI API 키",
+          "model": "모델:",
+          "language": "언어:"
+        }
+      }
+    },
+    "assistant": {
+      "title": "🧠 어시스턴트 동작",
+      "activation_mode": "활성화 모드:",
+      "verbosity": "응답 상세도:",
+      "response_style": "응답 스타일",
+      "input_priority": "입력 우선순위:"
+    },
+    "prompts": {
+      "title": "📝 AI 프롬프트 구성",
+      "info": "MeetMinder 어시스턴트의 동작 및 응답 스타일 사용자 지정:",
+      "placeholder": "MeetMinder 어시스턴트의 동작, 톤 및 전문성을 정의하는 시스템 프롬프트 입력...",
+      "load_file": "📁 파일에서 로드",
+      "save_file": "💾 파일에 저장",
+      "reset_default": "🔄 기본값으로 재설정"
+    },
+    "knowledge": {
+      "title": "🧠 지식 그래프",
+      "enable": "주제 분석 및 제안 활성화",
+      "matching_threshold": "매칭 임계값:",
+      "max_matches": "최대 제안:",
+      "topic_definitions": "주제 정의:",
+      "topic_definitions_placeholder": "주제 정의 예:\n\n회의 관리: 효과적인 회의를 구성하고 실행하기 위한 전략\n프로젝트 계획: 프로젝트 계획 및 실행 기술\n기술 토론: 기술 주제 및 문제 해결 처리\n고객 커뮤니케이션: 고객 상호 작용을 위한 모범 사례\n\n한 줄에 하나의 주제를 입력, 형식: 주제 이름: 설명",
+      "import_topics": "📁 주제 가져오기",
+      "export_topics": "💾 주제 내보내기",
+      "clear_all": "🗑️ 모두 지우기"
+    },
+    "documents": {
+      "title": "📚 문서 저장소 구성",
+      "title_short": "지식 베이스",
+      "subtitle": "컨텍스트 인식 답변을 위한 문서 관리",
+      "upload_documents": "클릭하여 문서 업로드",
+      "support_formats": "PDF, TXT, MD, DOCX 지원",
+      "loading": "문서 로드 중...",
+      "no_documents": "아직 문서가 없습니다. 시작하려면 일부를 업로드하세요!",
+      "enabled": "문서 저장 및 검색 활성화",
+      "chunk_size": "청크 크기:",
+      "chunk_overlap": "청크 겹침:",
+      "max_context": "최대 컨텍스트 청크:",
+      "embedding_provider": "임베딩 제공자:",
+      "embedding_model": "임베딩 모델:",
+      "vector_backend": "벡터 백엔드:",
+      "uploaded_documents": "업로드된 문서가 여기에 표시됩니다...",
+      "upload": "📤 문서 업로드",
+      "refresh_list": "🔄 목록 새로고침",
+      "delete": "🗑️ 삭제",
+      "delete_confirm": "이 문서를 삭제하시겠습니까?",
+      "upload_failed": "업로드 실패: {error}",
+      "error_saving": "설정 저장 중 오류: {error}",
+      "kb": "KB",
+      "chunks": "청크",
+      "embedding_provider_title": "🧮 임베딩 제공자",
+      "vector_storage_title": "💾 벡터 저장소",
+      "management_title": "📁 문서 관리",
+      "statistics_title": "📊 문서 저장소 통계:",
+      "total_documents": "총 문서 수:",
+      "completed": "완료:",
+      "failed": "실패:",
+      "total_chunks": "총 청크 수:",
+      "embedding": "임베딩:",
+      "vector_backend_label": "벡터 백엔드:",
+      "documents_list_title": "📁 문서:",
+      "unknown": "알 수 없음",
+      "status_label": "상태:",
+      "error_label": "오류:",
+      "no_documents_uploaded": "아직 문서가 업로드되지 않았습니다.",
+      "error_loading": "문서 로드 오류: {error}",
+      "status": {
+        "active": "활성",
+        "inactive": "비활성",
+        "processing": "처리 중",
+        "ready": "준비됨",
+        "error": "오류"
+      }
+    },
+    "profile": {
+      "title": "사용자 프로필",
+      "subtitle": "역할에 맞게 AI 응답 개인화",
+      "full_name": "전체 이름",
+      "job_title": "직책",
+      "skills": "기술 및 전문 지식",
+      "placeholder_name": "이름",
+      "placeholder_title": "예: 소프트웨어 엔지니어",
+      "placeholder_skills": "Python, 프로젝트 관리 등"
+    },
+    "hotkeys": {
+      "title": "⌨️ 전역 단축키",
+      "trigger_ai": "AI 트리거:",
+      "toggle_overlay": "오버레이 토글:",
+      "screenshot": "스크린샷:",
+      "emergency_reset": "긴급 재설정:",
+      "toggle_hide": "오버레이 숨기기 토글:",
+      "toggle_hide_placeholder": "예: Ctrl+H"
+    },
+    "debug": {
+      "enabled": "디버그 모드 활성화",
+      "verbose_logging": "상세 로깅",
+      "save_transcriptions": "전사를 파일로 저장",
+      "save_audio": "오디오 청크를 파일로 저장",
+      "max_files": "최대 디버그 파일 수:",
+      "title": "🐛 디버그 및 로깅"
+    }
+  },
+  "messages": {
+    "loading": "🚀 MeetMinder 로드 중...\n잠시 기다려 주세요...",
+    "initializing": "MeetMinder 초기화 중...",
+    "ready": "✅ MeetMinder가 실행 중입니다!",
+    "error": "오류: {error}",
+    "settings_saved": "설정이 성공적으로 저장되었습니다!",
+    "settings_reset": "설정이 기본값으로 재설정되었습니다",
+    "document_uploaded": "문서 업로드됨",
+    "upload_failed": "업로드 실패",
+    "upload_failed_msg": "문서 업로드 실패: {error}",
+    "ai_helper_not_available": "AI 도우미를 사용할 수 없음",
+    "ai_helper_not_available_msg": "AI 도우미를 사용할 수 없습니다. AI 제공자 구성을 확인하세요.",
+    "topics_imported": "주제 가져오기",
+    "topics_exported": "주제 내보내기",
+    "success": "성공",
+    "invalid_json": "잘못된 JSON",
+    "invalid_json_msg": "선택한 파일에 유효한 JSON이 포함되어 있지 않습니다.",
+    "error_loading_file": "오류",
+    "error_loading_file_msg": "파일 로드 오류: {error}",
+    "invalid_input": "잘못된 입력",
+    "invalid_input_msg": "애플리케이션 이름을 입력하세요.",
+    "already_added": "이미 추가됨",
+    "already_added_msg": "'{name}' (이)가 이미 목록에 있습니다.",
+    "application_added": "애플리케이션 추가됨"
+  }
+}
+

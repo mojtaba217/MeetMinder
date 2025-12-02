@@ -20,6 +20,16 @@ except ImportError:
     THEMES_AVAILABLE = False
     print("⚠️ Theme system not available, using default dark theme")
 
+# Import translation system
+try:
+    from utils.translation_manager import get_translation_manager, t
+    TRANSLATIONS_AVAILABLE = True
+except ImportError:
+    TRANSLATIONS_AVAILABLE = False
+    print("⚠️ Translation system not available, using English")
+    def t(key: str, default: str = None, **kwargs) -> str:
+        return default or key
+
 # Windows API constants for screen capture protection
 WDA_NONE = 0x00000000
 WDA_MONITOR = 0x00000001
@@ -405,6 +415,11 @@ class ModernOverlay(QWidget):
         self.was_visible_before_sharing = False
         self.show_transcript = config.get('show_transcript', True)  # Temporarily True for testing
         
+        # Button state flags to prevent stuck states
+        self._visibility_toggling = False
+        self._expansion_toggling = False
+        self._ask_ai_processing = False
+        
         # Theme support
         self.current_theme_name = config.get('theme', 'dark')
         try:
@@ -587,7 +602,7 @@ class ModernOverlay(QWidget):
         self.setAttribute(QtCore.Qt.WA_TranslucentBackground)
         
         # Set window title and icon
-        self.setWindowTitle("MeetMinder")
+        self.setWindowTitle(t("ui.overlay.title", "MeetMinder"))
         if os.path.exists("MeetMinderIcon.ico"):
             self.setWindowIcon(QtGui.QIcon("MeetMinderIcon.ico"))
         
@@ -684,10 +699,10 @@ class ModernOverlay(QWidget):
     def setup_recording_status(self, layout):
         """Setup recording status section"""
         # Microphone button - modern style with animation
-        self.mic_button = ModernButton("🎤", size_multiplier=self.size_multiplier)
+        self.mic_button = ModernButton(t("ui.buttons.mic", "🎤"), size_multiplier=self.size_multiplier)
         self.mic_button.setFixedSize(self.scale(50), self.scale(50))
         self.mic_button.clicked.connect(self.toggle_recording)
-        self.mic_button.setToolTip("Toggle microphone recording (Ctrl+M)")
+        self.mic_button.setToolTip(t("ui.tooltips.mic", "Toggle microphone recording (Ctrl+M)"))
         # Mic button styling handled by theme system
         
         # Timer display - modern style
@@ -702,50 +717,52 @@ class ModernOverlay(QWidget):
     def setup_main_controls(self, layout):
         """Setup main control buttons"""
         # Ask AI button - larger and more prominent
-        self.ask_ai_button = ModernButton("🤖 Ask AI", size_multiplier=self.size_multiplier)
+        self.ask_ai_button = ModernButton(t("ui.buttons.ask_ai", "🤖 Ask AI"), size_multiplier=self.size_multiplier)
         self.ask_ai_button.setObjectName("askAiButton")
         self.ask_ai_button.setFixedSize(self.scale(120), self.scale(50))
         self.ask_ai_button.clicked.connect(self.trigger_ask_ai)
+        self.ask_ai_button.setToolTip(t("ui.tooltips.ask_ai", "Trigger AI assistance (Ctrl+Space)"))
         # Ask AI button styling handled by theme system
         
         # Shortcut indicator - larger text
-        shortcut_label = QLabel("Ctrl+Space")
-        shortcut_label.setObjectName("shortcutLabel")
+        self.shortcut_label = QLabel(t("ui.overlay.shortcut", "Ctrl+Space"))
+        self.shortcut_label.setObjectName("shortcutLabel")
         # Shortcut label styling handled by theme system
         
         # Expand/collapse button - larger
-        self.expand_button = ModernButton("▼", size_multiplier=self.size_multiplier)
+        self.expand_button = ModernButton(t("ui.buttons.expand", "▼"), size_multiplier=self.size_multiplier)
         self.expand_button.setFixedSize(self.scale(50), self.scale(50))
         self.expand_button.clicked.connect(self.toggle_expansion)
-        self.expand_button.setToolTip("Expand/collapse details")
+        self.expand_button.setToolTip(t("ui.tooltips.expand", "Expand/collapse details"))
         # Expand button styling handled by theme system
         
         layout.addWidget(self.ask_ai_button)
-        layout.addWidget(shortcut_label)
+        layout.addWidget(self.shortcut_label)
         layout.addStretch()  # Push remaining items to the right
         layout.addWidget(self.expand_button)
     
     def setup_right_buttons(self, layout):
         """Setup right side control buttons"""
         # Settings button - modern style
-        settings_button = ModernButton("⚙️", size_multiplier=self.size_multiplier)
+        settings_button = ModernButton(t("ui.buttons.settings", "⚙️"), size_multiplier=self.size_multiplier)
         settings_button.setFixedSize(self.scale(50), self.scale(50))
         settings_button.clicked.connect(self.trigger_settings)
-        settings_button.setToolTip("Open settings (Ctrl+,)")
+        settings_button.setToolTip(t("ui.tooltips.settings", "Open settings (Ctrl+,)"))
         # Settings button styling handled by theme system
         
         # Hide/show button - modern style
-        self.visibility_button = ModernButton("Hide", size_multiplier=self.size_multiplier)
+        self.visibility_button = ModernButton(t("ui.buttons.hide", "Hide"), size_multiplier=self.size_multiplier)
         self.visibility_button.setFixedSize(self.scale(70), self.scale(50))
         self.visibility_button.clicked.connect(self.toggle_visibility)
+        self.visibility_button.setToolTip(t("ui.tooltips.hide", "Hide overlay"))
         # Visibility button styling handled by theme system
         
         # Close button - modern style
-        self.close_button = ModernButton("✕", size_multiplier=self.size_multiplier)
+        self.close_button = ModernButton(t("ui.buttons.close", "✕"), size_multiplier=self.size_multiplier)
         self.close_button.setObjectName("closeButton")
         self.close_button.setFixedSize(self.scale(50), self.scale(50))
         self.close_button.clicked.connect(self.close_application)
-        self.close_button.setToolTip("Close application")
+        self.close_button.setToolTip(t("ui.tooltips.close", "Close application"))
         # Close button styling handled by theme system
         
         layout.addWidget(settings_button)
@@ -789,8 +806,8 @@ class ModernOverlay(QWidget):
         ai_section.setSpacing(self.scale(12))
         
         # AI Response header
-        ai_header = QLabel("🤖 AI Response")
-        ai_header.setStyleSheet(f"""
+        self.ai_header = QLabel(t("ui.sections.ai_response", "🤖 AI Response"))
+        self.ai_header.setStyleSheet(f"""
             QLabel {{
                 color: white;
                 font-family: 'Segoe UI Variable';
@@ -831,7 +848,7 @@ class ModernOverlay(QWidget):
         # Live transcript area (optional)
         self.setup_transcript_section(ai_section)
         
-        ai_section.addWidget(ai_header)
+        ai_section.addWidget(self.ai_header)
         ai_section.addWidget(self.ai_response_area)
         
         layout.addLayout(ai_section, 3)  # Takes 3/4 of the width
@@ -840,7 +857,7 @@ class ModernOverlay(QWidget):
         """Setup the live transcript section"""
         # Always create transcript elements, but only show them if enabled
         # Transcript header
-        self.transcript_header = QLabel("📝 Live Transcript (System Audio)")
+        self.transcript_header = QLabel(t("ui.sections.live_transcript", "📝 Live Transcript (System Audio)"))
         self.transcript_header.setStyleSheet(f"""
             QLabel {{
                 color: #98FB98;
@@ -877,7 +894,7 @@ class ModernOverlay(QWidget):
         
         # Add some initial text to show it's working
         if self.show_transcript:
-            self.transcript_area.setPlainText("Waiting for system audio...")
+            self.transcript_area.setPlainText(t("ui.status.waiting_audio", "Waiting for system audio..."))
     
     def setup_info_panels(self, layout):
         """Setup the right side info panels"""
@@ -885,8 +902,8 @@ class ModernOverlay(QWidget):
         info_layout.setSpacing(self.scale(16))
         
         # Topic Analysis section
-        topic_header = QLabel("🧠 Topic Analysis")
-        topic_header.setStyleSheet(f"""
+        self.topic_header = QLabel(t("ui.sections.topic_analysis", "🧠 Topic Analysis"))
+        self.topic_header.setStyleSheet(f"""
             QLabel {{
                 color: #87CEEB;
                 font-family: 'Segoe UI Variable';
@@ -895,7 +912,7 @@ class ModernOverlay(QWidget):
             }}
         """)
         
-        self.topic_path_label = QLabel("No active topic")
+        self.topic_path_label = QLabel(t("ui.status.no_active_topic", "No active topic"))
         self.topic_path_label.setWordWrap(True)
         self.topic_path_label.setStyleSheet(f"""
             QLabel {{
@@ -912,8 +929,8 @@ class ModernOverlay(QWidget):
         """)
         
         # Guidance section
-        guidance_header = QLabel("💡 Guidance")
-        guidance_header.setStyleSheet(f"""
+        self.guidance_header = QLabel(t("ui.sections.guidance", "💡 Guidance"))
+        self.guidance_header.setStyleSheet(f"""
             QLabel {{
                 color: #98FB98;
                 font-family: 'Segoe UI Variable';
@@ -922,7 +939,7 @@ class ModernOverlay(QWidget):
             }}
         """)
         
-        self.topic_guidance_label = QLabel("Start speaking to get guidance")
+        self.topic_guidance_label = QLabel(t("ui.status.start_speaking", "Start speaking to get guidance"))
         self.topic_guidance_label.setWordWrap(True)
         self.topic_guidance_label.setStyleSheet(f"""
             QLabel {{
@@ -939,8 +956,8 @@ class ModernOverlay(QWidget):
         """)
         
         # Flow indicator
-        flow_header = QLabel("🔄 Flow")
-        flow_header.setStyleSheet(f"""
+        self.flow_header = QLabel(t("ui.sections.flow", "🔄 Flow"))
+        self.flow_header.setStyleSheet(f"""
             QLabel {{
                 color: #FFD700;
                 font-family: 'Segoe UI Variable';
@@ -949,7 +966,7 @@ class ModernOverlay(QWidget):
             }}
         """)
         
-        self.flow_label = QLabel("Waiting")
+        self.flow_label = QLabel(t("ui.status.waiting", "Waiting"))
         self.flow_label.setWordWrap(True)
         self.flow_label.setStyleSheet(f"""
             QLabel {{
@@ -964,11 +981,11 @@ class ModernOverlay(QWidget):
             }}
         """)
         
-        info_layout.addWidget(topic_header)
+        info_layout.addWidget(self.topic_header)
         info_layout.addWidget(self.topic_path_label)
-        info_layout.addWidget(guidance_header)
+        info_layout.addWidget(self.guidance_header)
         info_layout.addWidget(self.topic_guidance_label)
-        info_layout.addWidget(flow_header)
+        info_layout.addWidget(self.flow_header)
         info_layout.addWidget(self.flow_label)
         info_layout.addStretch()
         
@@ -976,68 +993,467 @@ class ModernOverlay(QWidget):
     
     def toggle_expansion(self):
         """Toggle the expansion of the content area"""
-        if self.is_expanded:
-            self.collapse_content()
-        else:
-            self.expand_content()
+        print(f"🔄 Toggle expansion called, current state: is_expanded={self.is_expanded}")
+        
+        # Prevent rapid clicking that could cause stuck state
+        if self._expansion_toggling:
+            print("⚠️ Already toggling, ignoring")
+            return
+        
+        # Check if animation is still running - if so, wait for it to finish
+        if hasattr(self, 'expand_animation') and self.expand_animation:
+            anim_state = self.expand_animation.state()
+            print(f"🔍 Animation state: {anim_state} (Running={QPropertyAnimation.Running})")
+            if anim_state == QPropertyAnimation.Running:
+                print("⚠️ Animation still running, ignoring")
+                return
+            # Clean up previous animation if it exists but isn't running
+            try:
+                self.expand_animation.finished.disconnect()
+            except:
+                pass
+            self.expand_animation = None
+        
+        # Ensure button is enabled before toggle
+        if hasattr(self, 'expand_button'):
+            self.expand_button.setEnabled(True)
+        
+        # Set flag to prevent multiple simultaneous toggles
+        self._expansion_toggling = True
+        
+        try:
+            if self.is_expanded:
+                print("🔽 Collapsing...")
+                self.collapse_content()
+            else:
+                print("🔼 Expanding...")
+                self.expand_content()
+        except Exception as e:
+            print(f"❌ Error in toggle_expansion: {e}")
+            import traceback
+            traceback.print_exc()
+            # On error, ensure button is enabled and state is reset
+            if hasattr(self, 'expand_button'):
+                self.expand_button.setEnabled(True)
+            self._expansion_toggling = False
+        # Note: Don't use finally with timer here - let the animation callbacks handle state reset
+    
+    def _reset_expansion_state(self):
+        """Reset expansion state flags and ensure button is enabled - safety fallback only"""
+        print("🔄 Safety reset of expansion state")
+        # Only reset if animation is not running (safety fallback)
+        if not (hasattr(self, 'expand_animation') and self.expand_animation and 
+                self.expand_animation.state() == QPropertyAnimation.Running):
+            self._expansion_toggling = False
+            if hasattr(self, 'expand_button'):
+                self.expand_button.setEnabled(True)
     
     def expand_content(self):
         """Expand the content area with animation"""
+        print(f"🔼 expand_content() called - is_expanded={self.is_expanded}")
         if self.is_expanded:
+            print("⚠️ Already expanded, skipping")
             return
         
+        print("🔼 Starting expand animation...")
+        print(f"🔍 Current state: is_expanded={self.is_expanded}, _expansion_toggling={getattr(self, '_expansion_toggling', False)}")
+        print(f"🔍 Content container exists: {hasattr(self, 'content_container')}, visible: {self.content_container.isVisible() if hasattr(self, 'content_container') else 'N/A'}")
+        
+        # Stop any existing animation first and clean up
+        if hasattr(self, 'expand_animation') and self.expand_animation:
+            if self.expand_animation.state() == QPropertyAnimation.Running:
+                print("🛑 Stopping existing animation")
+                self.expand_animation.stop()
+            try:
+                self.expand_animation.finished.disconnect()
+            except:
+                pass
+            self.expand_animation = None
+        
+        # Update button UI first (but don't set state yet - wait for animation to complete)
+        if hasattr(self, 'expand_button'):
+            self.expand_button.setText(t("ui.buttons.collapse", "▲"))
+            self.expand_button.setToolTip(t("ui.tooltips.expand", "Collapse details"))
+            self.expand_button.setEnabled(False)
+        
+        # Calculate actual content height
+        # Show content container temporarily to measure its size
+        if hasattr(self, 'content_container'):
+            # Make sure it's visible for measurement
+            self.content_container.setVisible(True)
+            self.content_container.show()  # Explicit show
+            self.content_container.updateGeometry()
+            QApplication.processEvents()  # Process events to get accurate size
+        
+        # Set state AFTER we've prepared everything but BEFORE animation starts
         self.is_expanded = True
-        self.expand_button.setText("▲")
-        self.expand_button.setToolTip("Collapse details")
         
-        # Show content container
-        self.content_container.setVisible(True)
+        # Restore minimum size constraints for child widgets when expanding
+        if hasattr(self, '_saved_minimums') and self._saved_minimums:
+            if 'ai_response_area' in self._saved_minimums and hasattr(self, 'ai_response_area'):
+                min_h, min_w = self._saved_minimums['ai_response_area']
+                self.ai_response_area.setMinimumHeight(min_h)
+                self.ai_response_area.setMinimumWidth(min_w)
+            if 'content_container' in self._saved_minimums and hasattr(self, 'content_container'):
+                min_h, min_w = self._saved_minimums['content_container']
+                self.content_container.setMinimumHeight(min_h)
+                self.content_container.setMinimumWidth(min_w)
+            print(f"🔧 Restored child widget minimum sizes")
         
-        # Animate height expansion
-        self.expand_animation = QPropertyAnimation(self, b"geometry")
-        self.expand_animation.setDuration(300)
+        # Ensure content stays visible during expand
+        if hasattr(self, 'content_container'):
+            self.content_container.setVisible(True)
+            self.content_container.show()
         
-        start_rect = self.geometry()
+        # Calculate total height: bar height + content height
+        bar_height = self.bar_container.height() if hasattr(self, 'bar_container') else self.scale(70)
+        content_height = self.content_container.sizeHint().height() if hasattr(self, 'content_container') else 0
+        if content_height <= 0:
+            # Fallback to a reasonable default if sizeHint fails
+            content_height = self.scale(350)
+            print(f"⚠️ Using fallback content height: {content_height}")
+        
+        total_height = bar_height + content_height
+        print(f"📏 Expand: bar={bar_height}, content={content_height}, total={total_height}")
+        
+        # Get current geometry - use actual current size
+        current_geo = self.geometry()
+        current_height = self.height() if self.height() > 0 else bar_height
+        
+        # Ensure we have valid geometry
+        if not current_geo.isValid() or current_geo.height() == 0:
+            current_geo = QtCore.QRect(
+                self.x() if self.x() > 0 else 0,
+                self.y() if self.y() > 0 else 0,
+                self.width() if self.width() > 0 else self.adaptive_width,
+                current_height
+            )
+            print(f"📐 Calculated start rect: {current_geo}")
+        else:
+            print(f"📐 Using current geometry: {current_geo}")
+        
+        # Create end rect with calculated height
         end_rect = QtCore.QRect(
-            start_rect.x(),
-            start_rect.y(),
-            start_rect.width(),
-            self.scale(400)  # Expanded height
+            current_geo.x(),
+            current_geo.y(),
+            current_geo.width(),
+            total_height
         )
         
-        self.expand_animation.setStartValue(start_rect)
-        self.expand_animation.setEndValue(end_rect)
+        height_diff = abs(current_geo.height() - end_rect.height())
+        print(f"📐 Animation: {current_geo.height()} → {end_rect.height()} (diff: {height_diff})")
+        
+        # Validate that we have a height difference
+        if height_diff < 1:
+            print("⚠️ No height difference, skipping animation and setting directly")
+            self.setGeometry(end_rect)
+            if hasattr(self, 'content_container'):
+                self.content_container.setVisible(True)
+                self.content_container.update()
+            self.update()
+            self.repaint()
+            QApplication.processEvents()
+            if hasattr(self, 'expand_button'):
+                self.expand_button.setEnabled(True)
+            self._expansion_toggling = False
+            return
+        
+        # Create new animation object - use size property instead of geometry for better compatibility
+        self.expand_animation = QPropertyAnimation(self, b"size")
+        self.expand_animation.setDuration(300)
+        self.expand_animation.setStartValue(QSize(current_geo.width(), current_geo.height()))
+        self.expand_animation.setEndValue(QSize(end_rect.width(), end_rect.height()))
         self.expand_animation.setEasingCurve(QEasingCurve.OutQuart)
+        
+        # Connect finished signal
+        self.expand_animation.finished.connect(self._on_expand_finished)
+        
+        # Safety timeout to re-enable button if animation fails (longer than animation duration)
+        QTimer.singleShot(500, self._ensure_button_enabled)
+        
+        # Ensure window is visible before starting animation
+        if not self.isVisible():
+            self.show()
+        
+        # Ensure we're at the correct position
+        self.move(end_rect.x(), end_rect.y())
+        
+        # Start animation
         self.expand_animation.start()
+        print("✅ Expand animation started")
+        
+        # Force immediate UI update
+        self.update()
+        QApplication.processEvents()
+    
+    def _on_expand_finished(self):
+        """Handle expand animation completion"""
+        print("✅ Expand animation finished")
+        print(f"🔍 State after expand: is_expanded={self.is_expanded}")
+        
+        # Ensure final geometry is set correctly
+        final_geo = self.geometry()
+        print(f"📐 Final geometry after expand: {final_geo}")
+        
+        # Clean up animation object
+        if hasattr(self, 'expand_animation'):
+            try:
+                self.expand_animation.finished.disconnect()
+            except:
+                pass
+            # Keep animation object for potential collapse, but mark as finished
+        
+        # Ensure content is visible
+        if hasattr(self, 'content_container'):
+            self.content_container.setVisible(True)
+            self.content_container.update()
+        
+        # Force UI refresh
+        self.update()
+        self.repaint()
+        QApplication.processEvents()
+        
+        # Re-enable button and reset toggle flag
+        if hasattr(self, 'expand_button'):
+            self.expand_button.setEnabled(True)
+            self.expand_button.update()
+            print("✅ Button re-enabled after expand")
+        
+        # Reset toggle flag - animation is complete
+        self._expansion_toggling = False
+        
+        print("✅ Expand fully completed, ready for next collapse")
+    
+    def _ensure_button_enabled(self):
+        """Safety mechanism to ensure ALL buttons are always enabled and clickable"""
+        print("🔧 Safety: Ensuring all buttons are enabled")
+        # Re-enable expand button
+        if hasattr(self, 'expand_button'):
+            self.expand_button.setEnabled(True)
+            self.expand_button.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
+        
+        # Re-enable all other buttons
+        for button_name in ['mic_button', 'ask_ai_button', 'visibility_button', 'close_button']:
+            if hasattr(self, button_name):
+                button = getattr(self, button_name)
+                button.setEnabled(True)
+                button.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
+        
+        # Ensure window accepts mouse events
+        self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
     
     def collapse_content(self):
         """Collapse the content area with animation"""
         if not self.is_expanded:
+            print("⚠️ Already collapsed, skipping")
             return
         
+        print("🔽 Starting collapse animation...")
+        
+        # CRITICAL: Hide content container FIRST to remove its size contribution
+        if hasattr(self, 'content_container'):
+            self.content_container.setVisible(False)
+            self.content_container.hide()
+            QApplication.processEvents()
+        
+        # CRITICAL: Remove minimum size constraints from child widgets
+        # Store current minimums to restore later
+        saved_minimums = {}
+        if hasattr(self, 'ai_response_area'):
+            saved_minimums['ai_response_area'] = (self.ai_response_area.minimumHeight(), self.ai_response_area.minimumWidth())
+            self.ai_response_area.setMinimumHeight(0)
+            self.ai_response_area.setMinimumWidth(0)
+        if hasattr(self, 'content_container'):
+            saved_minimums['content_container'] = (self.content_container.minimumHeight(), self.content_container.minimumWidth())
+            self.content_container.setMinimumHeight(0)
+            self.content_container.setMinimumWidth(0)
+        
+        # Store and remove main window minimum size
+        saved_minimums['main'] = (self.minimumHeight(), self.minimumWidth())
+        self.setMinimumHeight(0)
+        self.setMinimumSize(0, 0)
+        
+        # Store for restoration
+        self._saved_minimums = saved_minimums
+        print(f"💾 Removed minimum size constraints: {saved_minimums}")
+        
+        # Update button UI first (but don't set state yet - wait for animation to complete)
+        if hasattr(self, 'expand_button'):
+            self.expand_button.setText(t("ui.buttons.expand", "▼"))
+            self.expand_button.setToolTip(t("ui.tooltips.expand", "Expand details"))
+            self.expand_button.setEnabled(False)
+        
+        # Set state AFTER we've prepared everything but BEFORE animation starts
         self.is_expanded = False
-        self.expand_button.setText("▼")
-        self.expand_button.setToolTip("Expand details")
         
-        # Animate height collapse
-        self.expand_animation = QPropertyAnimation(self, b"geometry")
-        self.expand_animation.setDuration(250)
+        # Force layout update after hiding content
+        self.updateGeometry()
+        QApplication.processEvents()
         
-        start_rect = self.geometry()
+        # Stop any existing animation first and clean up
+        if hasattr(self, 'expand_animation') and self.expand_animation:
+            if self.expand_animation.state() == QPropertyAnimation.Running:
+                print("🛑 Stopping existing animation")
+                self.expand_animation.stop()
+            try:
+                self.expand_animation.finished.disconnect()
+            except:
+                pass
+            self.expand_animation = None
+        
+        # Calculate collapsed height (just the bar height)
+        bar_height = self.bar_container.height() if hasattr(self, 'bar_container') else self.scale(70)
+        collapsed_height = bar_height
+        print(f"📏 Collapse: target height={collapsed_height}")
+        
+        # Get current geometry - use actual current size
+        current_geo = self.geometry()
+        current_height = self.height() if self.height() > 0 else collapsed_height
+        
+        # Ensure we have valid geometry
+        if not current_geo.isValid() or current_geo.height() == 0:
+            current_geo = QtCore.QRect(
+                self.x() if self.x() > 0 else 0,
+                self.y() if self.y() > 0 else 0,
+                self.width() if self.width() > 0 else self.adaptive_width,
+                current_height
+            )
+            print(f"📐 Calculated start rect: {current_geo}")
+        else:
+            print(f"📐 Using current geometry: {current_geo}")
+        
+        # Create end rect with collapsed height
         end_rect = QtCore.QRect(
-            start_rect.x(),
-            start_rect.y(),
-            start_rect.width(),
-            self.scale(60)  # Collapsed height (bar only)
+            current_geo.x(),
+            current_geo.y(),
+            current_geo.width(),
+            collapsed_height
         )
         
-        self.expand_animation.setStartValue(start_rect)
-        self.expand_animation.setEndValue(end_rect)
-        self.expand_animation.setEasingCurve(QEasingCurve.InQuart)
-        self.expand_animation.finished.connect(
-            lambda: self.content_container.setVisible(False)
-        )
-        self.expand_animation.start()
+        height_diff = abs(current_geo.height() - end_rect.height())
+        print(f"📐 Animation: {current_geo.height()} → {end_rect.height()} (diff: {height_diff})")
+        
+        # Validate that we have a height difference
+        if height_diff < 1:
+            print("⚠️ No height difference, skipping animation and setting directly")
+            self.setGeometry(end_rect)
+            if hasattr(self, 'content_container'):
+                self.content_container.setVisible(False)
+                self.content_container.update()
+            self.update()
+            self.repaint()
+            QApplication.processEvents()
+            if hasattr(self, 'expand_button'):
+                self.expand_button.setEnabled(True)
+            self._expansion_toggling = False
+            return
+        
+        # CRITICAL: Use resize() directly with minimum size removed - animation may not work with constraints
+        # Try direct resize first
+        print(f"🔧 Attempting direct resize to {end_rect.width()}x{end_rect.height()}")
+        self.resize(end_rect.width(), end_rect.height())
+        self.move(end_rect.x(), end_rect.y())
+        QApplication.processEvents()
+        
+        # Check if resize worked
+        actual_height = self.height()
+        print(f"📏 Actual height after direct resize: {actual_height} (target: {end_rect.height()})")
+        
+        if abs(actual_height - end_rect.height()) > 5:
+            # Direct resize didn't work, try animation
+            print("⚠️ Direct resize failed, trying animation...")
+            # Create new animation object - use size property instead of geometry for better compatibility
+            self.expand_animation = QPropertyAnimation(self, b"size")
+            self.expand_animation.setDuration(250)
+            self.expand_animation.setStartValue(QSize(current_geo.width(), actual_height))
+            self.expand_animation.setEndValue(QSize(end_rect.width(), end_rect.height()))
+            self.expand_animation.setEasingCurve(QEasingCurve.InQuart)
+            
+            # Connect finished signal
+            self.expand_animation.finished.connect(self._on_collapse_finished)
+            
+            # Safety timeout to re-enable button if animation fails (longer than animation duration)
+            QTimer.singleShot(400, self._ensure_button_enabled)
+            
+            # Ensure window is visible before starting animation
+            if not self.isVisible():
+                self.show()
+            
+            # Ensure we're at the correct position
+            self.move(end_rect.x(), end_rect.y())
+            
+            # Start animation
+            self.expand_animation.start()
+            print("✅ Collapse animation started")
+        else:
+            # Direct resize worked, call finished handler directly
+            print("✅ Direct resize successful")
+            QTimer.singleShot(50, self._on_collapse_finished)
+        
+        # Force immediate UI update
+        self.update()
+        QApplication.processEvents()
+    
+    def _on_collapse_finished(self):
+        """Handle collapse animation completion"""
+        print("✅ Collapse animation finished")
+        print(f"🔍 State after collapse: is_expanded={self.is_expanded}")
+        
+        # Ensure final geometry is set correctly
+        final_geo = self.geometry()
+        print(f"📐 Final geometry after collapse: {final_geo}")
+        
+        # Hide content container after animation (should already be hidden)
+        if hasattr(self, 'content_container'):
+            self.content_container.setVisible(False)
+            self.content_container.hide()
+            self.content_container.update()
+        
+        # Restore minimum size constraints to bar height only
+        bar_height = self.bar_container.height() if hasattr(self, 'bar_container') else self.scale(70)
+        self.setMinimumHeight(bar_height)
+        self.setMinimumWidth(0)  # Allow width flexibility
+        
+        # Restore child widget minimums (but keep them at 0 since content is hidden)
+        if hasattr(self, '_saved_minimums'):
+            # Don't restore child minimums when collapsed - they're hidden anyway
+            print(f"🔧 Set minimum height to bar height: {bar_height}")
+            self._saved_minimums = None
+        
+        # Clean up animation object
+        if hasattr(self, 'expand_animation'):
+            try:
+                self.expand_animation.finished.disconnect()
+            except:
+                pass
+            # Keep animation object reference but it's finished - will be replaced on next toggle
+        
+        # Force UI refresh
+        self.update()
+        self.repaint()
+        QApplication.processEvents()
+        
+        # CRITICAL: Re-enable ALL buttons and ensure they're clickable
+        if hasattr(self, 'expand_button'):
+            self.expand_button.setEnabled(True)
+            self.expand_button.update()
+            self.expand_button.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
+            print("✅ Expand button re-enabled after collapse")
+        
+        # Re-enable all other buttons
+        for button_name in ['mic_button', 'ask_ai_button', 'visibility_button', 'close_button']:
+            if hasattr(self, button_name):
+                button = getattr(self, button_name)
+                button.setEnabled(True)
+                button.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
+                button.update()
+        
+        # Ensure window accepts mouse events
+        self.setAttribute(QtCore.Qt.WA_TransparentForMouseEvents, False)
+        
+        # Reset toggle flag - animation is complete
+        self._expansion_toggling = False
+        print("✅ Collapse fully completed, all buttons enabled, ready for next expand")
     
     def position_window(self):
         """Position window at top center of screen"""
@@ -1080,6 +1496,11 @@ class ModernOverlay(QWidget):
         print(f"🔄 _do_hide_overlay() called")
         self.is_visible = False
         
+        # Update visibility button text
+        if hasattr(self, 'visibility_button'):
+            self.visibility_button.setText(t("ui.buttons.show", "Show"))
+            self.visibility_button.setToolTip(t("ui.tooltips.show", "Show overlay"))
+        
         # Ensure valid window geometry before animation
         if not self.isVisible():
             print("🔄 Window not visible, skipping hide animation")
@@ -1113,6 +1534,12 @@ class ModernOverlay(QWidget):
         """Actually show the overlay without animation"""
         print(f"🔄 _do_show_overlay() called")
         self.is_visible = True
+        
+        # Update visibility button text
+        if hasattr(self, 'visibility_button'):
+            self.visibility_button.setText(t("ui.buttons.hide", "Hide"))
+            self.visibility_button.setToolTip(t("ui.tooltips.hide", "Hide overlay"))
+        
         self.show()
         self.position_window()
         
@@ -1201,11 +1628,31 @@ class ModernOverlay(QWidget):
     
     def trigger_ask_ai(self):
         """Trigger AI assistance"""
-        if self.on_ask_ai:
-            self.on_ask_ai()
-        # Auto-expand when AI is triggered
-        if not self.is_expanded:
-            self.expand_content()
+        # Prevent rapid clicking that could cause stuck state
+        if hasattr(self, '_ask_ai_processing') and self._ask_ai_processing:
+            return
+        
+        self._ask_ai_processing = True
+        if hasattr(self, 'ask_ai_button'):
+            self.ask_ai_button.setEnabled(False)
+            self.ask_ai_button.setText(t("ui.status.processing", "⏳ Processing..."))
+        
+        try:
+            if self.on_ask_ai:
+                self.on_ask_ai()
+            # Auto-expand when AI is triggered
+            if not self.is_expanded:
+                self.expand_content()
+        finally:
+            # Re-enable button after a short delay
+            QTimer.singleShot(500, self._reenable_ask_ai_button)
+    
+    def _reenable_ask_ai_button(self):
+        """Re-enable the Ask AI button after processing"""
+        if hasattr(self, 'ask_ai_button'):
+            self.ask_ai_button.setEnabled(True)
+            self.ask_ai_button.setText(t("ui.buttons.ask_ai", "🤖 Ask AI"))
+        self._ask_ai_processing = False
     
     def trigger_settings(self):
         """Trigger settings"""
@@ -1232,7 +1679,7 @@ class ModernOverlay(QWidget):
         # Auto-expand when triggered via hotkey
         if not self.is_expanded:
             self.expand_content()
-        self.update_ai_response("🤔 Analyzing context...")
+        self.update_ai_response(t("ui.status.analyzing", "🤔 Analyzing context..."))
         
         # Trigger the assistance callback but don't wait for it
         if self.on_ask_ai:
@@ -1247,7 +1694,7 @@ class ModernOverlay(QWidget):
                 self.background_ai_callback()
             else:
                 # Fallback - just show a message
-                self.update_ai_response_signal.emit("AI assistance triggered! (Configure AI provider to see responses)")
+                self.update_ai_response_signal.emit(t("ui.status.analyzing", "AI assistance triggered! (Configure AI provider to see responses)"))
         except Exception as e:
             print(f"❌ Error in background AI assistance: {e}")
             self.update_ai_response_signal.emit(f"Error: {e}")
@@ -1257,7 +1704,7 @@ class ModernOverlay(QWidget):
         """Queue take screenshot on main thread"""
         print("📸 Taking screenshot from hotkey...")
         # This would be implemented by the main application
-        self.update_ai_response("📸 Screenshot taken!")
+        self.update_ai_response(t("ui.status.screenshot_taken", "📸 Screenshot taken!"))
     
     # UI update methods - thread-safe slots
     @pyqtSlot(str)
@@ -1367,9 +1814,9 @@ class ModernOverlay(QWidget):
     def clear_all_content(self):
         """Clear all content areas"""
         self.ai_response_area.clear()
-        self.topic_path_label.setText("No active topic")
-        self.topic_guidance_label.setText("Start speaking to get guidance")
-        self.flow_label.setText("Waiting")
+        self.topic_path_label.setText(t("ui.status.no_active_topic", "No active topic"))
+        self.topic_guidance_label.setText(t("ui.status.start_speaking", "Start speaking to get guidance"))
+        self.flow_label.setText(t("ui.status.waiting", "Waiting"))
         if self.show_transcript and hasattr(self, 'transcript_area'):
             self.transcript_area.clear()
     
@@ -1458,7 +1905,7 @@ class ModernOverlay(QWidget):
             print(f"🔍 Transcript visibility set to: {visible}")
             
             if visible:
-                self.transcript_area.setPlainText("Transcript enabled - waiting for system audio...")
+                self.transcript_area.setPlainText(t("ui.status.transcript_enabled", "Transcript enabled - waiting for system audio..."))
             else:
                 self.transcript_area.clear()
     
@@ -1473,17 +1920,24 @@ class ModernOverlay(QWidget):
     @pyqtSlot()
     def toggle_visibility(self):
         """Toggle overlay visibility"""
-        print(f"🔄 Toggle visibility called - current state: is_visible={self.is_visible}")
-        print(f"🔄 Hide for screenshots: {getattr(self, 'hide_for_screenshots', False)}")
-        print(f"🔄 Screen sharing active: {getattr(self, 'screen_sharing_active', False)}")
+        # Prevent rapid clicking that could cause stuck state
+        if hasattr(self, '_visibility_toggling') and self._visibility_toggling:
+            return
         
-        if self.is_visible:
-            print("🔄 Hiding overlay")
-            self.hide_overlay()
-        else:
-            print("🔄 Showing overlay (forced - ignoring hide settings)")
-            # Force show overlay regardless of hide settings when user explicitly toggles
-            self._force_show_overlay()
+        self._visibility_toggling = True
+        try:
+            if self.is_visible:
+                self.hide_overlay()
+                if hasattr(self, 'visibility_button'):
+                    self.visibility_button.setText(t("ui.buttons.show", "Show"))
+                    self.visibility_button.setToolTip(t("ui.tooltips.show", "Show overlay"))
+            else:
+                self._force_show_overlay()
+                if hasattr(self, 'visibility_button'):
+                    self.visibility_button.setText(t("ui.buttons.hide", "Hide"))
+                    self.visibility_button.setToolTip(t("ui.tooltips.hide", "Hide overlay"))
+        finally:
+            QTimer.singleShot(300, lambda: setattr(self, '_visibility_toggling', False))
     
     def _force_show_overlay(self):
         """Force show overlay regardless of any hide settings"""
@@ -1491,6 +1945,10 @@ class ModernOverlay(QWidget):
         
         # Update visibility flag first
         self.is_visible = True
+        
+        if hasattr(self, 'visibility_button'):
+            self.visibility_button.setText(t("ui.buttons.hide", "Hide"))
+            self.visibility_button.setToolTip(t("ui.tooltips.hide", "Hide overlay"))
         
         if self.smooth_animations and self.animation_manager:
             print("🔄 Using animation manager to show")
@@ -1687,6 +2145,90 @@ class ModernOverlay(QWidget):
             
         except Exception as e:
             print(f"❌ Error updating content metrics: {e}")
+    
+    def refresh_translations(self):
+        """Refresh all UI text with current translations"""
+        if not TRANSLATIONS_AVAILABLE:
+            return
+        
+        try:
+            # Update window title
+            self.setWindowTitle(t("ui.overlay.title", "MeetMinder"))
+            
+            # Update buttons
+            if hasattr(self, 'ask_ai_button'):
+                self.ask_ai_button.setText(t("ui.buttons.ask_ai", "🤖 Ask AI"))
+                self.ask_ai_button.setToolTip(t("ui.tooltips.ask_ai", "Trigger AI assistance (Ctrl+Space)"))
+            
+            if hasattr(self, 'mic_button'):
+                self.mic_button.setToolTip(t("ui.tooltips.mic", "Toggle microphone recording (Ctrl+M)"))
+            
+            if hasattr(self, 'visibility_button'):
+                text = t("ui.buttons.hide", "Hide") if self.is_visible else t("ui.buttons.show", "Show")
+                self.visibility_button.setText(text)
+                tooltip = t("ui.tooltips.hide", "Hide overlay") if self.is_visible else t("ui.tooltips.show", "Show overlay")
+                self.visibility_button.setToolTip(tooltip)
+            
+            if hasattr(self, 'close_button'):
+                self.close_button.setToolTip(t("ui.tooltips.close", "Close application"))
+            
+            if hasattr(self, 'expand_button'):
+                text = t("ui.buttons.collapse", "▲") if self.is_expanded else t("ui.buttons.expand", "▼")
+                self.expand_button.setText(text)
+                self.expand_button.setToolTip(t("ui.tooltips.expand", "Expand/collapse details"))
+            
+            # Update shortcut label
+            if hasattr(self, 'shortcut_label'):
+                self.shortcut_label.setText(t("ui.overlay.shortcut", "Ctrl+Space"))
+            
+            # Update section headers
+            if hasattr(self, 'ai_header'):
+                self.ai_header.setText(t("ui.sections.ai_response", "🤖 AI Response"))
+            
+            if hasattr(self, 'transcript_header'):
+                self.transcript_header.setText(t("ui.sections.live_transcript", "📝 Live Transcript (System Audio)"))
+            
+            # Update status labels (only if they have default values to avoid overwriting dynamic content)
+            # We check both English and translated versions to handle language switches
+            if hasattr(self, 'topic_path_label'):
+                current_text = self.topic_path_label.text()
+                default_text = t("ui.status.no_active_topic", "No active topic")
+                # Check if it's the default (in any language) or empty
+                english_default = "No active topic"
+                if current_text == english_default or current_text == default_text or not current_text.strip():
+                    self.topic_path_label.setText(default_text)
+            
+            if hasattr(self, 'topic_guidance_label'):
+                current_text = self.topic_guidance_label.text()
+                default_text = t("ui.status.start_speaking", "Start speaking to get guidance")
+                # Check if it contains the default pattern or is empty
+                english_default = "Start speaking to get guidance"
+                if english_default in current_text or current_text == default_text or not current_text.strip():
+                    self.topic_guidance_label.setText(default_text)
+            
+            if hasattr(self, 'flow_label'):
+                current_text = self.flow_label.text()
+                default_text = t("ui.status.waiting", "Waiting")
+                # Check if it's the default (in any language) or empty
+                english_default = "Waiting"
+                if current_text == english_default or current_text == default_text or not current_text.strip():
+                    self.flow_label.setText(default_text)
+            
+            # Update section headers
+            if hasattr(self, 'topic_header'):
+                self.topic_header.setText(t("ui.sections.topic_analysis", "🧠 Topic Analysis"))
+            
+            if hasattr(self, 'guidance_header'):
+                self.guidance_header.setText(t("ui.sections.guidance", "💡 Guidance"))
+            
+            if hasattr(self, 'flow_header'):
+                self.flow_header.setText(t("ui.sections.flow", "🔄 Flow"))
+            
+            print("✅ Translations refreshed")
+        except Exception as e:
+            print(f"❌ Error refreshing translations: {e}")
+            import traceback
+            traceback.print_exc()
     
     def enhanced_closeEvent(self, event):
         """Enhanced cleanup when overlay is closed"""

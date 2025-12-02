@@ -14,6 +14,19 @@ import whisper
 from concurrent.futures import ThreadPoolExecutor
 import functools
 
+# Set Windows console to UTF-8 encoding to support emojis
+if sys.platform == 'win32':
+    try:
+        # Set console code page to UTF-8
+        os.system('chcp 65001 >nul 2>&1')
+        # Also set stdout/stderr encoding
+        if hasattr(sys.stdout, 'reconfigure'):
+            sys.stdout.reconfigure(encoding='utf-8', errors='replace')
+        if hasattr(sys.stderr, 'reconfigure'):
+            sys.stderr.reconfigure(encoding='utf-8', errors='replace')
+    except Exception:
+        pass  # Silently fail if console encoding can't be changed
+
 # Add the current directory to Python path
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -39,6 +52,19 @@ from ui.settings_dialog import ModernSettingsDialog
 from screen.capture import ScreenCapture
 from utils.hotkeys import AsyncHotkeyManager
 from utils.resource_monitor import global_resource_monitor
+
+# Import translation system
+try:
+    from utils.translation_manager import get_translation_manager, set_language, t
+    TRANSLATIONS_AVAILABLE = True
+except ImportError:
+    TRANSLATIONS_AVAILABLE = False
+    logger.info("⚠️ Translation system not available")
+    def t(key: str, default: str = None, **kwargs) -> str:
+        """Fallback translation function"""
+        if kwargs:
+            return (default or key).format(**kwargs)
+        return default or key
 
 # PyQt5 imports for the app
 from PyQt5.QtWidgets import QApplication, QSplashScreen, QLabel
@@ -122,20 +148,38 @@ class AIAssistant:
     @lazy_load("whisper_model")
     def _load_whisper_model_lazy(self):
         """Lazy load Whisper model only when needed"""
-        logger.info("🤖 Lazy loading Whisper model...")
+        logger.info("🤖 Starting Whisper model loading...")
+        logger.info("   ⏳ This may take 1-3 minutes (downloading/loading model)...")
+        logger.info("   💡 Please wait, the application will continue after loading completes")
+        
         try:
             import whisper
-            # Use the model size from config if available
-            model_size = getattr(self, 'whisper_language', 'base')
-            if hasattr(self, 'config') and self.config:
-                audio_config = self.config.get_audio_config()
-                model_size = getattr(audio_config, 'whisper_model_size', 'base')
             
+            # Get model size from stored attribute or config
+            model_size = getattr(self, 'whisper_model_size', 'base')
+            if not hasattr(self, 'whisper_model_size'):
+                if hasattr(self, 'config') and self.config:
+                    try:
+                        audio_config = self.config.get_audio_config()
+                        model_size = getattr(audio_config, 'whisper_model_size', 'base')
+                    except:
+                        model_size = 'base'
+                else:
+                    model_size = 'base'
+            
+            logger.info(f"   📦 Loading Whisper model: '{model_size}'")
+            logger.info("   ⏳ Loading model into memory (this may take 30-60 seconds)...")
+            
+            # Load the model (this is a blocking operation)
             model = whisper.load_model(model_size)
-            logger.info(f"✅ Whisper model '{model_size}' loaded successfully")
+            
+            logger.info(f"✅ Whisper model '{model_size}' loaded successfully!")
+            logger.info("   🎉 Model is ready for transcription")
             return model
         except Exception as e:
             logger.error(f"❌ Failed to load Whisper model: {e}")
+            import traceback
+            logger.error(f"   Error details: {traceback.format_exc()}")
             return None
     
     def _cleanup_audio_resources(self):
@@ -170,7 +214,14 @@ class AIAssistant:
         elif alert_type == "high_cpu":
             # Show alert in overlay if available
             if hasattr(self, 'overlay') and self.overlay:
-                self.overlay.update_ai_response(f"⚠️ High CPU usage: {data.get('usage', 0):.1f}%")
+                if TRANSLATIONS_AVAILABLE:
+                    try:
+                        cpu_msg = t('ui.status.high_cpu', "⚠️ High CPU usage: {usage}%").format(usage=f"{data.get('usage', 0):.1f}")
+                        self.overlay.update_ai_response(cpu_msg)
+                    except Exception:
+                        self.overlay.update_ai_response(f"⚠️ High CPU usage: {data.get('usage', 0):.1f}%")
+                else:
+                    self.overlay.update_ai_response(f"⚠️ High CPU usage: {data.get('usage', 0):.1f}%")
         elif alert_type == "queue_backlog":
             logger.info("🧹 Clearing low priority tasks due to backlog")
     
@@ -180,12 +231,26 @@ class AIAssistant:
             logger.warning(f"🚨 Critical memory usage: {memory_percent:.1f}%")
             memory_manager.force_cleanup("critical_memory")
             if hasattr(self, 'overlay') and self.overlay:
-                self.overlay.update_ai_response(f"🚨 Critical memory usage: {memory_percent:.1f}% - cleaning up...")
+                if TRANSLATIONS_AVAILABLE:
+                    try:
+                        mem_msg = t('ui.status.critical_memory', "🚨 Critical memory usage: {percent}% - cleaning up...").format(percent=f"{memory_percent:.1f}")
+                        self.overlay.update_ai_response(mem_msg)
+                    except Exception:
+                        self.overlay.update_ai_response(f"🚨 Critical memory usage: {memory_percent:.1f}% - cleaning up...")
+                else:
+                    self.overlay.update_ai_response(f"🚨 Critical memory usage: {memory_percent:.1f}% - cleaning up...")
         elif memory_percent > 75:
             logger.warning(f"⚠️ High memory usage: {memory_percent:.1f}%")
             memory_manager.gentle_cleanup("high_memory")
             if hasattr(self, 'overlay') and self.overlay:
-                self.overlay.update_ai_response(f"⚠️ Memory usage: {memory_percent:.1f}% - optimizing...")
+                if TRANSLATIONS_AVAILABLE:
+                    try:
+                        mem_msg = t('ui.status.high_memory', "⚠️ Memory usage: {percent}% - optimizing...").format(percent=f"{memory_percent:.1f}")
+                        self.overlay.update_ai_response(mem_msg)
+                    except Exception:
+                        self.overlay.update_ai_response(f"⚠️ Memory usage: {memory_percent:.1f}% - optimizing...")
+                else:
+                    self.overlay.update_ai_response(f"⚠️ Memory usage: {memory_percent:.1f}% - optimizing...")
     
     def _create_loading_screen(self):
         """Create a simple loading screen"""
@@ -215,6 +280,19 @@ class AIAssistant:
         
         # Load configuration
         self.config = ConfigManager()
+        
+        # Initialize translation system
+        if TRANSLATIONS_AVAILABLE:
+            try:
+                # Get language from config
+                ui_config = self.config.get('ui', {})
+                language = ui_config.get('language', 'en')
+                
+                # Initialize translation manager
+                translation_manager = get_translation_manager(language=language)
+                logger.info(f"🌐 Language initialized: {translation_manager.get_language()}")
+            except Exception as e:
+                logger.info(f"⚠️ Error initializing translation system: {e}")
         
         self.splash.showMessage("🎤 Initializing transcription engine...", Qt.AlignCenter | Qt.AlignBottom, Qt.white)
         self.app.processEvents()
@@ -539,8 +617,15 @@ class AIAssistant:
             # Show overlay
             self.overlay.show_overlay()
             
-            # Clear previous AI response
-            self.overlay.update_ai_response("🤔 Analyzing context...")
+            # Clear previous AI response with translated message
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    analyzing_msg = t('ui.status.analyzing', "🤔 Analyzing context...")
+                    self.overlay.update_ai_response(analyzing_msg)
+                except Exception:
+                    self.overlay.update_ai_response("🤔 Analyzing context...")
+            else:
+                self.overlay.update_ai_response("🤔 Analyzing context...")
             
             # Stream AI response
             self.overlay.update_ai_response("")  # Clear the analyzing message
@@ -555,7 +640,14 @@ class AIAssistant:
                 
         except Exception as e:
             logger.info(f"❌ Error triggering assistance: {e}")
-            self.overlay.update_ai_response(f"Error: {e}")
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    error_msg = t('ui.status.error', "Error: {error}").format(error=str(e))
+                    self.overlay.update_ai_response(error_msg)
+                except Exception:
+                    self.overlay.update_ai_response(f"Error: {e}")
+            else:
+                self.overlay.update_ai_response(f"Error: {e}")
     
     @handle_errors(show_user_message=False)
     def _trigger_assistance_background(self):
@@ -584,8 +676,15 @@ class AIAssistant:
             except Exception as e:
                 logger.info(f"❌ Error queuing topic analysis: {e}")
             
-            # Clear previous AI response using thread-safe method
-            self.overlay.update_ai_response_threadsafe("🤔 Analyzing context...")
+            # Clear previous AI response using thread-safe method with translation
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    analyzing_msg = t('ui.status.analyzing', "🤔 Analyzing context...")
+                    self.overlay.update_ai_response_threadsafe(analyzing_msg)
+                except Exception:
+                    self.overlay.update_ai_response_threadsafe("🤔 Analyzing context...")
+            else:
+                self.overlay.update_ai_response_threadsafe("🤔 Analyzing context...")
             
             # Submit AI assistance as high priority task
             try:
@@ -600,11 +699,25 @@ class AIAssistant:
                 )
             except Exception as e:
                 logger.info(f"❌ Error queuing AI assistance: {e}")
-                self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+                if TRANSLATIONS_AVAILABLE:
+                    try:
+                        error_msg = t('ui.status.error', "Error: {error}").format(error=str(e))
+                        self.overlay.update_ai_response_threadsafe(error_msg)
+                    except Exception:
+                        self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+                else:
+                    self.overlay.update_ai_response_threadsafe(f"Error: {e}")
                 
         except Exception as e:
             logger.info(f"❌ Error in background AI assistance: {e}")
-            self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    error_msg = t('ui.status.error', "Error: {error}").format(error=str(e))
+                    self.overlay.update_ai_response_threadsafe(error_msg)
+                except Exception:
+                    self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+            else:
+                self.overlay.update_ai_response_threadsafe(f"Error: {e}")
     
     @cached(ttl=60)  # Cache results for 1 minute
     async def _process_ai_assistance_async(self, transcript, screen_context, context_type):
@@ -624,7 +737,14 @@ class AIAssistant:
                 
         except Exception as e:
             logger.error(f"❌ Error in AI assistance processing: {e}")
-            self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    error_msg = t('ui.status.error', "Error: {error}").format(error=str(e))
+                    self.overlay.update_ai_response_threadsafe(error_msg)
+                except Exception:
+                    self.overlay.update_ai_response_threadsafe(f"Error: {e}")
+            else:
+                self.overlay.update_ai_response_threadsafe(f"Error: {e}")
     
     async def _update_overlay_topic_analysis_async(self, transcript=None):
         """Async version of topic analysis update"""
@@ -645,7 +765,11 @@ class AIAssistant:
                 topic_path = self.topic_analyzer.get_current_topic_display()
                 self.overlay.update_topic_path_threadsafe(topic_path)
             else:
-                self.overlay.update_topic_path_threadsafe("No active topic")
+                if TRANSLATIONS_AVAILABLE:
+                    no_topic_msg = t('ui.status.no_active_topic', "No active topic")
+                    self.overlay.update_topic_path_threadsafe(no_topic_msg)
+                else:
+                    self.overlay.update_topic_path_threadsafe("No active topic")
             
             self.overlay.update_topic_guidance_threadsafe(analysis['guidance'])
             self.overlay.update_conversation_flow_threadsafe(analysis['conversation_flow'])
@@ -772,6 +896,18 @@ class AIAssistant:
             
             # Apply changes that can be applied immediately
             ui_config = new_config.get('ui', {}).get('overlay', {})
+            ui_language = new_config.get('ui', {}).get('language', None)
+            
+            # Check if language changed
+            if ui_language and TRANSLATIONS_AVAILABLE:
+                current_language = get_translation_manager().get_language()
+                if ui_language != current_language:
+                    logger.info(f"🌐 Language changing from {current_language} to {ui_language}")
+                    set_language(ui_language)
+                    # Refresh overlay translations
+                    if hasattr(self, 'overlay') and hasattr(self.overlay, 'refresh_translations'):
+                        self.overlay.refresh_translations()
+                    logger.info(f"✅ Language changed to: {ui_language}")
             
             # Check if UI size multiplier changed
             current_multiplier = self.overlay.size_multiplier
@@ -781,8 +917,9 @@ class AIAssistant:
                 logger.info(f"🎨 UI Size changing from {current_multiplier}x to {new_multiplier}x")
                 # Recreate the overlay with new size
                 self.overlay.hide()
-                self.overlay.screen_sharing_detector.stop_detection()
-                self.overlay.screen_sharing_detector.wait()
+                if self.overlay.screen_sharing_detector is not None:
+                    self.overlay.screen_sharing_detector.stop_detection()
+                    self.overlay.screen_sharing_detector.wait()
                 
                 # Create new overlay with updated config
                 updated_ui_config = self.config.get('ui.overlay', {})
@@ -819,8 +956,9 @@ class AIAssistant:
                 logger.info(f"📝 Transcript visibility changing from {current_transcript} to {new_transcript}")
                 # Recreate the overlay with new transcript setting
                 self.overlay.hide()
-                self.overlay.screen_sharing_detector.stop_detection()
-                self.overlay.screen_sharing_detector.wait()
+                if self.overlay.screen_sharing_detector is not None:
+                    self.overlay.screen_sharing_detector.stop_detection()
+                    self.overlay.screen_sharing_detector.wait()
                 
                 # Create new overlay with updated config
                 updated_ui_config = self.config.get('ui.overlay', {})
@@ -908,7 +1046,14 @@ class AIAssistant:
                 
                 # Show brief notification in overlay
                 self.overlay.show_overlay_respecting_hide_setting()
-                self.overlay.update_ai_response(f"📸 Screenshot saved: {screenshot_path}")
+                if TRANSLATIONS_AVAILABLE:
+                    try:
+                        screenshot_msg = t('ui.status.screenshot_saved', "📸 Screenshot saved: {path}").format(path=screenshot_path)
+                        self.overlay.update_ai_response(screenshot_msg)
+                    except Exception:
+                        self.overlay.update_ai_response(f"📸 Screenshot saved: {screenshot_path}")
+                else:
+                    self.overlay.update_ai_response(f"📸 Screenshot saved: {screenshot_path}")
             else:
                 logger.info("❌ Failed to take screenshot")
                 
@@ -1077,7 +1222,11 @@ class AIAssistant:
                 topic_path = self.topic_analyzer.get_current_topic_display()
                 self.overlay.update_topic_path(topic_path)
             else:
-                self.overlay.update_topic_path("No active topic")
+                if TRANSLATIONS_AVAILABLE:
+                    no_topic_msg = t('ui.status.no_active_topic', "No active topic")
+                    self.overlay.update_topic_path(no_topic_msg)
+                else:
+                    self.overlay.update_topic_path("No active topic")
             
             self.overlay.update_topic_guidance(analysis['guidance'])
             self.overlay.update_conversation_flow(analysis['conversation_flow'])
@@ -1104,8 +1253,16 @@ class AIAssistant:
         logger.info("🎯 Starting MeetMinder...")
         
         try:
-            # Start audio processing
-            self.audio_contextualizer.start_continuous_capture()
+            # Start audio processing in background thread (model loading may take time)
+            logger.info("🎤 Starting audio capture in background thread...")
+            logger.info("   ⏳ Whisper model will be loaded on first use (may take 1-3 minutes)")
+            audio_thread = threading.Thread(
+                target=self.audio_contextualizer.start_continuous_capture,
+                daemon=True,
+                name="AudioCapture"
+            )
+            audio_thread.start()
+            logger.info("   ✅ Audio capture thread started")
             
             # Start hotkeys in background thread
             hotkey_thread = threading.Thread(
