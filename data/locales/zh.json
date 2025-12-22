@@ -1,0 +1,371 @@
+{
+  "ui": {
+    "overlay": {
+      "title": "MeetMinder",
+      "ask_ai": "🤖 询问AI",
+      "toggle_mic": "切换麦克风录音",
+      "settings": "打开设置",
+      "hide": "隐藏",
+      "show": "显示",
+      "close": "关闭应用程序",
+      "expand": "展开详情",
+      "collapse": "折叠详情",
+      "timer": "00:00",
+      "shortcut": "Ctrl+空格"
+    },
+    "buttons": {
+      "ask_ai": "🤖 询问AI",
+      "mic": "🎤",
+      "settings": "⚙️",
+      "hide": "隐藏",
+      "show": "显示",
+      "close": "✕",
+      "expand": "▼",
+      "collapse": "▲"
+    },
+    "sections": {
+      "ai_response": "🤖 AI响应",
+      "live_transcript": "📝 实时转录（系统音频）",
+      "topic_analysis": "🧠 主题分析",
+      "guidance": "💡 指导",
+      "flow": "🔄 流程"
+    },
+    "status": {
+      "no_active_topic": "无活动主题",
+      "start_speaking": "开始说话以获取指导",
+      "waiting": "等待中",
+      "analyzing": "🤔 正在分析上下文...",
+      "processing": "⏳ 处理中...",
+      "waiting_audio": "等待系统音频...",
+      "transcript_enabled": "转录已启用 - 等待系统音频...",
+      "screenshot_saved": "📸 截图已保存：{path}",
+      "screenshot_taken": "📸 已截图！",
+      "error": "错误：{error}"
+    },
+    "tooltips": {
+      "ask_ai": "触发AI辅助（Ctrl+空格）",
+      "mic": "切换麦克风录音（Ctrl+M）",
+      "settings": "打开设置（Ctrl+,）",
+      "hide": "隐藏叠加层",
+      "show": "显示叠加层",
+      "close": "关闭应用程序",
+      "expand": "展开/折叠详情"
+    }
+  },
+  "settings": {
+    "title": "MeetMinder 设置",
+    "tabs": {
+      "ai_provider": "🤖 AI提供商",
+      "audio": "🎤 音频",
+      "interface": "🖥️ 界面",
+      "assistant": "🧠 助手",
+      "prompts": "📝 提示",
+      "knowledge": "🧠 知识",
+      "documents": "📚 文档",
+      "hotkeys": "⌨️ 快捷键",
+      "debug": "🐛 调试"
+    },
+    "buttons": {
+      "save": "💾 保存设置",
+      "save_changes": "保存更改",
+      "cancel": "❌ 取消",
+      "reset": "🔄 重置为默认值"
+    },
+    "nav": {
+      "general": "常规",
+      "ai": "AI和模型",
+      "audio": "音频",
+      "documents": "文档",
+      "profile": "个人资料"
+    },
+    "general": {
+      "title": "常规设置",
+      "subtitle": "配置界面和应用程序行为",
+      "always_on_top": "始终置顶",
+      "always_on_top_desc": "保持叠加层在其他窗口之上可见",
+      "hide_from_sharing_desc": "对Zoom/Teams/Meet不可见",
+      "overlay_opacity": "叠加层透明度",
+      "auto_hide_timer": "自动隐藏计时器（秒）"
+    },
+    "ai": {
+      "title": "AI配置",
+      "subtitle": "管理您的AI提供商和模型设置",
+      "response_concise": "简洁",
+      "response_balanced": "平衡",
+      "response_detailed": "详细"
+    },
+    "language": {
+      "label": "界面语言",
+      "tooltip": "选择界面语言"
+    },
+    "theme": {
+      "label": "主题：",
+      "dark": "深色模式",
+      "light": "浅色模式",
+      "tooltip": "选择浅色或深色主题"
+    },
+    "size_multiplier": {
+      "label": "大小倍数："
+    },
+    "show_transcript": {
+      "label": "在展开视图中显示实时转录"
+    },
+    "hide_from_sharing": {
+      "label": "隐藏屏幕共享"
+    },
+    "screen_sharing": {
+      "label": "启用屏幕共享检测",
+      "tooltip": "检测到屏幕共享应用时自动隐藏叠加层"
+    },
+    "hide_screenshots": {
+      "label": "截图/调试时隐藏叠加层",
+      "tooltip": "临时隐藏整个叠加层以便拍摄干净的截图或调试UI问题"
+    },
+    "background_opacity": {
+      "label": "背景透明度："
+    },
+    "blur_effects": {
+      "label": "启用模糊效果",
+      "tooltip": "为背景应用模糊效果以获得专业外观"
+    },
+    "smooth_animations": {
+      "label": "启用平滑动画",
+      "tooltip": "使用平滑动画进行过渡和调整大小"
+    },
+    "auto_width": {
+      "label": "启用自动宽度调整",
+      "tooltip": "根据内容自动调整叠加层宽度"
+    },
+    "dynamic_transparency": {
+      "label": "启用动态透明度",
+      "tooltip": "根据活动和上下文调整透明度"
+    },
+    "auto_hide": {
+      "label": "自动隐藏计时器：",
+      "suffix": " 秒（0 = 禁用）"
+    },
+    "ai_provider": {
+      "title": "🤖 AI提供商",
+      "provider_label": "AI提供商",
+      "azure": {
+        "title": "🔷 Azure OpenAI配置",
+        "endpoint": "端点：",
+        "endpoint_placeholder": "https://your-resource.openai.azure.com/",
+        "api_key": "API密钥",
+        "api_key_placeholder": "sk-...",
+        "model": "模型名称",
+        "model_placeholder": "gpt-4",
+        "deployment": "部署：",
+        "deployment_placeholder": "your-deployment-name",
+        "api_version": "API版本："
+      },
+      "openai": {
+        "title": "🟢 OpenAI配置",
+        "api_key": "API密钥：",
+        "api_key_placeholder": "您的OpenAI API密钥",
+        "model": "模型：",
+        "model_placeholder": "gpt-4"
+      },
+      "gemini": {
+        "title": "🔴 Google Gemini配置",
+        "api_key": "API密钥：",
+        "api_key_placeholder": "您的Gemini API密钥",
+        "model": "模型：",
+        "model_placeholder": "gemini-2.0-flash",
+        "project_id": "项目ID：",
+        "project_id_placeholder": "your-project-id"
+      }
+    },
+    "audio": {
+      "title": "🎤 音频配置",
+      "subtitle": "配置麦克风和转录",
+      "mode": "音频输入模式",
+      "whisper_language": "Whisper语言",
+      "auto_start": "自动开始转录",
+      "auto_start_desc": "应用启动时开始监听",
+      "mode_single": "仅麦克风",
+      "mode_dual": "麦克风 + 系统音频",
+      "language_english": "英语",
+      "language_auto": "自动检测",
+      "language_spanish": "西班牙语",
+      "language_french": "法语",
+      "language_german": "德语",
+      "buffer_duration": "缓冲时长：",
+      "buffer_suffix": " 分钟",
+      "processing_interval": "处理间隔：",
+      "system_audio": {
+        "title": "🔊 系统音频监控",
+        "full_monitoring": "监控所有系统音频（覆盖特定应用选择）",
+        "select_apps": "选择要监控的特定应用程序：",
+        "meeting_apps": "📞 会议和通信应用（默认启用）",
+        "other_apps": "🖥️ 其他应用程序（默认禁用）",
+        "custom_app": "输入自定义应用程序名称（例如，MyApp.exe）",
+        "add_custom": "➕ 添加",
+        "filtering": "🎛️ 音频过滤：",
+        "filter_music": "🎵 过滤音乐和非语音音频（推荐）",
+        "filter_music_tooltip": "使用AI检测并忽略音乐、音效和其他非语音音频",
+        "speech_sensitivity": "语音检测灵敏度：",
+        "monitoring_status": "📊 当前监控：加载中..."
+      },
+      "transcription": {
+        "title": "📝 转录设置",
+        "provider": "提供商：",
+        "whisper": {
+          "title": "🤖 本地Whisper配置",
+          "model_size": "模型大小："
+        },
+        "google_speech": {
+          "title": "🔴 Google语音转文字配置",
+          "json_file": "服务账户JSON文件：",
+          "browse": "浏览",
+          "json_content": "或粘贴JSON内容：",
+          "json_placeholder": "{\n  \"type\": \"service_account\",\n  \"project_id\": \"your-project\",\n  \"private_key_id\": \"...\",\n  ...\n}"
+        },
+        "azure_speech": {
+          "title": "🔷 Azure语音服务配置",
+          "api_key": "API密钥：",
+          "api_key_placeholder": "您的Azure语音API密钥",
+          "region": "区域：",
+          "region_placeholder": "eastus",
+          "endpoint": "自定义端点：",
+          "endpoint_placeholder": "https://your-region.api.cognitive.microsoft.com/ （可选）",
+          "language": "语言："
+        },
+        "openai_whisper": {
+          "title": "🟢 OpenAI Whisper API配置",
+          "api_key": "API密钥：",
+          "api_key_placeholder": "您的OpenAI API密钥",
+          "model": "模型：",
+          "language": "语言："
+        }
+      }
+    },
+    "assistant": {
+      "title": "🧠 助手行为",
+      "activation_mode": "激活模式：",
+      "verbosity": "响应详细程度：",
+      "response_style": "响应风格",
+      "input_priority": "输入优先级："
+    },
+    "prompts": {
+      "title": "📝 AI提示配置",
+      "info": "自定义MeetMinder助手的行为和响应风格：",
+      "placeholder": "输入定义MeetMinder助手行为、语气和专业知识的系统提示...",
+      "load_file": "📁 从文件加载",
+      "save_file": "💾 保存到文件",
+      "reset_default": "🔄 重置为默认值"
+    },
+    "knowledge": {
+      "title": "🧠 知识图谱",
+      "enable": "启用主题分析和建议",
+      "matching_threshold": "匹配阈值：",
+      "max_matches": "最大建议数：",
+      "topic_definitions": "主题定义：",
+      "topic_definitions_placeholder": "示例主题定义：\n\n会议管理：组织和运行有效会议的策略\n项目规划：项目规划和执行技术\n技术讨论：处理技术主题和问题解决\n客户沟通：客户互动最佳实践\n\n每行输入一个主题，格式：主题名称：描述",
+      "import_topics": "📁 导入主题",
+      "export_topics": "💾 导出主题",
+      "clear_all": "🗑️ 清除全部"
+    },
+    "documents": {
+      "title": "📚 文档存储配置",
+      "title_short": "知识库",
+      "subtitle": "管理文档以获取上下文感知答案",
+      "upload_documents": "点击上传文档",
+      "support_formats": "支持 PDF、TXT、MD、DOCX",
+      "loading": "正在加载文档...",
+      "no_documents": "还没有文档。上传一些开始吧！",
+      "enabled": "启用文档存储和检索",
+      "chunk_size": "块大小：",
+      "chunk_overlap": "块重叠：",
+      "max_context": "最大上下文块：",
+      "embedding_provider": "嵌入提供商：",
+      "embedding_model": "嵌入模型：",
+      "vector_backend": "向量后端：",
+      "uploaded_documents": "上传的文档将显示在这里...",
+      "upload": "📤 上传文档",
+      "refresh_list": "🔄 刷新列表",
+      "delete": "🗑️ 删除",
+      "delete_confirm": "您确定要删除此文档吗？",
+      "upload_failed": "上传失败：{error}",
+      "error_saving": "保存设置时出错：{error}",
+      "kb": "KB",
+      "chunks": "块",
+      "embedding_provider_title": "🧮 嵌入提供商",
+      "vector_storage_title": "💾 向量存储",
+      "management_title": "📁 文档管理",
+      "statistics_title": "📊 文档存储统计：",
+      "total_documents": "总文档数：",
+      "completed": "已完成：",
+      "failed": "失败：",
+      "total_chunks": "总块数：",
+      "embedding": "嵌入：",
+      "vector_backend_label": "向量后端：",
+      "documents_list_title": "📁 文档：",
+      "unknown": "未知",
+      "status_label": "状态：",
+      "error_label": "错误：",
+      "no_documents_uploaded": "尚未上传文档。",
+      "error_loading": "加载文档时出错：{error}",
+      "status": {
+        "active": "活动",
+        "inactive": "非活动",
+        "processing": "处理中",
+        "ready": "就绪",
+        "error": "错误"
+      }
+    },
+    "profile": {
+      "title": "用户资料",
+      "subtitle": "个性化AI响应以适应您的角色",
+      "full_name": "全名",
+      "job_title": "职位",
+      "skills": "技能与专长",
+      "placeholder_name": "您的姓名",
+      "placeholder_title": "例如：软件工程师",
+      "placeholder_skills": "Python、项目管理等"
+    },
+    "hotkeys": {
+      "title": "⌨️ 全局快捷键",
+      "trigger_ai": "触发AI：",
+      "toggle_overlay": "切换叠加层：",
+      "screenshot": "截图：",
+      "emergency_reset": "紧急重置：",
+      "toggle_hide": "切换隐藏叠加层：",
+      "toggle_hide_placeholder": "例如：Ctrl+H"
+    },
+    "debug": {
+      "enabled": "启用调试模式",
+      "verbose_logging": "详细日志",
+      "save_transcriptions": "保存转录到文件",
+      "save_audio": "保存音频块到文件",
+      "max_files": "最大调试文件数：",
+      "title": "🐛 调试和日志"
+    }
+  },
+  "messages": {
+    "loading": "🚀 正在加载 MeetMinder...\n请稍候...",
+    "initializing": "正在初始化 MeetMinder...",
+    "ready": "✅ MeetMinder 现在正在运行！",
+    "error": "错误：{error}",
+    "settings_saved": "设置已成功保存！",
+    "settings_reset": "设置已重置为默认值",
+    "document_uploaded": "文档已上传",
+    "upload_failed": "上传失败",
+    "upload_failed_msg": "上传文档失败：{error}",
+    "ai_helper_not_available": "AI助手不可用",
+    "ai_helper_not_available_msg": "AI助手不可用。请检查您的AI提供商配置。",
+    "topics_imported": "导入主题",
+    "topics_exported": "导出主题",
+    "success": "成功",
+    "invalid_json": "无效的JSON",
+    "invalid_json_msg": "所选文件不包含有效的JSON。",
+    "error_loading_file": "错误",
+    "error_loading_file_msg": "加载文件失败：{error}",
+    "invalid_input": "无效输入",
+    "invalid_input_msg": "请输入应用程序名称。",
+    "already_added": "已添加",
+    "already_added_msg": "'{name}' 已在列表中。",
+    "application_added": "应用程序已添加"
+  }
+}
+

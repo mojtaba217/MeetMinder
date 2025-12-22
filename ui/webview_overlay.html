@@ -342,7 +342,7 @@
         <!-- Control Bar -->
         <div class="glass-panel control-bar">
             <!-- Record Button -->
-            <div class="record-btn" id="recordBtn" onclick="toggleRecording()" title="Toggle Microphone">
+            <div class="record-btn" id="recordBtn" onclick="toggleRecording()" data-translate-title="ui.tooltips.mic">
                 <div class="record-wave"></div>
                 <svg class="record-icon" viewBox="0 0 24 24">
                     <path d="M12 14c1.66 0 3-1.34 3-3V5c0-1.66-1.34-3-3-3S9 3.34 9 5v6c0 1.66 1.34 3 3 3z" />
@@ -352,22 +352,22 @@
             </div>
 
             <!-- Timer -->
-            <div class="timer" id="timer">00:00</div>
+            <div class="timer" id="timer" data-translate="ui.overlay.timer">00:00</div>
 
             <!-- AI Button -->
-            <button class="ai-btn" onclick="askAI()">
+            <button class="ai-btn" onclick="askAI()" data-translate-title="ui.tooltips.ask_ai">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
                     stroke-linecap="round" stroke-linejoin="round">
                     <path d="M12 2a10 10 0 1 0 10 10H12V2z"></path>
                     <path d="M12 2a10 10 0 0 1 10 10"></path>
                     <path d="M2.05 10.5a10 10 0 0 1 9.95-8.5"></path>
                 </svg>
-                <span>Ask AI</span>
+                <span data-translate="ui.buttons.ask_ai">Ask AI</span>
             </button>
 
             <!-- Actions -->
             <div class="actions">
-                <div class="icon-btn" onclick="openSettings()" title="Settings">
+                <div class="icon-btn" onclick="openSettings()" data-translate-title="ui.tooltips.settings">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                         stroke-linejoin="round">
                         <circle cx="12" cy="12" r="3"></circle>
@@ -376,13 +376,13 @@
                         </path>
                     </svg>
                 </div>
-                <div class="icon-btn" onclick="minimizeWindow()" title="Minimize">
+                <div class="icon-btn" onclick="minimizeWindow()" data-translate-title="ui.tooltips.hide">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                         stroke-linejoin="round">
                         <line x1="5" y1="12" x2="19" y2="12"></line>
                     </svg>
                 </div>
-                <div class="icon-btn close" onclick="closeApp()" title="Close">
+                <div class="icon-btn close" onclick="closeApp()" data-translate-title="ui.tooltips.close">
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-linecap="round"
                         stroke-linejoin="round">
                         <line x1="18" y1="6" x2="6" y2="18"></line>
@@ -399,7 +399,7 @@
                     stroke-linejoin="round">
                     <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
                 </svg>
-                <p>Ready to assist. Press Ctrl+Space or click 'Ask AI'.</p>
+                <p data-translate="ui.status.waiting">Ready to assist. Press Ctrl+Space or click 'Ask AI'.</p>
             </div>
         </div>
     </div>

@@ -1,0 +1,371 @@
+{
+  "ui": {
+    "overlay": {
+      "title": "MeetMinder",
+      "ask_ai": "🤖 Demander à l'IA",
+      "toggle_mic": "Activer/désactiver l'enregistrement du microphone",
+      "settings": "Ouvrir les paramètres",
+      "hide": "Masquer",
+      "show": "Afficher",
+      "close": "Fermer l'application",
+      "expand": "Développer les détails",
+      "collapse": "Réduire les détails",
+      "timer": "00:00",
+      "shortcut": "Ctrl+Espace"
+    },
+    "buttons": {
+      "ask_ai": "🤖 Demander à l'IA",
+      "mic": "🎤",
+      "settings": "⚙️",
+      "hide": "Masquer",
+      "show": "Afficher",
+      "close": "✕",
+      "expand": "▼",
+      "collapse": "▲"
+    },
+    "sections": {
+      "ai_response": "🤖 Réponse de l'IA",
+      "live_transcript": "📝 Transcription en Direct (Audio Système)",
+      "topic_analysis": "🧠 Analyse des Sujets",
+      "guidance": "💡 Conseils",
+      "flow": "🔄 Flux"
+    },
+    "status": {
+      "no_active_topic": "Aucun sujet actif",
+      "start_speaking": "Commencez à parler pour obtenir des conseils",
+      "waiting": "En attente",
+      "analyzing": "🤔 Analyse du contexte...",
+      "processing": "⏳ Traitement...",
+      "waiting_audio": "En attente de l'audio système...",
+      "transcript_enabled": "Transcription activée - en attente de l'audio système...",
+      "screenshot_saved": "📸 Capture d'écran enregistrée : {path}",
+      "screenshot_taken": "📸 Capture d'écran prise !",
+      "error": "Erreur : {error}"
+    },
+    "tooltips": {
+      "ask_ai": "Déclencher l'assistance IA (Ctrl+Espace)",
+      "mic": "Activer/désactiver l'enregistrement du microphone (Ctrl+M)",
+      "settings": "Ouvrir les paramètres (Ctrl+,)",
+      "hide": "Masquer la superposition",
+      "show": "Afficher la superposition",
+      "close": "Fermer l'application",
+      "expand": "Développer/réduire les détails"
+    }
+  },
+  "settings": {
+    "title": "Paramètres MeetMinder",
+    "tabs": {
+      "ai_provider": "🤖 Fournisseur IA",
+      "audio": "🎤 Audio",
+      "interface": "🖥️ Interface",
+      "assistant": "🧠 Assistant",
+      "prompts": "📝 Invites",
+      "knowledge": "🧠 Connaissances",
+      "documents": "📚 Documents",
+      "hotkeys": "⌨️ Raccourcis",
+      "debug": "🐛 Débogage"
+    },
+    "buttons": {
+      "save": "💾 Enregistrer les Paramètres",
+      "save_changes": "Enregistrer les Modifications",
+      "cancel": "❌ Annuler",
+      "reset": "🔄 Réinitialiser aux Valeurs par Défaut"
+    },
+    "nav": {
+      "general": "Général",
+      "ai": "IA et Modèle",
+      "audio": "Audio",
+      "documents": "Documents",
+      "profile": "Profil"
+    },
+    "general": {
+      "title": "Paramètres Généraux",
+      "subtitle": "Configurer l'interface et le comportement de l'application",
+      "always_on_top": "Toujours au Premier Plan",
+      "always_on_top_desc": "Garder la superposition visible au-dessus des autres fenêtres",
+      "hide_from_sharing_desc": "Invisible pour Zoom/Teams/Meet",
+      "overlay_opacity": "Opacité de la Superposition",
+      "auto_hide_timer": "Minuteur d'Auto-masquage (secondes)"
+    },
+    "ai": {
+      "title": "Configuration IA",
+      "subtitle": "Gérer les paramètres de votre fournisseur et modèle IA",
+      "response_concise": "Concis",
+      "response_balanced": "Équilibré",
+      "response_detailed": "Détaillé"
+    },
+    "language": {
+      "label": "Langue de l'Interface",
+      "tooltip": "Sélectionnez la langue de l'interface"
+    },
+    "theme": {
+      "label": "Thème :",
+      "dark": "Mode Sombre",
+      "light": "Mode Clair",
+      "tooltip": "Choisissez entre thème clair et sombre"
+    },
+    "size_multiplier": {
+      "label": "Multiplicateur de Taille :"
+    },
+    "show_transcript": {
+      "label": "Afficher la transcription en direct en vue étendue"
+    },
+    "hide_from_sharing": {
+      "label": "Masquer du Partage d'Écran"
+    },
+    "screen_sharing": {
+      "label": "Activer la détection de partage d'écran",
+      "tooltip": "Masquer automatiquement la superposition lorsque des applications de partage d'écran sont détectées"
+    },
+    "hide_screenshots": {
+      "label": "Masquer la superposition pour les captures d'écran/débogage",
+      "tooltip": "Masquer temporairement toute la superposition pour prendre des captures d'écran propres ou déboguer les problèmes d'interface"
+    },
+    "background_opacity": {
+      "label": "Opacité de Fond :"
+    },
+    "blur_effects": {
+      "label": "Activer les effets de flou",
+      "tooltip": "Appliquer des effets de flou à l'arrière-plan pour un aspect professionnel"
+    },
+    "smooth_animations": {
+      "label": "Activer les animations fluides",
+      "tooltip": "Utiliser des animations fluides pour les transitions et le redimensionnement"
+    },
+    "auto_width": {
+      "label": "Activer l'ajustement automatique de la largeur",
+      "tooltip": "Ajuster automatiquement la largeur de la superposition en fonction du contenu"
+    },
+    "dynamic_transparency": {
+      "label": "Activer la transparence dynamique",
+      "tooltip": "Ajuster la transparence en fonction de l'activité et du contexte"
+    },
+    "auto_hide": {
+      "label": "Minuteur d'Auto-masquage :",
+      "suffix": " secondes (0 = désactivé)"
+    },
+    "ai_provider": {
+      "title": "🤖 Fournisseur IA",
+      "provider_label": "Fournisseur IA",
+      "azure": {
+        "title": "🔷 Configuration Azure OpenAI",
+        "endpoint": "Point de Terminaison :",
+        "endpoint_placeholder": "https://your-resource.openai.azure.com/",
+        "api_key": "Clé API",
+        "api_key_placeholder": "sk-...",
+        "model": "Nom du Modèle",
+        "model_placeholder": "gpt-4",
+        "deployment": "Déploiement :",
+        "deployment_placeholder": "your-deployment-name",
+        "api_version": "Version API :"
+      },
+      "openai": {
+        "title": "🟢 Configuration OpenAI",
+        "api_key": "Clé API :",
+        "api_key_placeholder": "Votre clé API OpenAI",
+        "model": "Modèle :",
+        "model_placeholder": "gpt-4"
+      },
+      "gemini": {
+        "title": "🔴 Configuration Google Gemini",
+        "api_key": "Clé API :",
+        "api_key_placeholder": "Votre clé API Gemini",
+        "model": "Modèle :",
+        "model_placeholder": "gemini-2.0-flash",
+        "project_id": "ID du Projet :",
+        "project_id_placeholder": "your-project-id"
+      }
+    },
+    "audio": {
+      "title": "🎤 Configuration Audio",
+      "subtitle": "Configurer le microphone et la transcription",
+      "mode": "Mode d'Entrée Audio",
+      "whisper_language": "Langue Whisper",
+      "auto_start": "Démarrer la Transcription Automatiquement",
+      "auto_start_desc": "Commencer à écouter au lancement de l'application",
+      "mode_single": "Microphone Seulement",
+      "mode_dual": "Microphone + Audio Système",
+      "language_english": "Anglais",
+      "language_auto": "Détection Automatique",
+      "language_spanish": "Espagnol",
+      "language_french": "Français",
+      "language_german": "Allemand",
+      "buffer_duration": "Durée du Tampon :",
+      "buffer_suffix": " minutes",
+      "processing_interval": "Intervalle de Traitement :",
+      "system_audio": {
+        "title": "🔊 Surveillance Audio Système",
+        "full_monitoring": "Surveiller tout l'audio système (remplace la sélection d'application spécifique)",
+        "select_apps": "Sélectionner des applications spécifiques à surveiller :",
+        "meeting_apps": "📞 Applications de Réunion et Communication (Activées par Défaut)",
+        "other_apps": "🖥️ Autres Applications (Désactivées par Défaut)",
+        "custom_app": "Entrer le nom d'application personnalisé (ex. MyApp.exe)",
+        "add_custom": "➕ Ajouter",
+        "filtering": "🎛️ Filtrage Audio :",
+        "filter_music": "🎵 Filtrer la musique et l'audio non vocal (recommandé)",
+        "filter_music_tooltip": "Utilise l'IA pour détecter et ignorer la musique, les effets sonores et autre audio non vocal",
+        "speech_sensitivity": "Sensibilité de Détection Vocale :",
+        "monitoring_status": "📊 Surveillance actuelle : Chargement..."
+      },
+      "transcription": {
+        "title": "📝 Paramètres de Transcription",
+        "provider": "Fournisseur :",
+        "whisper": {
+          "title": "🤖 Configuration Whisper Local",
+          "model_size": "Taille du Modèle :"
+        },
+        "google_speech": {
+          "title": "🔴 Configuration Google Speech-to-Text",
+          "json_file": "Fichier JSON du Compte de Service :",
+          "browse": "Parcourir",
+          "json_content": "Ou coller le contenu JSON :",
+          "json_placeholder": "{\n  \"type\": \"service_account\",\n  \"project_id\": \"your-project\",\n  \"private_key_id\": \"...\",\n  ...\n}"
+        },
+        "azure_speech": {
+          "title": "🔷 Configuration Services Vocaux Azure",
+          "api_key": "Clé API :",
+          "api_key_placeholder": "Votre clé API Azure Speech",
+          "region": "Région :",
+          "region_placeholder": "eastus",
+          "endpoint": "Point de Terminaison Personnalisé :",
+          "endpoint_placeholder": "https://your-region.api.cognitive.microsoft.com/ (optionnel)",
+          "language": "Langue :"
+        },
+        "openai_whisper": {
+          "title": "🟢 Configuration API Whisper OpenAI",
+          "api_key": "Clé API :",
+          "api_key_placeholder": "Votre clé API OpenAI",
+          "model": "Modèle :",
+          "language": "Langue :"
+        }
+      }
+    },
+    "assistant": {
+      "title": "🧠 Comportement de l'Assistant",
+      "activation_mode": "Mode d'Activation :",
+      "verbosity": "Détail de la Réponse :",
+      "response_style": "Style de Réponse",
+      "input_priority": "Priorité d'Entrée :"
+    },
+    "prompts": {
+      "title": "📝 Configuration du Prompt IA",
+      "info": "Personnalisez le comportement et le style de réponse de l'assistant MeetMinder :",
+      "placeholder": "Entrez le prompt système qui définit le comportement, le ton et l'expertise de l'assistant MeetMinder...",
+      "load_file": "📁 Charger depuis un Fichier",
+      "save_file": "💾 Enregistrer dans un Fichier",
+      "reset_default": "🔄 Réinitialiser par Défaut"
+    },
+    "knowledge": {
+      "title": "🧠 Graphe de Connaissances",
+      "enable": "Activer l'analyse et les suggestions de sujets",
+      "matching_threshold": "Seuil de Correspondance :",
+      "max_matches": "Suggestions Maximales :",
+      "topic_definitions": "Définitions de Sujets :",
+      "topic_definitions_placeholder": "Exemples de définitions de sujets :\n\nGestion de Réunions : Stratégies pour organiser et mener des réunions efficaces\nPlanification de Projet : Techniques pour la planification et l'exécution de projets\nDiscussions Techniques : Gestion des sujets techniques et résolution de problèmes\nCommunication Client : Meilleures pratiques pour les interactions avec les clients\n\nEntrez un sujet par ligne avec le format : Nom du Sujet : Description",
+      "import_topics": "📁 Importer des Sujets",
+      "export_topics": "💾 Exporter des Sujets",
+      "clear_all": "🗑️ Tout Effacer"
+    },
+    "documents": {
+      "title": "📚 Configuration du Magasin de Documents",
+      "title_short": "Base de Connaissances",
+      "subtitle": "Gérer les documents pour des réponses contextuelles",
+      "upload_documents": "Cliquer pour Télécharger des Documents",
+      "support_formats": "Prise en charge de PDF, TXT, MD, DOCX",
+      "loading": "Chargement des documents...",
+      "no_documents": "Aucun document pour le moment. Téléchargez-en pour commencer !",
+      "enabled": "Activer le stockage et la récupération de documents",
+      "chunk_size": "Taille des Fragments :",
+      "chunk_overlap": "Chevauchement des Fragments :",
+      "max_context": "Fragments de Contexte Maximum :",
+      "embedding_provider": "Fournisseur d'Intégration :",
+      "embedding_model": "Modèle d'Intégration :",
+      "vector_backend": "Backend Vectoriel :",
+      "uploaded_documents": "Les documents téléchargés apparaîtront ici...",
+      "upload": "📤 Télécharger un Document",
+      "refresh_list": "🔄 Actualiser la Liste",
+      "delete": "🗑️ Supprimer",
+      "delete_confirm": "Êtes-vous sûr de vouloir supprimer ce document ?",
+      "upload_failed": "Échec du téléchargement : {error}",
+      "error_saving": "Erreur lors de l'enregistrement des paramètres : {error}",
+      "kb": "Ko",
+      "chunks": "fragments",
+      "embedding_provider_title": "🧮 Fournisseur d'Intégration",
+      "vector_storage_title": "💾 Stockage Vectoriel",
+      "management_title": "📁 Gestion de Documents",
+      "statistics_title": "📊 Statistiques du Magasin de Documents :",
+      "total_documents": "Total de Documents :",
+      "completed": "Terminés :",
+      "failed": "Échoués :",
+      "total_chunks": "Total de Fragments :",
+      "embedding": "Intégration :",
+      "vector_backend_label": "Backend Vectoriel :",
+      "documents_list_title": "📁 Documents :",
+      "unknown": "Inconnu",
+      "status_label": "Statut :",
+      "error_label": "Erreur :",
+      "no_documents_uploaded": "Aucun document téléchargé pour le moment.",
+      "error_loading": "Erreur lors du chargement des documents : {error}",
+      "status": {
+        "active": "Actif",
+        "inactive": "Inactif",
+        "processing": "Traitement",
+        "ready": "Prêt",
+        "error": "Erreur"
+      }
+    },
+    "profile": {
+      "title": "Profil Utilisateur",
+      "subtitle": "Personnaliser les réponses IA pour votre rôle",
+      "full_name": "Nom Complet",
+      "job_title": "Titre du Poste",
+      "skills": "Compétences et Expertise",
+      "placeholder_name": "Votre nom",
+      "placeholder_title": "ex. Ingénieur Logiciel",
+      "placeholder_skills": "Python, Gestion de Projet, etc."
+    },
+    "hotkeys": {
+      "title": "⌨️ Raccourcis Globaux",
+      "trigger_ai": "Déclencher l'IA :",
+      "toggle_overlay": "Basculer la Superposition :",
+      "screenshot": "Capture d'Écran :",
+      "emergency_reset": "Réinitialisation d'Urgence :",
+      "toggle_hide": "Basculer Masquer la Superposition :",
+      "toggle_hide_placeholder": "ex., Ctrl+H"
+    },
+    "debug": {
+      "enabled": "Activer le mode débogage",
+      "verbose_logging": "Journalisation détaillée",
+      "save_transcriptions": "Enregistrer les transcriptions dans des fichiers",
+      "save_audio": "Enregistrer les fragments audio dans des fichiers",
+      "max_files": "Fichiers de Débogage Maximum :",
+      "title": "🐛 Débogage et Journalisation"
+    }
+  },
+  "messages": {
+    "loading": "🚀 Chargement de MeetMinder...\nVeuillez patienter...",
+    "initializing": "Initialisation de MeetMinder...",
+    "ready": "✅ MeetMinder est maintenant en cours d'exécution !",
+    "error": "Erreur : {error}",
+    "settings_saved": "Paramètres enregistrés avec succès !",
+    "settings_reset": "Paramètres réinitialisés aux valeurs par défaut",
+    "document_uploaded": "Document Téléchargé",
+    "upload_failed": "Échec du Téléchargement",
+    "upload_failed_msg": "Échec du téléchargement du document : {error}",
+    "ai_helper_not_available": "Assistant IA Non Disponible",
+    "ai_helper_not_available_msg": "L'assistant IA n'est pas disponible. Veuillez vérifier votre configuration du fournisseur d'IA.",
+    "topics_imported": "Importer des Sujets",
+    "topics_exported": "Exporter des Sujets",
+    "success": "Succès",
+    "invalid_json": "JSON Invalide",
+    "invalid_json_msg": "Le fichier sélectionné ne contient pas de JSON valide.",
+    "error_loading_file": "Erreur",
+    "error_loading_file_msg": "Erreur lors du chargement du fichier : {error}",
+    "invalid_input": "Entrée Invalide",
+    "invalid_input_msg": "Veuillez entrer un nom d'application.",
+    "already_added": "Déjà Ajouté",
+    "already_added_msg": "'{name}' est déjà dans la liste.",
+    "application_added": "Application Ajoutée"
+  }
+}
+
