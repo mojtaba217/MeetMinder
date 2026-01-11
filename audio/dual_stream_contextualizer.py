@@ -88,6 +88,20 @@ class DualStreamAudioContextualizer:
             print(f"✓ Configured for lazy Whisper model loading (saves ~500MB at startup)")
         else:
             print(f"✓ Using pre-loaded Whisper model for dual-stream processing")
+        
+        # Audio streams
+        self.mic_stream = None
+        self.system_audio_capture = None
+        
+        # Timing
+        self.last_mic_time = time.time()
+        self.last_system_time = time.time()
+        
+        # Callbacks
+        self.context_change_callbacks = []
+        
+        # Initialize system audio capture
+        self._init_system_audio()
     
     def _get_whisper_model(self):
         """Get Whisper model using lazy loading"""
@@ -115,21 +129,7 @@ class DualStreamAudioContextualizer:
                 print(f"❌ Error loading Whisper model: {e}")
                 return None
         return self.whisper_model
-        
-        # Audio streams
-        self.mic_stream = None
-        self.system_audio_capture = None
-        
-        # Timing
-        self.last_mic_time = time.time()
-        self.last_system_time = time.time()
-        
-        # Callbacks
-        self.context_change_callbacks = []
-        
-        # Initialize system audio capture
-        self._init_system_audio()
-        
+    
     def update_debug_config(self, new_debug_config: Dict[str, Any]):
         """Update debug configuration at runtime"""
         self.debug_config.update(new_debug_config)
