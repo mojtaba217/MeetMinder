@@ -11,6 +11,18 @@ from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtGui import QFont, QIcon
 import json
 
+# Import translation system
+try:
+    from utils.translation_manager import get_translation_manager, t, set_language
+    TRANSLATIONS_AVAILABLE = True
+except ImportError:
+    TRANSLATIONS_AVAILABLE = False
+    print("⚠️ Translation system not available in settings")
+    def t(key: str, default: str = None, **kwargs) -> str:
+        return default or key
+    def set_language(lang: str):
+        pass
+
 class ModernSettingsDialog(QDialog):
     """Modern tabbed settings dialog with organized sections"""
     
@@ -19,6 +31,7 @@ class ModernSettingsDialog(QDialog):
     def __init__(self, current_config: Dict[str, Any], parent=None):
         super().__init__(parent)
         self.current_config = current_config.copy()
+        self.overlay_ref = parent  # Store reference to overlay for refreshing
         
         # Get screen resolution for responsive sizing
         self.screen = QApplication.desktop().screenGeometry()
@@ -36,7 +49,7 @@ class ModernSettingsDialog(QDialog):
     
     def setup_ui(self):
         """Setup the tabbed settings UI"""
-        self.setWindowTitle("MeetMinder Settings")
+        self.setWindowTitle(t("settings.title", "MeetMinder Settings"))
         
         # Set window icon
         if os.path.exists("MeetMinderIcon.ico"):
@@ -101,7 +114,7 @@ class ModernSettingsDialog(QDialog):
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Provider Selection
-        provider_group = QGroupBox("🤖 AI Provider")
+        self.provider_group = QGroupBox(t("settings.ai_provider.title", "🤖 AI Provider"))
         provider_layout = QFormLayout()
         provider_layout.setSpacing(self.scale(20))
         provider_layout.setLabelAlignment(Qt.AlignLeft)
@@ -110,147 +123,147 @@ class ModernSettingsDialog(QDialog):
         self.ai_provider_type.addItems(["azure_openai", "openai", "google_gemini", "deepseek", "claude"])
         self.ai_provider_type.setMinimumHeight(self.scale(40))
         self.ai_provider_type.currentTextChanged.connect(self.on_provider_changed)
-        provider_layout.addRow("Provider:", self.ai_provider_type)
+        provider_layout.addRow(t("settings.ai_provider.provider_label", "Provider:"), self.ai_provider_type)
         
-        provider_group.setLayout(provider_layout)
-        layout.addWidget(provider_group)
+        self.provider_group.setLayout(provider_layout)
+        layout.addWidget(self.provider_group)
         
         # Azure OpenAI Settings
-        self.azure_group = QGroupBox("🔷 Azure OpenAI Configuration")
+        self.azure_group = QGroupBox(t("settings.ai_provider.azure.title", "🔷 Azure OpenAI Configuration"))
         self.azure_group.setMinimumHeight(self.scale(350))
         azure_layout = QFormLayout()
         azure_layout.setSpacing(self.scale(20))
         azure_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.azure_endpoint = QLineEdit()
-        self.azure_endpoint.setPlaceholderText("https://your-resource.openai.azure.com/")
+        self.azure_endpoint.setPlaceholderText(t("settings.ai_provider.azure.endpoint_placeholder", "https://your-resource.openai.azure.com/"))
         self.azure_endpoint.setMinimumHeight(self.scale(40))
 
-        azure_layout.addRow("Endpoint:", self.azure_endpoint)
+        azure_layout.addRow(t("settings.ai_provider.azure.endpoint", "Endpoint:"), self.azure_endpoint)
         
         self.azure_api_key = QLineEdit()
-        self.azure_api_key.setPlaceholderText("Your Azure OpenAI API key")
+        self.azure_api_key.setPlaceholderText(t("settings.ai_provider.azure.api_key_placeholder", "Your Azure OpenAI API key"))
         self.azure_api_key.setEchoMode(QLineEdit.Password)
         self.azure_api_key.setMinimumHeight(self.scale(40))
 
-        azure_layout.addRow("API Key:", self.azure_api_key)
+        azure_layout.addRow(t("settings.ai_provider.azure.api_key", "API Key:"), self.azure_api_key)
         
         self.azure_model = QLineEdit()
-        self.azure_model.setPlaceholderText("gpt-4")
+        self.azure_model.setPlaceholderText(t("settings.ai_provider.azure.model_placeholder", "gpt-4"))
         self.azure_model.setMinimumHeight(self.scale(40))
 
-        azure_layout.addRow("Model:", self.azure_model)
+        azure_layout.addRow(t("settings.ai_provider.azure.model", "Model:"), self.azure_model)
         
         self.azure_deployment = QLineEdit()
-        self.azure_deployment.setPlaceholderText("your-deployment-name")
+        self.azure_deployment.setPlaceholderText(t("settings.ai_provider.azure.deployment_placeholder", "your-deployment-name"))
         self.azure_deployment.setMinimumHeight(self.scale(40))
 
-        azure_layout.addRow("Deployment:", self.azure_deployment)
+        azure_layout.addRow(t("settings.ai_provider.azure.deployment", "Deployment:"), self.azure_deployment)
         
         self.azure_api_version = QLineEdit()
         self.azure_api_version.setText("2024-06-01")
         self.azure_api_version.setMinimumHeight(self.scale(40))
 
-        azure_layout.addRow("API Version:", self.azure_api_version)
+        azure_layout.addRow(t("settings.ai_provider.azure.api_version", "API Version:"), self.azure_api_version)
         
         self.azure_group.setLayout(azure_layout)
         layout.addWidget(self.azure_group)
         
         # OpenAI Settings
-        self.openai_group = QGroupBox("🟢 OpenAI Configuration")
+        self.openai_group = QGroupBox(t("settings.ai_provider.openai.title", "🟢 OpenAI Configuration"))
         self.openai_group.setMinimumHeight(self.scale(200))
         openai_layout = QFormLayout()
         openai_layout.setSpacing(self.scale(20))
         openai_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.openai_api_key = QLineEdit()
-        self.openai_api_key.setPlaceholderText("Your OpenAI API key")
+        self.openai_api_key.setPlaceholderText(t("settings.ai_provider.openai.api_key_placeholder", "Your OpenAI API key"))
         self.openai_api_key.setEchoMode(QLineEdit.Password)
         self.openai_api_key.setMinimumHeight(self.scale(40))
-        openai_layout.addRow("API Key:", self.openai_api_key)
+        openai_layout.addRow(t("settings.ai_provider.openai.api_key", "API Key:"), self.openai_api_key)
         
         self.openai_model = QLineEdit()
-        self.openai_model.setPlaceholderText("gpt-4")
+        self.openai_model.setPlaceholderText(t("settings.ai_provider.openai.model_placeholder", "gpt-4"))
         self.openai_model.setMinimumHeight(self.scale(40))
-        openai_layout.addRow("Model:", self.openai_model)
+        openai_layout.addRow(t("settings.ai_provider.openai.model", "Model:"), self.openai_model)
         
         self.openai_group.setLayout(openai_layout)
         layout.addWidget(self.openai_group)
         
         # Google Gemini Settings
-        self.gemini_group = QGroupBox("🔴 Google Gemini Configuration")
+        self.gemini_group = QGroupBox(t("settings.ai_provider.gemini.title", "🔴 Google Gemini Configuration"))
         self.gemini_group.setMinimumHeight(self.scale(250))
         gemini_layout = QFormLayout()
         gemini_layout.setSpacing(self.scale(20))
         gemini_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.gemini_api_key = QLineEdit()
-        self.gemini_api_key.setPlaceholderText("Your Gemini API key")
+        self.gemini_api_key.setPlaceholderText(t("settings.ai_provider.gemini.api_key_placeholder", "Your Gemini API key"))
         self.gemini_api_key.setEchoMode(QLineEdit.Password)
         self.gemini_api_key.setMinimumHeight(self.scale(40))
-        gemini_layout.addRow("API Key:", self.gemini_api_key)
+        gemini_layout.addRow(t("settings.ai_provider.gemini.api_key", "API Key:"), self.gemini_api_key)
         
         self.gemini_model = QLineEdit()
-        self.gemini_model.setPlaceholderText("gemini-2.0-flash")
+        self.gemini_model.setPlaceholderText(t("settings.ai_provider.gemini.model_placeholder", "gemini-2.0-flash"))
         self.gemini_model.setMinimumHeight(self.scale(40))
-        gemini_layout.addRow("Model:", self.gemini_model)
+        gemini_layout.addRow(t("settings.ai_provider.gemini.model", "Model:"), self.gemini_model)
         
         self.gemini_project_id = QLineEdit()
-        self.gemini_project_id.setPlaceholderText("your-project-id")
+        self.gemini_project_id.setPlaceholderText(t("settings.ai_provider.gemini.project_id_placeholder", "your-project-id"))
         self.gemini_project_id.setMinimumHeight(self.scale(40))
-        gemini_layout.addRow("Project ID:", self.gemini_project_id)
+        gemini_layout.addRow(t("settings.ai_provider.gemini.project_id", "Project ID:"), self.gemini_project_id)
         
         self.gemini_group.setLayout(gemini_layout)
         layout.addWidget(self.gemini_group)
         
         # DeepSeek Settings
-        self.deepseek_group = QGroupBox("🧠 DeepSeek Configuration")
+        self.deepseek_group = QGroupBox(t("settings.ai_provider.deepseek.title", "🧠 DeepSeek Configuration"))
         self.deepseek_group.setMinimumHeight(self.scale(250))
         deepseek_layout = QFormLayout()
         deepseek_layout.setSpacing(self.scale(20))
         deepseek_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.deepseek_api_key = QLineEdit()
-        self.deepseek_api_key.setPlaceholderText("Your DeepSeek API key")
+        self.deepseek_api_key.setPlaceholderText(t("settings.ai_provider.deepseek.api_key_placeholder", "Your DeepSeek API key"))
         self.deepseek_api_key.setEchoMode(QLineEdit.Password)
         self.deepseek_api_key.setMinimumHeight(self.scale(40))
-        deepseek_layout.addRow("API Key:", self.deepseek_api_key)
+        deepseek_layout.addRow(t("settings.ai_provider.deepseek.api_key", "API Key:"), self.deepseek_api_key)
         
         self.deepseek_base_url = QLineEdit()
-        self.deepseek_base_url.setPlaceholderText("https://api.deepseek.com")
+        self.deepseek_base_url.setPlaceholderText(t("settings.ai_provider.deepseek.base_url_placeholder", "https://api.deepseek.com"))
         self.deepseek_base_url.setMinimumHeight(self.scale(40))
-        deepseek_layout.addRow("Base URL:", self.deepseek_base_url)
+        deepseek_layout.addRow(t("settings.ai_provider.deepseek.base_url", "Base URL:"), self.deepseek_base_url)
         
         self.deepseek_model = QLineEdit()
-        self.deepseek_model.setPlaceholderText("deepseek-coder")
+        self.deepseek_model.setPlaceholderText(t("settings.ai_provider.deepseek.model_placeholder", "deepseek-coder"))
         self.deepseek_model.setMinimumHeight(self.scale(40))
-        deepseek_layout.addRow("Model:", self.deepseek_model)
+        deepseek_layout.addRow(t("settings.ai_provider.deepseek.model", "Model:"), self.deepseek_model)
         
         self.deepseek_group.setLayout(deepseek_layout)
         layout.addWidget(self.deepseek_group)
         
         # Claude Settings
-        self.claude_group = QGroupBox("🎭 Claude Configuration")
+        self.claude_group = QGroupBox(t("settings.ai_provider.claude.title", "🎭 Claude Configuration"))
         self.claude_group.setMinimumHeight(self.scale(250))
         claude_layout = QFormLayout()
         claude_layout.setSpacing(self.scale(20))
         claude_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.claude_api_key = QLineEdit()
-        self.claude_api_key.setPlaceholderText("Your Anthropic API key")
+        self.claude_api_key.setPlaceholderText(t("settings.ai_provider.claude.api_key_placeholder", "Your Anthropic API key"))
         self.claude_api_key.setEchoMode(QLineEdit.Password)
         self.claude_api_key.setMinimumHeight(self.scale(40))
-        claude_layout.addRow("API Key:", self.claude_api_key)
+        claude_layout.addRow(t("settings.ai_provider.claude.api_key", "API Key:"), self.claude_api_key)
         
         self.claude_base_url = QLineEdit()
-        self.claude_base_url.setPlaceholderText("https://api.anthropic.com")
+        self.claude_base_url.setPlaceholderText(t("settings.ai_provider.claude.base_url_placeholder", "https://api.anthropic.com"))
         self.claude_base_url.setMinimumHeight(self.scale(40))
-        claude_layout.addRow("Base URL:", self.claude_base_url)
+        claude_layout.addRow(t("settings.ai_provider.claude.base_url", "Base URL:"), self.claude_base_url)
         
         self.claude_model = QLineEdit()
-        self.claude_model.setPlaceholderText("claude-3-sonnet-20240229")
+        self.claude_model.setPlaceholderText(t("settings.ai_provider.claude.model_placeholder", "claude-3-sonnet-20240229"))
         self.claude_model.setMinimumHeight(self.scale(40))
-        claude_layout.addRow("Model:", self.claude_model)
+        claude_layout.addRow(t("settings.ai_provider.claude.model", "Model:"), self.claude_model)
         
         self.claude_group.setLayout(claude_layout)
         layout.addWidget(self.claude_group)
@@ -263,7 +276,7 @@ class ModernSettingsDialog(QDialog):
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        self.tab_widget.addTab(tab, "🤖 AI Provider")
+        self.tab_widget.addTab(tab, t("settings.tabs.ai_provider", "🤖 AI Provider"))
     
     def setup_audio_tab(self):
         """Setup Audio settings tab"""
@@ -279,8 +292,8 @@ class ModernSettingsDialog(QDialog):
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Audio Mode
-        mode_group = QGroupBox("🎤 Audio Configuration")
-        mode_group.setMinimumHeight(self.scale(300))
+        self.mode_group = QGroupBox(t("settings.audio.title", "🎤 Audio Configuration"))
+        self.mode_group.setMinimumHeight(self.scale(300))
         mode_layout = QFormLayout()
         mode_layout.setSpacing(self.scale(20))
         mode_layout.setLabelAlignment(Qt.AlignLeft)
@@ -288,13 +301,13 @@ class ModernSettingsDialog(QDialog):
         self.audio_mode = QComboBox()
         self.audio_mode.addItems(["single_stream", "dual_stream"])
         self.audio_mode.setMinimumHeight(self.scale(40))
-        mode_layout.addRow("Audio Mode:", self.audio_mode)
+        mode_layout.addRow(t("settings.audio.mode", "Audio Mode:"), self.audio_mode)
         
         self.buffer_duration = QSpinBox()
         self.buffer_duration.setRange(1, 30)
-        self.buffer_duration.setSuffix(" minutes")
+        self.buffer_duration.setSuffix(t("settings.audio.buffer_suffix", " minutes"))
         self.buffer_duration.setMinimumHeight(self.scale(40))
-        mode_layout.addRow("Buffer Duration:", self.buffer_duration)
+        mode_layout.addRow(t("settings.audio.buffer_duration", "Buffer Duration:"), self.buffer_duration)
         
         self.processing_interval = QSlider(Qt.Horizontal)
         self.processing_interval.setRange(5, 50)
@@ -310,19 +323,19 @@ class ModernSettingsDialog(QDialog):
         interval_layout = QHBoxLayout()
         interval_layout.addWidget(self.processing_interval)
         interval_layout.addWidget(self.processing_label)
-        mode_layout.addRow("Processing Interval:", interval_layout)
+        mode_layout.addRow(t("settings.audio.processing_interval", "Processing Interval:"), interval_layout)
         
-        mode_group.setLayout(mode_layout)
-        layout.addWidget(mode_group)
+        self.mode_group.setLayout(mode_layout)
+        layout.addWidget(self.mode_group)
         
         # System Audio Monitoring
-        system_audio_group = QGroupBox("🔊 System Audio Monitoring")
-        system_audio_group.setMinimumHeight(self.scale(400))
+        self.system_audio_group = QGroupBox(t("settings.audio.system_audio.title", "🔊 System Audio Monitoring"))
+        self.system_audio_group.setMinimumHeight(self.scale(400))
         system_audio_layout = QVBoxLayout()
         system_audio_layout.setSpacing(self.scale(15))
         
         # Full system audio monitoring toggle
-        self.full_system_audio = QCheckBox("Monitor all system audio (overrides specific app selection)")
+        self.full_system_audio = QCheckBox(t("settings.audio.system_audio.full_monitoring", "Monitor all system audio (overrides specific app selection)"))
         self.full_system_audio.setMinimumHeight(self.scale(32))
         self.full_system_audio.setStyleSheet("font-weight: 600; color: #ffffff;")
         self.full_system_audio.toggled.connect(self.on_full_system_audio_changed)
@@ -337,13 +350,13 @@ class ModernSettingsDialog(QDialog):
         system_audio_layout.addWidget(separator)
         
         # Application selection
-        app_selection_label = QLabel("Select specific applications to monitor:")
-        app_selection_label.setStyleSheet("color: #e6e6e6; font-style: italic; margin-top: 10px;")
-        app_selection_label.setMinimumHeight(self.scale(28))
-        system_audio_layout.addWidget(app_selection_label)
+        self.app_selection_label = QLabel(t("settings.audio.system_audio.select_apps", "Select specific applications to monitor:"))
+        self.app_selection_label.setStyleSheet("color: #e6e6e6; font-style: italic; margin-top: 10px;")
+        self.app_selection_label.setMinimumHeight(self.scale(28))
+        system_audio_layout.addWidget(self.app_selection_label)
         
         # Add status indicator
-        self.monitoring_status = QLabel("📊 Currently monitoring: Loading...")
+        self.monitoring_status = QLabel(t("settings.audio.system_audio.monitoring_status", "📊 Currently monitoring: Loading..."))
         self.monitoring_status.setStyleSheet("color: #0078d4; font-weight: 600; margin-bottom: 10px; padding: 8px; background: #1a1a1a; border-radius: 4px;")
         self.monitoring_status.setMinimumHeight(self.scale(32))
         self.monitoring_status.setWordWrap(True)
@@ -380,10 +393,10 @@ class ModernSettingsDialog(QDialog):
         self.app_checkboxes = {}
         
         # Add meeting apps (left column)
-        meeting_label = QLabel("📞 Meeting & Communication Apps (Enabled by Default)")
-        meeting_label.setStyleSheet("font-weight: 600; color: #0078d4; margin-bottom: 5px;")
-        meeting_label.setMinimumHeight(self.scale(32))
-        apps_layout.addWidget(meeting_label, 0, 0, 1, 2)
+        self.meeting_label = QLabel(t("settings.audio.system_audio.meeting_apps", "📞 Meeting & Communication Apps (Enabled by Default)"))
+        self.meeting_label.setStyleSheet("font-weight: 600; color: #0078d4; margin-bottom: 5px;")
+        self.meeting_label.setMinimumHeight(self.scale(32))
+        apps_layout.addWidget(self.meeting_label, 0, 0, 1, 2)
         
         row = 1
         for app_name, app_key, emoji in meeting_apps:
@@ -406,10 +419,10 @@ class ModernSettingsDialog(QDialog):
             row += 1
         
         # Add other apps (right column)
-        other_label = QLabel("🖥️ Other Applications (Disabled by Default)")
-        other_label.setStyleSheet("font-weight: 600; color: #666666; margin-bottom: 5px;")
-        other_label.setMinimumHeight(self.scale(32))
-        apps_layout.addWidget(other_label, 0, 2, 1, 2)
+        self.other_label = QLabel(t("settings.audio.system_audio.other_apps", "🖥️ Other Applications (Disabled by Default)"))
+        self.other_label.setStyleSheet("font-weight: 600; color: #666666; margin-bottom: 5px;")
+        self.other_label.setMinimumHeight(self.scale(32))
+        apps_layout.addWidget(self.other_label, 0, 2, 1, 2)
         
         row = 1
         for app_name, app_key, emoji in other_apps:
@@ -434,31 +447,31 @@ class ModernSettingsDialog(QDialog):
         # Custom application input
         custom_layout = QHBoxLayout()
         self.custom_app_input = QLineEdit()
-        self.custom_app_input.setPlaceholderText("Enter custom application name (e.g., MyApp.exe)")
+        self.custom_app_input.setPlaceholderText(t("settings.audio.system_audio.custom_app", "Enter custom application name (e.g., MyApp.exe)"))
         self.custom_app_input.setMinimumHeight(self.scale(40))
         self.custom_app_input.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         
-        add_custom_btn = QPushButton("➕ Add")
-        add_custom_btn.setMinimumHeight(self.scale(40))
-        add_custom_btn.setMaximumWidth(self.scale(80))
-        add_custom_btn.clicked.connect(self.add_custom_application)
+        self.add_custom_btn = QPushButton(t("settings.audio.system_audio.add_custom", "➕ Add"))
+        self.add_custom_btn.setMinimumHeight(self.scale(40))
+        self.add_custom_btn.setMaximumWidth(self.scale(80))
+        self.add_custom_btn.clicked.connect(self.add_custom_application)
         
         custom_layout.addWidget(self.custom_app_input)
-        custom_layout.addWidget(add_custom_btn)
+        custom_layout.addWidget(self.add_custom_btn)
         apps_layout.addLayout(custom_layout, row, 2, 1, 2)
         
         system_audio_layout.addWidget(apps_widget)
         
         # Audio filtering options
-        filter_label = QLabel("🎛️ Audio Filtering:")
-        filter_label.setStyleSheet("font-weight: 600; color: #ffffff; margin-top: 15px;")
-        filter_label.setMinimumHeight(self.scale(28))
-        system_audio_layout.addWidget(filter_label)
+        self.filter_label = QLabel(t("settings.audio.system_audio.filtering", "🎛️ Audio Filtering:"))
+        self.filter_label.setStyleSheet("font-weight: 600; color: #ffffff; margin-top: 15px;")
+        self.filter_label.setMinimumHeight(self.scale(28))
+        system_audio_layout.addWidget(self.filter_label)
         
-        self.filter_music = QCheckBox("🎵 Filter out music and non-speech audio (recommended)")
+        self.filter_music = QCheckBox(t("settings.audio.system_audio.filter_music", "🎵 Filter out music and non-speech audio (recommended)"))
         self.filter_music.setMinimumHeight(self.scale(32))
         self.filter_music.setChecked(True)
-        self.filter_music.setToolTip("Uses AI to detect and ignore music, sound effects, and other non-speech audio")
+        self.filter_music.setToolTip(t("settings.audio.system_audio.filter_music_tooltip", "Uses AI to detect and ignore music, sound effects, and other non-speech audio"))
         system_audio_layout.addWidget(self.filter_music)
         
         self.speech_detection_threshold = QSlider(Qt.Horizontal)
@@ -473,17 +486,17 @@ class ModernSettingsDialog(QDialog):
         )
         
         threshold_layout = QHBoxLayout()
-        threshold_layout.addWidget(QLabel("Speech Detection Sensitivity:"))
+        threshold_layout.addWidget(QLabel(t("settings.audio.system_audio.speech_sensitivity", "Speech Detection Sensitivity:")))
         threshold_layout.addWidget(self.speech_detection_threshold)
         threshold_layout.addWidget(self.speech_threshold_label)
         system_audio_layout.addLayout(threshold_layout)
         
-        system_audio_group.setLayout(system_audio_layout)
-        layout.addWidget(system_audio_group)
+        self.system_audio_group.setLayout(system_audio_layout)
+        layout.addWidget(self.system_audio_group)
         
         # Transcription Provider
-        transcription_group = QGroupBox("📝 Transcription Settings")
-        transcription_group.setMinimumHeight(self.scale(500))  # Increased for more content
+        self.transcription_group = QGroupBox(t("settings.audio.transcription.title", "📝 Transcription Settings"))
+        self.transcription_group.setMinimumHeight(self.scale(500))  # Increased for more content
         transcription_layout = QVBoxLayout()
         transcription_layout.setSpacing(self.scale(15))
         
@@ -496,12 +509,12 @@ class ModernSettingsDialog(QDialog):
         self.transcription_provider.addItems(["local_whisper", "google_speech", "azure_speech", "openai_whisper"])
         self.transcription_provider.setMinimumHeight(self.scale(40))
         self.transcription_provider.currentTextChanged.connect(self.on_transcription_provider_changed)
-        provider_form.addRow("Provider:", self.transcription_provider)
+        provider_form.addRow(t("settings.audio.transcription.provider", "Provider:"), self.transcription_provider)
         
         transcription_layout.addLayout(provider_form)
         
         # Local Whisper Settings
-        self.whisper_group = QGroupBox("🤖 Local Whisper Configuration")
+        self.whisper_group = QGroupBox(t("settings.audio.transcription.whisper.title", "🤖 Local Whisper Configuration"))
         self.whisper_group.setMinimumHeight(self.scale(120))
         whisper_layout = QFormLayout()
         whisper_layout.setSpacing(self.scale(15))
@@ -510,13 +523,13 @@ class ModernSettingsDialog(QDialog):
         self.whisper_model = QComboBox()
         self.whisper_model.addItems(["tiny", "base", "small", "medium", "large"])
         self.whisper_model.setMinimumHeight(self.scale(40))
-        whisper_layout.addRow("Model Size:", self.whisper_model)
+        whisper_layout.addRow(t("settings.audio.transcription.whisper.model_size", "Model Size:"), self.whisper_model)
         
         self.whisper_group.setLayout(whisper_layout)
         transcription_layout.addWidget(self.whisper_group)
         
         # Google Speech Settings
-        self.google_speech_group = QGroupBox("🔴 Google Speech-to-Text Configuration")
+        self.google_speech_group = QGroupBox(t("settings.audio.transcription.google_speech.title", "🔴 Google Speech-to-Text Configuration"))
         self.google_speech_group.setMinimumHeight(self.scale(200))
         google_layout = QVBoxLayout()
         google_layout.setSpacing(self.scale(15))
@@ -524,25 +537,25 @@ class ModernSettingsDialog(QDialog):
         # JSON config file option
         json_file_layout = QHBoxLayout()
         self.google_json_file = QLineEdit()
-        self.google_json_file.setPlaceholderText("Path to Google Cloud service account JSON file")
+        self.google_json_file.setPlaceholderText(t("settings.audio.transcription.google_speech.json_file", "Path to Google Cloud service account JSON file"))
         self.google_json_file.setMinimumHeight(self.scale(40))
         self.google_json_file.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
         
-        browse_json_btn = QPushButton("📁 Browse")
-        browse_json_btn.setMinimumHeight(self.scale(40))
-        browse_json_btn.setMaximumWidth(self.scale(100))
-        browse_json_btn.clicked.connect(self.browse_google_json_file)
+        self.browse_json_btn = QPushButton(t("settings.audio.transcription.google_speech.browse", "📁 Browse"))
+        self.browse_json_btn.setMinimumHeight(self.scale(40))
+        self.browse_json_btn.setMaximumWidth(self.scale(100))
+        self.browse_json_btn.clicked.connect(self.browse_google_json_file)
         
-        json_file_layout.addWidget(QLabel("Service Account JSON:"))
+        json_file_layout.addWidget(QLabel(t("settings.audio.transcription.google_speech.json_file", "Service Account JSON File:")))
         json_file_layout.addWidget(self.google_json_file)
-        json_file_layout.addWidget(browse_json_btn)
+        json_file_layout.addWidget(self.browse_json_btn)
         google_layout.addLayout(json_file_layout)
         
         # Alternative: Direct JSON input
-        google_layout.addWidget(QLabel("Or paste JSON content directly:"))
+        google_layout.addWidget(QLabel(t("settings.audio.transcription.google_speech.json_content", "Or paste JSON content:")))
         self.google_json_content = QTextEdit()
         self.google_json_content.setMinimumHeight(self.scale(100))
-        self.google_json_content.setPlaceholderText('{\n  "type": "service_account",\n  "project_id": "your-project",\n  "private_key_id": "...",\n  ...\n}')
+        self.google_json_content.setPlaceholderText(t("settings.audio.transcription.google_speech.json_placeholder", '{\n  "type": "service_account",\n  "project_id": "your-project",\n  "private_key_id": "...",\n  ...\n}'))
         self.google_json_content.setStyleSheet("QTextEdit { color: #ffffff; font-family: 'Consolas', monospace; }")
         google_layout.addWidget(self.google_json_content)
         
@@ -550,68 +563,68 @@ class ModernSettingsDialog(QDialog):
         transcription_layout.addWidget(self.google_speech_group)
         
         # Azure Speech Settings
-        self.azure_speech_group = QGroupBox("🔷 Azure Speech Services Configuration")
+        self.azure_speech_group = QGroupBox(t("settings.audio.transcription.azure_speech.title", "🔷 Azure Speech Services Configuration"))
         self.azure_speech_group.setMinimumHeight(self.scale(250))
         azure_speech_layout = QFormLayout()
         azure_speech_layout.setSpacing(self.scale(20))
         azure_speech_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.azure_speech_key = QLineEdit()
-        self.azure_speech_key.setPlaceholderText("Your Azure Speech API key")
+        self.azure_speech_key.setPlaceholderText(t("settings.audio.transcription.azure_speech.api_key_placeholder", "Your Azure Speech API key"))
         self.azure_speech_key.setEchoMode(QLineEdit.Password)
         self.azure_speech_key.setMinimumHeight(self.scale(40))
         self.azure_speech_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
-        azure_speech_layout.addRow("API Key:", self.azure_speech_key)
+        azure_speech_layout.addRow(t("settings.audio.transcription.azure_speech.api_key", "API Key:"), self.azure_speech_key)
         
         self.azure_speech_region = QLineEdit()
-        self.azure_speech_region.setPlaceholderText("eastus")
+        self.azure_speech_region.setPlaceholderText(t("settings.audio.transcription.azure_speech.region_placeholder", "eastus"))
         self.azure_speech_region.setMinimumHeight(self.scale(40))
         self.azure_speech_region.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
-        azure_speech_layout.addRow("Region:", self.azure_speech_region)
+        azure_speech_layout.addRow(t("settings.audio.transcription.azure_speech.region", "Region:"), self.azure_speech_region)
         
         self.azure_speech_endpoint = QLineEdit()
-        self.azure_speech_endpoint.setPlaceholderText("https://your-region.api.cognitive.microsoft.com/ (optional)")
+        self.azure_speech_endpoint.setPlaceholderText(t("settings.audio.transcription.azure_speech.endpoint_placeholder", "https://your-region.api.cognitive.microsoft.com/ (optional)"))
         self.azure_speech_endpoint.setMinimumHeight(self.scale(40))
         self.azure_speech_endpoint.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
-        azure_speech_layout.addRow("Custom Endpoint:", self.azure_speech_endpoint)
+        azure_speech_layout.addRow(t("settings.audio.transcription.azure_speech.endpoint", "Custom Endpoint:"), self.azure_speech_endpoint)
         
         self.azure_speech_language = QComboBox()
         self.azure_speech_language.addItems(["en-US", "en-GB", "es-ES", "fr-FR", "de-DE", "it-IT", "pt-BR", "zh-CN", "ja-JP", "ko-KR"])
         self.azure_speech_language.setMinimumHeight(self.scale(40))
-        azure_speech_layout.addRow("Language:", self.azure_speech_language)
+        azure_speech_layout.addRow(t("settings.audio.transcription.azure_speech.language", "Language:"), self.azure_speech_language)
         
         self.azure_speech_group.setLayout(azure_speech_layout)
         transcription_layout.addWidget(self.azure_speech_group)
         
         # OpenAI Whisper API Settings
-        self.openai_whisper_group = QGroupBox("🟢 OpenAI Whisper API Configuration")
+        self.openai_whisper_group = QGroupBox(t("settings.audio.transcription.openai_whisper.title", "🟢 OpenAI Whisper API Configuration"))
         self.openai_whisper_group.setMinimumHeight(self.scale(200))
         openai_whisper_layout = QFormLayout()
         openai_whisper_layout.setSpacing(self.scale(20))
         openai_whisper_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.openai_whisper_api_key = QLineEdit()
-        self.openai_whisper_api_key.setPlaceholderText("Your OpenAI API key")
+        self.openai_whisper_api_key.setPlaceholderText(t("settings.audio.transcription.openai_whisper.api_key_placeholder", "Your OpenAI API key"))
         self.openai_whisper_api_key.setEchoMode(QLineEdit.Password)
         self.openai_whisper_api_key.setMinimumHeight(self.scale(40))
         self.openai_whisper_api_key.setStyleSheet("QLineEdit { color: #ffffff; } QLineEdit::placeholder { color: #a0a0a0; }")
-        openai_whisper_layout.addRow("API Key:", self.openai_whisper_api_key)
+        openai_whisper_layout.addRow(t("settings.audio.transcription.openai_whisper.api_key", "API Key:"), self.openai_whisper_api_key)
         
         self.openai_whisper_model = QComboBox()
         self.openai_whisper_model.addItems(["whisper-1"])
         self.openai_whisper_model.setMinimumHeight(self.scale(40))
-        openai_whisper_layout.addRow("Model:", self.openai_whisper_model)
+        openai_whisper_layout.addRow(t("settings.audio.transcription.openai_whisper.model", "Model:"), self.openai_whisper_model)
         
         self.openai_whisper_language = QComboBox()
         self.openai_whisper_language.addItems(["auto-detect", "en", "es", "fr", "de", "it", "pt", "zh", "ja", "ko"])
         self.openai_whisper_language.setMinimumHeight(self.scale(40))
-        openai_whisper_layout.addRow("Language:", self.openai_whisper_language)
+        openai_whisper_layout.addRow(t("settings.audio.transcription.openai_whisper.language", "Language:"), self.openai_whisper_language)
         
         self.openai_whisper_group.setLayout(openai_whisper_layout)
         transcription_layout.addWidget(self.openai_whisper_group)
         
-        transcription_group.setLayout(transcription_layout)
-        layout.addWidget(transcription_group)
+        self.transcription_group.setLayout(transcription_layout)
+        layout.addWidget(self.transcription_group)
         
         layout.addStretch()
         
@@ -621,7 +634,7 @@ class ModernSettingsDialog(QDialog):
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        self.tab_widget.addTab(tab, "🎤 Audio")
+        self.tab_widget.addTab(tab, t("settings.tabs.audio", "🎤 Audio"))
     
     def setup_ui_tab(self):
         """Setup UI settings tab"""
@@ -632,54 +645,40 @@ class ModernSettingsDialog(QDialog):
         content.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         content.setMinimumSize(self.scale(1200), self.scale(600))
         
-        # Ensure dark background
-        content.setStyleSheet(f"""
-            QWidget {{
-                background: #141414;
-            }}
-            QSpinBox {{
-                background: #1a1a1a;
-                color: #ffffff;
-                border: 1px solid #404040;
-                padding: {self.scale(4)}px {self.scale(8)}px;
-            }}
-            QSpinBox:hover {{
-                background: #262626;
-                border: 1px solid #0078d4;
-            }}
-            QSpinBox::up-button, QSpinBox::down-button {{
-                background: #262626;
-                border: none;
-            }}
-        """)
-        
         layout = QVBoxLayout(content)
         layout.setSpacing(self.scale(25))
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Appearance
-        appearance_group = QGroupBox("🎨 Appearance")
-        appearance_group.setMinimumHeight(self.scale(500))  # Increased height for theme option
+        self.appearance_group = QGroupBox(t("settings.appearance.title", "🎨 Appearance"))
+        self.appearance_group.setMinimumHeight(self.scale(500))  # Increased height for theme option
         appearance_layout = QFormLayout()
         appearance_layout.setSpacing(self.scale(20))
         appearance_layout.setLabelAlignment(Qt.AlignLeft)
         
-        # Ensure consistent styling for the group box
-        appearance_group.setStyleSheet(f"""
-            QGroupBox {{
-                background: #1a1a1a;
-                border: 1px solid #404040;
-                color: #ffffff;
-            }}
-        """)
+        # Language Selection
+        self.language_selector = QComboBox()
+        if TRANSLATIONS_AVAILABLE:
+            translation_manager = get_translation_manager()
+            languages = translation_manager.get_available_languages()
+            for lang_code, lang_name in languages:
+                self.language_selector.addItem(f"{lang_name} ({lang_code})", lang_code)
+        else:
+            self.language_selector.addItem("English (en)", "en")
+        self.language_selector.setMinimumHeight(self.scale(40))
+        self.language_selector.setToolTip(t("settings.language.tooltip", "Select the interface language"))
+        self.language_selector.currentIndexChanged.connect(self.on_language_changed)
+        self.language_label = QLabel(t("settings.language.label", "Language:"))
+        appearance_layout.addRow(self.language_label, self.language_selector)
         
         # Theme Selection
         self.theme_selector = QComboBox()
-        self.theme_selector.addItems(["Dark Mode", "Light Mode"])
+        self.theme_selector.addItems([t("settings.theme.dark", "Dark Mode"), t("settings.theme.light", "Light Mode")])
         self.theme_selector.setMinimumHeight(self.scale(40))
-        self.theme_selector.setToolTip("Choose between light and dark theme")
+        self.theme_selector.setToolTip(t("settings.theme.tooltip", "Choose between light and dark theme"))
         self.theme_selector.currentTextChanged.connect(self.on_theme_changed)
-        appearance_layout.addRow("Theme:", self.theme_selector)
+        self.theme_label = QLabel(t("settings.theme.label", "Theme:"))
+        appearance_layout.addRow(self.theme_label, self.theme_selector)
         
         self.size_multiplier = QSlider(Qt.Horizontal)
         self.size_multiplier.setRange(10, 40)
@@ -695,38 +694,40 @@ class ModernSettingsDialog(QDialog):
         size_layout = QHBoxLayout()
         size_layout.addWidget(self.size_multiplier)
         size_layout.addWidget(self.size_label)
-        appearance_layout.addRow("Size Multiplier:", size_layout)
+        self.size_multiplier_label = QLabel(t("settings.size_multiplier.label", "Size Multiplier:"))
+        appearance_layout.addRow(self.size_multiplier_label, size_layout)
         
-        self.show_transcript = QCheckBox("Show live transcript in expanded view")
+        self.show_transcript = QCheckBox(t("settings.show_transcript.label", "Show live transcript in expanded view"))
         self.show_transcript.setMinimumHeight(self.scale(32))
         appearance_layout.addRow("", self.show_transcript)
         
-        self.hide_from_sharing = QCheckBox("Hide from screen sharing")
+        self.hide_from_sharing = QCheckBox(t("settings.hide_from_sharing.label", "Hide from screen sharing"))
         self.hide_from_sharing.setMinimumHeight(self.scale(32))
         appearance_layout.addRow("", self.hide_from_sharing)
         
         self.auto_hide_seconds = QSpinBox()
         self.auto_hide_seconds.setRange(0, 60)
-        self.auto_hide_seconds.setSuffix(" seconds (0 = disabled)")
+        self.auto_hide_seconds.setSuffix(t("settings.auto_hide.suffix", " seconds (0 = disabled)"))
         self.auto_hide_seconds.setMinimumHeight(self.scale(40))
-        appearance_layout.addRow("Auto-hide Timer:", self.auto_hide_seconds)
+        self.auto_hide_label = QLabel(t("settings.auto_hide.label", "Auto-hide Timer:"))
+        appearance_layout.addRow(self.auto_hide_label, self.auto_hide_seconds)
         
         # Screen sharing detection
-        self.enable_screen_sharing_detection = QCheckBox("Enable screen sharing detection")
+        self.enable_screen_sharing_detection = QCheckBox(t("settings.screen_sharing.label", "Enable screen sharing detection"))
         self.enable_screen_sharing_detection.setMinimumHeight(self.scale(32))
-        self.enable_screen_sharing_detection.setToolTip("Automatically hide overlay when screen sharing apps are detected")
+        self.enable_screen_sharing_detection.setToolTip(t("settings.screen_sharing.tooltip", "Automatically hide overlay when screen sharing apps are detected"))
         appearance_layout.addRow("", self.enable_screen_sharing_detection)
         
         # Hide overlay for screenshots/debugging
-        self.hide_overlay_for_screenshots = QCheckBox("Hide overlay for screenshots/debugging")
+        self.hide_overlay_for_screenshots = QCheckBox(t("settings.hide_screenshots.label", "Hide overlay for screenshots/debugging"))
         self.hide_overlay_for_screenshots.setMinimumHeight(self.scale(32))
-        self.hide_overlay_for_screenshots.setToolTip("Temporarily hide the entire overlay for taking clean screenshots or debugging UI issues")
+        self.hide_overlay_for_screenshots.setToolTip(t("settings.hide_screenshots.tooltip", "Temporarily hide the entire overlay for taking clean screenshots or debugging UI issues"))
         self.hide_overlay_for_screenshots.toggled.connect(self.on_hide_overlay_toggled)
         appearance_layout.addRow("", self.hide_overlay_for_screenshots)
         
         # Enhanced UI Features Group
-        enhanced_group = QGroupBox("🚀 Enhanced Features")
-        enhanced_group.setMinimumHeight(self.scale(350))
+        self.enhanced_group = QGroupBox(t("settings.enhanced_features.title", "🚀 Enhanced Features"))
+        self.enhanced_group.setMinimumHeight(self.scale(350))
         enhanced_layout = QFormLayout()
         enhanced_layout.setSpacing(self.scale(20))
         enhanced_layout.setLabelAlignment(Qt.AlignLeft)
@@ -745,37 +746,38 @@ class ModernSettingsDialog(QDialog):
         opacity_layout = QHBoxLayout()
         opacity_layout.addWidget(self.background_opacity)
         opacity_layout.addWidget(self.opacity_label)
-        enhanced_layout.addRow("Background Opacity:", opacity_layout)
+        self.background_opacity_label = QLabel(t("settings.background_opacity.label", "Background Opacity:"))
+        enhanced_layout.addRow(self.background_opacity_label, opacity_layout)
         
         # Blur effects
-        self.enable_blur_effects = QCheckBox("Enable blur effects")
+        self.enable_blur_effects = QCheckBox(t("settings.blur_effects.label", "Enable blur effects"))
         self.enable_blur_effects.setMinimumHeight(self.scale(32))
-        self.enable_blur_effects.setToolTip("Apply blur effects to background for professional look")
+        self.enable_blur_effects.setToolTip(t("settings.blur_effects.tooltip", "Apply blur effects to background for professional look"))
         enhanced_layout.addRow("", self.enable_blur_effects)
         
         # Smooth animations
-        self.enable_smooth_animations = QCheckBox("Enable smooth animations")
+        self.enable_smooth_animations = QCheckBox(t("settings.smooth_animations.label", "Enable smooth animations"))
         self.enable_smooth_animations.setMinimumHeight(self.scale(32))
-        self.enable_smooth_animations.setToolTip("Use smooth animations for transitions and resizing")
+        self.enable_smooth_animations.setToolTip(t("settings.smooth_animations.tooltip", "Use smooth animations for transitions and resizing"))
         enhanced_layout.addRow("", self.enable_smooth_animations)
         
         # Auto-width adjustment
-        self.enable_auto_width = QCheckBox("Enable auto-width adjustment")
+        self.enable_auto_width = QCheckBox(t("settings.auto_width.label", "Enable auto-width adjustment"))
         self.enable_auto_width.setMinimumHeight(self.scale(32))
-        self.enable_auto_width.setToolTip("Automatically adjust overlay width based on content")
+        self.enable_auto_width.setToolTip(t("settings.auto_width.tooltip", "Automatically adjust overlay width based on content"))
         enhanced_layout.addRow("", self.enable_auto_width)
         
         # Dynamic transparency
-        self.enable_dynamic_transparency = QCheckBox("Enable dynamic transparency")
+        self.enable_dynamic_transparency = QCheckBox(t("settings.dynamic_transparency.label", "Enable dynamic transparency"))
         self.enable_dynamic_transparency.setMinimumHeight(self.scale(32))
-        self.enable_dynamic_transparency.setToolTip("Adjust transparency based on activity and context")
+        self.enable_dynamic_transparency.setToolTip(t("settings.dynamic_transparency.tooltip", "Adjust transparency based on activity and context"))
         enhanced_layout.addRow("", self.enable_dynamic_transparency)
         
-        enhanced_group.setLayout(enhanced_layout)
+        self.enhanced_group.setLayout(enhanced_layout)
         
-        appearance_group.setLayout(appearance_layout)
-        layout.addWidget(appearance_group)
-        layout.addWidget(enhanced_group)
+        self.appearance_group.setLayout(appearance_layout)
+        layout.addWidget(self.appearance_group)
+        layout.addWidget(self.enhanced_group)
         
         layout.addStretch()
         
@@ -785,7 +787,7 @@ class ModernSettingsDialog(QDialog):
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        self.tab_widget.addTab(tab, "🖥️ Interface")
+        self.tab_widget.addTab(tab, t("settings.tabs.interface", "🖥️ Interface"))
     
     def setup_assistant_tab(self):
         """Setup MeetMinder behavior tab"""
@@ -801,8 +803,8 @@ class ModernSettingsDialog(QDialog):
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Behavior Settings
-        behavior_group = QGroupBox("🧠 Assistant Behavior")
-        behavior_group.setMinimumHeight(self.scale(400))  # Set minimum height for group
+        self.behavior_group = QGroupBox(t("settings.assistant.title", "🧠 Assistant Behavior"))
+        self.behavior_group.setMinimumHeight(self.scale(400))  # Set minimum height for group
         behavior_layout = QFormLayout()
         behavior_layout.setSpacing(self.scale(20))  # Increased spacing
         behavior_layout.setLabelAlignment(Qt.AlignLeft)
@@ -810,25 +812,25 @@ class ModernSettingsDialog(QDialog):
         self.activation_mode = QComboBox()
         self.activation_mode.addItems(["manual", "auto"])
         self.activation_mode.setMinimumHeight(self.scale(40))  # Larger height
-        behavior_layout.addRow("Activation Mode:", self.activation_mode)
+        behavior_layout.addRow(t("settings.assistant.activation_mode", "Activation Mode:"), self.activation_mode)
         
         self.verbosity = QComboBox()
         self.verbosity.addItems(["concise", "standard", "detailed"])
         self.verbosity.setMinimumHeight(self.scale(40))
-        behavior_layout.addRow("Response Verbosity:", self.verbosity)
+        behavior_layout.addRow(t("settings.assistant.verbosity", "Response Verbosity:"), self.verbosity)
         
         self.response_style = QComboBox()
         self.response_style.addItems(["professional", "casual", "technical"])
         self.response_style.setMinimumHeight(self.scale(40))
-        behavior_layout.addRow("Response Style:", self.response_style)
+        behavior_layout.addRow(t("settings.assistant.response_style", "Response Style:"), self.response_style)
         
         self.input_prioritization = QComboBox()
         self.input_prioritization.addItems(["mic", "system_audio", "balanced"])
         self.input_prioritization.setMinimumHeight(self.scale(40))
-        behavior_layout.addRow("Input Priority:", self.input_prioritization)
+        behavior_layout.addRow(t("settings.assistant.input_priority", "Input Priority:"), self.input_prioritization)
         
-        behavior_group.setLayout(behavior_layout)
-        layout.addWidget(behavior_group)
+        self.behavior_group.setLayout(behavior_layout)
+        layout.addWidget(self.behavior_group)
         
         layout.addStretch()
         
@@ -838,7 +840,7 @@ class ModernSettingsDialog(QDialog):
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        self.tab_widget.addTab(tab, "🧠 Assistant")
+        self.tab_widget.addTab(tab, t("settings.tabs.assistant", "🧠 Assistant"))
     
     def setup_prompts_tab(self):
         """Setup prompts configuration tab"""
@@ -854,45 +856,45 @@ class ModernSettingsDialog(QDialog):
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # System Prompt
-        prompt_group = QGroupBox("📝 AI Prompt Configuration")
-        prompt_group.setMinimumHeight(self.scale(500))
+        self.prompt_group = QGroupBox(t("settings.prompts.title", "📝 AI Prompt Configuration"))
+        self.prompt_group.setMinimumHeight(self.scale(500))
         prompt_layout = QVBoxLayout()
         prompt_layout.setSpacing(self.scale(15))
         
-        prompt_info = QLabel("Customize the MeetMinder assistant's behavior and response style:")
-        prompt_info.setStyleSheet("color: #e6e6e6; font-style: italic;")
-        prompt_info.setMinimumHeight(self.scale(28))
-        prompt_layout.addWidget(prompt_info)
+        self.prompt_info = QLabel(t("settings.prompts.info", "Customize the MeetMinder assistant's behavior and response style:"))
+        self.prompt_info.setStyleSheet("color: #e6e6e6; font-style: italic;")
+        self.prompt_info.setMinimumHeight(self.scale(28))
+        prompt_layout.addWidget(self.prompt_info)
         
         self.system_prompt = QTextEdit()
         self.system_prompt.setMinimumHeight(self.scale(350))
-        self.system_prompt.setPlaceholderText("Enter system prompt that defines the MeetMinder assistant's behavior, tone, and expertise...")
+        self.system_prompt.setPlaceholderText(t("settings.prompts.placeholder", "Enter system prompt that defines the MeetMinder assistant's behavior, tone, and expertise..."))
         prompt_layout.addWidget(self.system_prompt)
         
         # Load/Save buttons
         button_layout = QHBoxLayout()
         button_layout.setSpacing(self.scale(15))
         
-        load_prompt_btn = QPushButton("📁 Load from File")
-        load_prompt_btn.setMinimumHeight(self.scale(40))
-        load_prompt_btn.clicked.connect(self.load_prompt_file)
+        self.load_prompt_btn = QPushButton(t("settings.prompts.load_file", "📁 Load from File"))
+        self.load_prompt_btn.setMinimumHeight(self.scale(40))
+        self.load_prompt_btn.clicked.connect(self.load_prompt_file)
         
-        save_prompt_btn = QPushButton("💾 Save to File")
-        save_prompt_btn.setMinimumHeight(self.scale(40))
-        save_prompt_btn.clicked.connect(self.save_prompt_file)
+        self.save_prompt_btn = QPushButton(t("settings.prompts.save_file", "💾 Save to File"))
+        self.save_prompt_btn.setMinimumHeight(self.scale(40))
+        self.save_prompt_btn.clicked.connect(self.save_prompt_file)
         
-        reset_prompt_btn = QPushButton("🔄 Reset to Default")
-        reset_prompt_btn.setMinimumHeight(self.scale(40))
-        reset_prompt_btn.clicked.connect(self.reset_prompt_to_default)
+        self.reset_prompt_btn = QPushButton(t("settings.prompts.reset_default", "🔄 Reset to Default"))
+        self.reset_prompt_btn.setMinimumHeight(self.scale(40))
+        self.reset_prompt_btn.clicked.connect(self.reset_prompt_to_default)
         
-        button_layout.addWidget(load_prompt_btn)
-        button_layout.addWidget(save_prompt_btn)
-        button_layout.addWidget(reset_prompt_btn)
+        button_layout.addWidget(self.load_prompt_btn)
+        button_layout.addWidget(self.save_prompt_btn)
+        button_layout.addWidget(self.reset_prompt_btn)
         button_layout.addStretch()
         prompt_layout.addLayout(button_layout)
         
-        prompt_group.setLayout(prompt_layout)
-        layout.addWidget(prompt_group)
+        self.prompt_group.setLayout(prompt_layout)
+        layout.addWidget(self.prompt_group)
         
         layout.addStretch()
         
@@ -902,7 +904,7 @@ class ModernSettingsDialog(QDialog):
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        self.tab_widget.addTab(tab, "📝 Prompts")
+        self.tab_widget.addTab(tab, t("settings.tabs.prompts", "📝 Prompts"))
     
     def setup_knowledge_tab(self):
         """Setup knowledge graph management tab"""
@@ -918,13 +920,13 @@ class ModernSettingsDialog(QDialog):
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Knowledge Graph Settings
-        knowledge_group = QGroupBox("🧠 Knowledge Graph")
-        knowledge_group.setMinimumHeight(self.scale(500))
+        self.knowledge_group = QGroupBox(t("settings.knowledge.title", "🧠 Knowledge Graph"))
+        self.knowledge_group.setMinimumHeight(self.scale(500))
         knowledge_layout = QVBoxLayout()
         knowledge_layout.setSpacing(self.scale(15))
         
         # Enable/disable
-        self.enable_topic_graph = QCheckBox("Enable topic analysis and suggestions")
+        self.enable_topic_graph = QCheckBox(t("settings.knowledge.enable", "Enable topic analysis and suggestions"))
         self.enable_topic_graph.setMinimumHeight(self.scale(32))
         knowledge_layout.addWidget(self.enable_topic_graph)
         
@@ -946,55 +948,51 @@ class ModernSettingsDialog(QDialog):
         threshold_layout = QHBoxLayout()
         threshold_layout.addWidget(self.matching_threshold)
         threshold_layout.addWidget(self.matching_label)
-        settings_layout.addRow("Matching Threshold:", threshold_layout)
+        settings_layout.addRow(t("settings.knowledge.matching_threshold", "Matching Threshold:"), threshold_layout)
         
         self.max_matches = QSpinBox()
         self.max_matches.setRange(1, 10)
         self.max_matches.setValue(3)
         self.max_matches.setMinimumHeight(self.scale(40))
-        settings_layout.addRow("Max Suggestions:", self.max_matches)
+        settings_layout.addRow(t("settings.knowledge.max_matches", "Max Suggestions:"), self.max_matches)
         
         knowledge_layout.addLayout(settings_layout)
         
         # Topic definitions
-        topic_info = QLabel("Define topics and their relationships (one per line):")
-        topic_info.setStyleSheet("color: #e6e6e6; margin-top: 15px;")
-        topic_info.setMinimumHeight(self.scale(28))
-        knowledge_layout.addWidget(topic_info)
+        self.topic_info = QLabel(t("settings.knowledge.topic_definitions", "Topic Definitions:"))
+        self.topic_info.setStyleSheet("color: #e6e6e6; margin-top: 15px;")
+        self.topic_info.setMinimumHeight(self.scale(28))
+        knowledge_layout.addWidget(self.topic_info)
         
         self.topic_definitions = QTextEdit()
         self.topic_definitions.setMinimumHeight(self.scale(250))
-        self.topic_definitions.setPlaceholderText("""Example topic definitions:
-Programming -> Python (suggestion: "Consider using virtual environments")
-Programming -> JavaScript (suggestion: "Don't forget async/await for promises")
-Meetings -> Planning (suggestion: "Create action items with deadlines")
-Meetings -> Review (suggestion: "Document key decisions and next steps")""")
+        self.topic_definitions.setPlaceholderText(t("settings.knowledge.topic_definitions_placeholder", "Example topic definitions:\n\nMeeting Management: Strategies for organizing and running effective meetings\nProject Planning: Techniques for project planning and execution\nTechnical Discussions: Handling technical topics and problem-solving\nClient Communication: Best practices for client interactions\n\nEnter one topic per line with format: Topic Name: Description"))
         knowledge_layout.addWidget(self.topic_definitions)
         
         # Buttons
         topic_button_layout = QHBoxLayout()
         topic_button_layout.setSpacing(self.scale(15))
         
-        import_topics_btn = QPushButton("📁 Import Topics")
-        import_topics_btn.setMinimumHeight(self.scale(40))
-        import_topics_btn.clicked.connect(self.import_topics)
+        self.import_topics_btn = QPushButton(t("settings.knowledge.import_topics", "📁 Import Topics"))
+        self.import_topics_btn.setMinimumHeight(self.scale(40))
+        self.import_topics_btn.clicked.connect(self.import_topics)
         
-        export_topics_btn = QPushButton("💾 Export Topics")
-        export_topics_btn.setMinimumHeight(self.scale(40))
-        export_topics_btn.clicked.connect(self.export_topics)
+        self.export_topics_btn = QPushButton(t("settings.knowledge.export_topics", "💾 Export Topics"))
+        self.export_topics_btn.setMinimumHeight(self.scale(40))
+        self.export_topics_btn.clicked.connect(self.export_topics)
         
-        clear_topics_btn = QPushButton("🗑️ Clear All")
-        clear_topics_btn.setMinimumHeight(self.scale(40))
-        clear_topics_btn.clicked.connect(self.clear_topics)
+        self.clear_topics_btn = QPushButton(t("settings.knowledge.clear_all", "🗑️ Clear All"))
+        self.clear_topics_btn.setMinimumHeight(self.scale(40))
+        self.clear_topics_btn.clicked.connect(self.clear_topics)
         
-        topic_button_layout.addWidget(import_topics_btn)
-        topic_button_layout.addWidget(export_topics_btn)
-        topic_button_layout.addWidget(clear_topics_btn)
+        topic_button_layout.addWidget(self.import_topics_btn)
+        topic_button_layout.addWidget(self.export_topics_btn)
+        topic_button_layout.addWidget(self.clear_topics_btn)
         topic_button_layout.addStretch()
         knowledge_layout.addLayout(topic_button_layout)
         
-        knowledge_group.setLayout(knowledge_layout)
-        layout.addWidget(knowledge_group)
+        self.knowledge_group.setLayout(knowledge_layout)
+        layout.addWidget(self.knowledge_group)
         
         layout.addStretch()
         
@@ -1004,7 +1002,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        self.tab_widget.addTab(tab, "🧠 Knowledge")
+        self.tab_widget.addTab(tab, t("settings.tabs.knowledge", "🧠 Knowledge"))
 
     def setup_documents_tab(self):
         """Setup document management tab"""
@@ -1020,28 +1018,28 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
 
         # Document Store Settings
-        doc_settings_group = QGroupBox("📚 Document Store Configuration")
-        doc_settings_group.setMinimumHeight(self.scale(200))
+        self.doc_settings_group = QGroupBox(t("settings.documents.title", "📚 Document Store Configuration"))
+        self.doc_settings_group.setMinimumHeight(self.scale(200))
         doc_settings_layout = QVBoxLayout()
         doc_settings_layout.setSpacing(self.scale(15))
 
-        self.documents_enabled = QCheckBox("Enable document knowledge base")
+        self.documents_enabled = QCheckBox(t("settings.documents.enabled", "Enable document storage and retrieval"))
         self.documents_enabled.setMinimumHeight(self.scale(32))
-        self.documents_enabled.setToolTip("Enable RAG (Retrieval-Augmented Generation) with uploaded documents")
+        self.documents_enabled.setToolTip(t("settings.documents.enabled", "Enable document storage and retrieval"))
         doc_settings_layout.addWidget(self.documents_enabled)
 
         # Chunking settings
         chunk_layout = QHBoxLayout()
         chunk_layout.setSpacing(self.scale(15))
 
-        chunk_layout.addWidget(QLabel("Chunk Size:"))
+        chunk_layout.addWidget(QLabel(t("settings.documents.chunk_size", "Chunk Size:")))
         self.chunk_size = QSpinBox()
         self.chunk_size.setRange(500, 2000)
         self.chunk_size.setValue(1000)
         self.chunk_size.setMinimumHeight(self.scale(35))
         chunk_layout.addWidget(self.chunk_size)
 
-        chunk_layout.addWidget(QLabel("Overlap:"))
+        chunk_layout.addWidget(QLabel(t("settings.documents.chunk_overlap", "Chunk Overlap:")))
         self.chunk_overlap = QSpinBox()
         self.chunk_overlap.setRange(0, 500)
         self.chunk_overlap.setValue(200)
@@ -1053,7 +1051,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
 
         # Max context chunks
         max_chunks_layout = QHBoxLayout()
-        max_chunks_layout.addWidget(QLabel("Max Context Chunks:"))
+        max_chunks_layout.addWidget(QLabel(t("settings.documents.max_context", "Max Context Chunks:")))
         self.max_context_chunks = QSpinBox()
         self.max_context_chunks.setRange(1, 10)
         self.max_context_chunks.setValue(5)
@@ -1062,18 +1060,18 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         max_chunks_layout.addStretch()
         doc_settings_layout.addLayout(max_chunks_layout)
 
-        doc_settings_group.setLayout(doc_settings_layout)
-        layout.addWidget(doc_settings_group)
+        self.doc_settings_group.setLayout(doc_settings_layout)
+        layout.addWidget(self.doc_settings_group)
 
         # Embedding Configuration
-        embedding_group = QGroupBox("🧮 Embedding Provider")
-        embedding_group.setMinimumHeight(self.scale(150))
+        self.embedding_group = QGroupBox(t("settings.documents.embedding_provider_title", "🧮 Embedding Provider"))
+        self.embedding_group.setMinimumHeight(self.scale(150))
         embedding_layout = QVBoxLayout()
         embedding_layout.setSpacing(self.scale(15))
 
         # Provider selection
         provider_layout = QHBoxLayout()
-        provider_layout.addWidget(QLabel("Provider:"))
+        provider_layout.addWidget(QLabel(t("settings.documents.embedding_provider", "Embedding Provider:")))
         self.embedding_provider = QComboBox()
         self.embedding_provider.addItems(["local", "openai"])
         self.embedding_provider.setMinimumHeight(self.scale(35))
@@ -1083,7 +1081,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
 
         # Model selection (for local)
         model_layout = QHBoxLayout()
-        model_layout.addWidget(QLabel("Model:"))
+        model_layout.addWidget(QLabel(t("settings.documents.embedding_model", "Embedding Model:")))
         self.embedding_model = QComboBox()
         self.embedding_model.addItems([
             "all-MiniLM-L6-v2",
@@ -1095,17 +1093,17 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         model_layout.addStretch()
         embedding_layout.addLayout(model_layout)
 
-        embedding_group.setLayout(embedding_layout)
-        layout.addWidget(embedding_group)
+        self.embedding_group.setLayout(embedding_layout)
+        layout.addWidget(self.embedding_group)
 
         # Vector Backend Configuration
-        vector_group = QGroupBox("💾 Vector Storage")
-        vector_group.setMinimumHeight(self.scale(100))
+        self.vector_group = QGroupBox(t("settings.documents.vector_storage_title", "💾 Vector Storage"))
+        self.vector_group.setMinimumHeight(self.scale(100))
         vector_layout = QVBoxLayout()
         vector_layout.setSpacing(self.scale(15))
 
         backend_layout = QHBoxLayout()
-        backend_layout.addWidget(QLabel("Backend:"))
+        backend_layout.addWidget(QLabel(t("settings.documents.vector_backend", "Vector Backend:")))
         self.vector_backend = QComboBox()
         self.vector_backend.addItems(["faiss", "pinecone"])
         self.vector_backend.setMinimumHeight(self.scale(35))
@@ -1113,23 +1111,23 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         backend_layout.addStretch()
         vector_layout.addLayout(backend_layout)
 
-        vector_group.setLayout(vector_layout)
-        layout.addWidget(vector_group)
+        self.vector_group.setLayout(vector_layout)
+        layout.addWidget(self.vector_group)
 
         # Document Management
-        management_group = QGroupBox("📁 Document Management")
-        management_group.setMinimumHeight(self.scale(200))
+        self.management_group = QGroupBox(t("settings.documents.management_title", "📁 Document Management"))
+        self.management_group.setMinimumHeight(self.scale(200))
         management_layout = QVBoxLayout()
         management_layout.setSpacing(self.scale(15))
 
         # Upload button
         upload_layout = QHBoxLayout()
-        self.upload_button = QPushButton("📤 Upload Document")
+        self.upload_button = QPushButton(t("settings.documents.upload", "📤 Upload Document"))
         self.upload_button.setMinimumHeight(self.scale(40))
         self.upload_button.clicked.connect(self.upload_document)
         upload_layout.addWidget(self.upload_button)
 
-        self.refresh_button = QPushButton("🔄 Refresh List")
+        self.refresh_button = QPushButton(t("settings.documents.refresh_list", "🔄 Refresh List"))
         self.refresh_button.setMinimumHeight(self.scale(40))
         self.refresh_button.clicked.connect(self.refresh_documents)
         upload_layout.addWidget(self.refresh_button)
@@ -1140,12 +1138,12 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         # Document list placeholder
         self.documents_list = QTextEdit()
         self.documents_list.setMinimumHeight(self.scale(150))
-        self.documents_list.setPlaceholderText("Uploaded documents will appear here...")
+        self.documents_list.setPlaceholderText(t("settings.documents.uploaded_documents", "Uploaded documents will appear here..."))
         self.documents_list.setReadOnly(True)
         management_layout.addWidget(self.documents_list)
 
-        management_group.setLayout(management_layout)
-        layout.addWidget(management_group)
+        self.management_group.setLayout(management_layout)
+        layout.addWidget(self.management_group)
 
         layout.addStretch()
 
@@ -1155,7 +1153,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
 
-        self.tab_widget.addTab(tab, "📚 Documents")
+        self.tab_widget.addTab(tab, t("settings.tabs.documents", "📚 Documents"))
 
     def upload_document(self):
         """Handle document upload"""
@@ -1169,14 +1167,18 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                 try:
                     import asyncio
                     doc_id = asyncio.run(self.parent().ai_helper.add_document_async(file_path))
-                    QMessageBox.information(self, "Document Uploaded",
-                                          f"Document uploaded successfully!\nID: {doc_id}\n\nProcessing in background...")
+                    QMessageBox.information(self, 
+                                          t("messages.document_uploaded", "Document Uploaded"),
+                                          t("messages.document_uploaded_msg", "Document uploaded successfully!\nID: {doc_id}\n\nProcessing in background...").format(doc_id=doc_id))
                     self.refresh_documents()
                 except Exception as e:
-                    QMessageBox.warning(self, "Upload Failed", f"Failed to upload document: {str(e)}")
+                    QMessageBox.warning(self, 
+                                      t("messages.upload_failed", "Upload Failed"), 
+                                      t("messages.upload_failed_msg", "Failed to upload document: {error}").format(error=str(e)))
             else:
-                QMessageBox.warning(self, "AI Helper Not Available",
-                                  "AI helper is not available. Please check your AI provider configuration.")
+                QMessageBox.warning(self, 
+                                  t("messages.ai_helper_not_available", "AI Helper Not Available"),
+                                  t("messages.ai_helper_not_available_msg", "AI helper is not available. Please check your AI provider configuration."))
 
     def refresh_documents(self):
         """Refresh the document list"""
@@ -1185,16 +1187,16 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                 documents = self.parent().ai_helper.list_documents()
                 stats = self.parent().ai_helper.get_document_store_stats()
 
-                text = "📊 Document Store Statistics:\n"
+                text = t("settings.documents.statistics_title", "📊 Document Store Statistics:") + "\n"
                 if stats:
-                    text += f"Total Documents: {stats.get('total_documents', 0)}\n"
-                    text += f"Completed: {stats.get('completed_documents', 0)}\n"
-                    text += f"Failed: {stats.get('failed_documents', 0)}\n"
-                    text += f"Total Chunks: {stats.get('total_chunks', 0)}\n"
-                    text += f"Embedding: {stats.get('embedding_provider', 'none')}\n"
-                    text += f"Vector Backend: {stats.get('vector_backend', 'none')}\n\n"
+                    text += t("settings.documents.total_documents", "Total Documents:") + f" {stats.get('total_documents', 0)}\n"
+                    text += t("settings.documents.completed", "Completed:") + f" {stats.get('completed_documents', 0)}\n"
+                    text += t("settings.documents.failed", "Failed:") + f" {stats.get('failed_documents', 0)}\n"
+                    text += t("settings.documents.total_chunks", "Total Chunks:") + f" {stats.get('total_chunks', 0)}\n"
+                    text += t("settings.documents.embedding", "Embedding:") + f" {stats.get('embedding_provider', 'none')}\n"
+                    text += t("settings.documents.vector_backend_label", "Vector Backend:") + f" {stats.get('vector_backend', 'none')}\n\n"
 
-                text += "📁 Documents:\n"
+                text += t("settings.documents.documents_list_title", "📁 Documents:") + "\n"
                 if documents:
                     for doc in documents:
                         status_emoji = {
@@ -1204,20 +1206,25 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                             "failed": "❌"
                         }.get(doc.get('status', 'unknown'), "❓")
 
-                        text += f"{status_emoji} {doc.get('file_name', 'Unknown')} "
+                        file_name = doc.get('file_name', t("settings.documents.unknown", "Unknown"))
+                        text += f"{status_emoji} {file_name} "
                         text += f"(ID: {doc.get('id', 'N/A')[:8]}...)\n"
-                        text += f"   Status: {doc.get('status', 'unknown')}\n"
+                        status_label = t("settings.documents.status_label", "Status:")
+                        status_value = doc.get('status', t("settings.documents.unknown", "unknown"))
+                        text += f"   {status_label} {status_value}\n"
                         if doc.get('error_message'):
-                            text += f"   Error: {doc.get('error_message')}\n"
+                            error_label = t("settings.documents.error_label", "Error:")
+                            text += f"   {error_label} {doc.get('error_message')}\n"
                         text += "\n"
                 else:
-                    text += "No documents uploaded yet.\n"
+                    text += t("settings.documents.no_documents_uploaded", "No documents uploaded yet.") + "\n"
 
                 self.documents_list.setPlainText(text)
             except Exception as e:
-                self.documents_list.setPlainText(f"Error loading documents: {str(e)}")
+                error_msg = t("settings.documents.error_loading", "Error loading documents: {error}").format(error=str(e))
+                self.documents_list.setPlainText(error_msg)
         else:
-            self.documents_list.setPlainText("AI helper not available.")
+            self.documents_list.setPlainText(t("messages.ai_helper_not_available_msg", "AI helper is not available. Please check your AI provider configuration."))
 
     def setup_hotkeys_tab(self):
         """Setup hotkeys configuration tab"""
@@ -1233,36 +1240,36 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Hotkeys
-        hotkeys_group = QGroupBox("⌨️ Global Hotkeys")
-        hotkeys_group.setMinimumHeight(self.scale(350))
+        self.hotkeys_group = QGroupBox(t("settings.hotkeys.title", "⌨️ Global Hotkeys"))
+        self.hotkeys_group.setMinimumHeight(self.scale(350))
         hotkeys_layout = QFormLayout()
         hotkeys_layout.setSpacing(self.scale(20))
         hotkeys_layout.setLabelAlignment(Qt.AlignLeft)
         
         self.trigger_assistance = QLineEdit()
         self.trigger_assistance.setMinimumHeight(self.scale(40))
-        hotkeys_layout.addRow("Trigger AI:", self.trigger_assistance)
+        hotkeys_layout.addRow(t("settings.hotkeys.trigger_ai", "Trigger AI:"), self.trigger_assistance)
         
         self.toggle_overlay = QLineEdit()
         self.toggle_overlay.setMinimumHeight(self.scale(40))
-        hotkeys_layout.addRow("Toggle Overlay:", self.toggle_overlay)
+        hotkeys_layout.addRow(t("settings.hotkeys.toggle_overlay", "Toggle Overlay:"), self.toggle_overlay)
         
         self.take_screenshot = QLineEdit()
         self.take_screenshot.setMinimumHeight(self.scale(40))
-        hotkeys_layout.addRow("Screenshot:", self.take_screenshot)
+        hotkeys_layout.addRow(t("settings.hotkeys.screenshot", "Screenshot:"), self.take_screenshot)
         
         self.emergency_reset = QLineEdit()
         self.emergency_reset.setMinimumHeight(self.scale(40))
-        hotkeys_layout.addRow("Emergency Reset:", self.emergency_reset)
+        hotkeys_layout.addRow(t("settings.hotkeys.emergency_reset", "Emergency Reset:"), self.emergency_reset)
         
         self.toggle_hide_for_screenshots = QLineEdit()
         self.toggle_hide_for_screenshots.setMinimumHeight(self.scale(40))
-        self.toggle_hide_for_screenshots.setPlaceholderText("e.g., Ctrl+H")
-        self.toggle_hide_for_screenshots.setToolTip("Hotkey to quickly toggle overlay hiding for screenshots/debugging")
-        hotkeys_layout.addRow("Toggle Hide Overlay:", self.toggle_hide_for_screenshots)
+        self.toggle_hide_for_screenshots.setPlaceholderText(t("settings.hotkeys.toggle_hide_placeholder", "e.g., Ctrl+H"))
+        self.toggle_hide_for_screenshots.setToolTip(t("settings.hotkeys.toggle_hide_placeholder", "e.g., Ctrl+H"))
+        hotkeys_layout.addRow(t("settings.hotkeys.toggle_hide", "Toggle Hide Overlay:"), self.toggle_hide_for_screenshots)
         
-        hotkeys_group.setLayout(hotkeys_layout)
-        layout.addWidget(hotkeys_group)
+        self.hotkeys_group.setLayout(hotkeys_layout)
+        layout.addWidget(self.hotkeys_group)
         
         layout.addStretch()
         
@@ -1272,7 +1279,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        self.tab_widget.addTab(tab, "⌨️ Hotkeys")
+        self.tab_widget.addTab(tab, t("settings.tabs.hotkeys", "⌨️ Hotkeys"))
     
     def setup_debug_tab(self):
         """Setup debug settings tab"""
@@ -1288,24 +1295,24 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         layout.setContentsMargins(self.scale(30), self.scale(30), self.scale(30), self.scale(30))
         
         # Debug Settings
-        debug_group = QGroupBox("🐛 Debug & Logging")
-        debug_group.setMinimumHeight(self.scale(400))
+        self.debug_group = QGroupBox(t("settings.debug.title", "🐛 Debug & Logging"))
+        self.debug_group.setMinimumHeight(self.scale(400))
         debug_layout = QVBoxLayout()
         debug_layout.setSpacing(self.scale(15))
         
-        self.debug_enabled = QCheckBox("Enable debug mode")
+        self.debug_enabled = QCheckBox(t("settings.debug.enabled", "Enable debug mode"))
         self.debug_enabled.setMinimumHeight(self.scale(32))
         debug_layout.addWidget(self.debug_enabled)
         
-        self.verbose_logging = QCheckBox("Verbose logging")
+        self.verbose_logging = QCheckBox(t("settings.debug.verbose_logging", "Verbose logging"))
         self.verbose_logging.setMinimumHeight(self.scale(32))
         debug_layout.addWidget(self.verbose_logging)
         
-        self.save_transcriptions = QCheckBox("Save transcriptions to files")
+        self.save_transcriptions = QCheckBox(t("settings.debug.save_transcriptions", "Save transcriptions to files"))
         self.save_transcriptions.setMinimumHeight(self.scale(32))
         debug_layout.addWidget(self.save_transcriptions)
         
-        self.save_audio_chunks = QCheckBox("Save audio chunks for debugging")
+        self.save_audio_chunks = QCheckBox(t("settings.debug.save_audio", "Save audio chunks to files"))
         self.save_audio_chunks.setMinimumHeight(self.scale(32))
         debug_layout.addWidget(self.save_audio_chunks)
         
@@ -1316,11 +1323,11 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.max_debug_files = QSpinBox()
         self.max_debug_files.setRange(10, 1000)
         self.max_debug_files.setValue(100)
-        form_layout.addRow("Max Debug Files:", self.max_debug_files)
+        form_layout.addRow(t("settings.debug.max_files", "Max Debug Files:"), self.max_debug_files)
         
         debug_layout.addLayout(form_layout)
-        debug_group.setLayout(debug_layout)
-        layout.addWidget(debug_group)
+        self.debug_group.setLayout(debug_layout)
+        layout.addWidget(self.debug_group)
         
         layout.addStretch()
         
@@ -1330,7 +1337,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         tab.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         tab.setVerticalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         
-        self.tab_widget.addTab(tab, "🐛 Debug")
+        self.tab_widget.addTab(tab, t("settings.tabs.debug", "🐛 Debug"))
     
     def on_provider_changed(self, provider):
         """Handle AI provider selection change"""
@@ -1363,6 +1370,242 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         self.google_speech_group.setVisible(provider == "google_speech")
         self.azure_speech_group.setVisible(provider == "azure_speech")
         self.openai_whisper_group.setVisible(provider == "openai_whisper")
+    
+    def on_language_changed(self, index):
+        """Handle language change"""
+        if TRANSLATIONS_AVAILABLE and index >= 0:
+            lang_code = self.language_selector.itemData(index)
+            if lang_code:
+                print(f"🌐 Language changed to: {lang_code}")
+                set_language(lang_code)
+                # Refresh settings dialog UI
+                self.refresh_translations()
+                # Refresh overlay if available
+                if self.overlay_ref and hasattr(self.overlay_ref, 'refresh_translations'):
+                    self.overlay_ref.refresh_translations()
+    
+    def refresh_translations(self):
+        """Refresh all UI text with current translations"""
+        if not TRANSLATIONS_AVAILABLE:
+            return
+        
+        try:
+            # Update window title
+            self.setWindowTitle(t("settings.title", "MeetMinder Settings"))
+            
+            # Update tab labels
+            if hasattr(self, 'tab_widget'):
+                for i in range(self.tab_widget.count()):
+                    tab_text = self.tab_widget.tabText(i)
+                    # Map emoji tabs to translation keys
+                    tab_mapping = {
+                        "🤖 AI Provider": t("settings.tabs.ai_provider", "🤖 AI Provider"),
+                        "🎤 Audio": t("settings.tabs.audio", "🎤 Audio"),
+                        "🖥️ Interface": t("settings.tabs.interface", "🖥️ Interface"),
+                        "🧠 Assistant": t("settings.tabs.assistant", "🧠 Assistant"),
+                        "📝 Prompts": t("settings.tabs.prompts", "📝 Prompts"),
+                        "🧠 Knowledge": t("settings.tabs.knowledge", "🧠 Knowledge"),
+                        "📚 Documents": t("settings.tabs.documents", "📚 Documents"),
+                        "⌨️ Hotkeys": t("settings.tabs.hotkeys", "⌨️ Hotkeys"),
+                        "🐛 Debug": t("settings.tabs.debug", "🐛 Debug")
+                    }
+                    if tab_text in tab_mapping:
+                        self.tab_widget.setTabText(i, tab_mapping[tab_text])
+            
+            # Update button labels
+            if hasattr(self, 'save_button'):
+                self.save_button.setText(t("settings.buttons.save", "💾 Save Settings"))
+            if hasattr(self, 'cancel_button'):
+                self.cancel_button.setText(t("settings.buttons.cancel", "❌ Cancel"))
+            if hasattr(self, 'reset_button'):
+                self.reset_button.setText(t("settings.buttons.reset", "🔄 Reset to Defaults"))
+            
+            # Update Interface tab labels
+            if hasattr(self, 'language_label'):
+                self.language_label.setText(t("settings.language.label", "Language:"))
+            if hasattr(self, 'theme_label'):
+                self.theme_label.setText(t("settings.theme.label", "Theme:"))
+            if hasattr(self, 'size_multiplier_label'):
+                self.size_multiplier_label.setText(t("settings.size_multiplier.label", "Size Multiplier:"))
+            if hasattr(self, 'auto_hide_label'):
+                self.auto_hide_label.setText(t("settings.auto_hide.label", "Auto-hide Timer:"))
+            if hasattr(self, 'auto_hide_seconds'):
+                self.auto_hide_seconds.setSuffix(t("settings.auto_hide.suffix", " seconds (0 = disabled)"))
+            if hasattr(self, 'background_opacity_label'):
+                self.background_opacity_label.setText(t("settings.background_opacity.label", "Background Opacity:"))
+            
+            # Update Interface tab checkboxes and labels
+            if hasattr(self, 'show_transcript'):
+                self.show_transcript.setText(t("settings.show_transcript.label", "Show live transcript in expanded view"))
+            if hasattr(self, 'hide_from_sharing'):
+                self.hide_from_sharing.setText(t("settings.hide_from_sharing.label", "Hide from screen sharing"))
+            if hasattr(self, 'enable_screen_sharing_detection'):
+                self.enable_screen_sharing_detection.setText(t("settings.screen_sharing.label", "Enable screen sharing detection"))
+                self.enable_screen_sharing_detection.setToolTip(t("settings.screen_sharing.tooltip", "Automatically hide overlay when screen sharing apps are detected"))
+            if hasattr(self, 'hide_overlay_for_screenshots'):
+                self.hide_overlay_for_screenshots.setText(t("settings.hide_screenshots.label", "Hide overlay for screenshots/debugging"))
+                self.hide_overlay_for_screenshots.setToolTip(t("settings.hide_screenshots.tooltip", "Temporarily hide the entire overlay for taking clean screenshots or debugging UI issues"))
+            if hasattr(self, 'enable_blur_effects'):
+                self.enable_blur_effects.setText(t("settings.blur_effects.label", "Enable blur effects"))
+                self.enable_blur_effects.setToolTip(t("settings.blur_effects.tooltip", "Apply blur effects to background for professional look"))
+            if hasattr(self, 'enable_smooth_animations'):
+                self.enable_smooth_animations.setText(t("settings.smooth_animations.label", "Enable smooth animations"))
+                self.enable_smooth_animations.setToolTip(t("settings.smooth_animations.tooltip", "Use smooth animations for transitions and resizing"))
+            if hasattr(self, 'enable_auto_width'):
+                self.enable_auto_width.setText(t("settings.auto_width.label", "Enable auto-width adjustment"))
+                self.enable_auto_width.setToolTip(t("settings.auto_width.tooltip", "Automatically adjust overlay width based on content"))
+            if hasattr(self, 'enable_dynamic_transparency'):
+                self.enable_dynamic_transparency.setText(t("settings.dynamic_transparency.label", "Enable dynamic transparency"))
+                self.enable_dynamic_transparency.setToolTip(t("settings.dynamic_transparency.tooltip", "Adjust transparency based on activity and context"))
+            
+            # Update group box titles
+            if hasattr(self, 'appearance_group'):
+                self.appearance_group.setTitle(t("settings.appearance.title", "🎨 Appearance"))
+            if hasattr(self, 'enhanced_group'):
+                self.enhanced_group.setTitle(t("settings.enhanced_features.title", "🚀 Enhanced Features"))
+            if hasattr(self, 'provider_group'):
+                self.provider_group.setTitle(t("settings.ai_provider.title", "🤖 AI Provider"))
+            if hasattr(self, 'azure_group'):
+                self.azure_group.setTitle(t("settings.ai_provider.azure.title", "🔷 Azure OpenAI Configuration"))
+            if hasattr(self, 'openai_group'):
+                self.openai_group.setTitle(t("settings.ai_provider.openai.title", "🟢 OpenAI Configuration"))
+            if hasattr(self, 'gemini_group'):
+                self.gemini_group.setTitle(t("settings.ai_provider.gemini.title", "🔴 Google Gemini Configuration"))
+            if hasattr(self, 'deepseek_group'):
+                self.deepseek_group.setTitle(t("settings.ai_provider.deepseek.title", "🧠 DeepSeek Configuration"))
+            if hasattr(self, 'claude_group'):
+                self.claude_group.setTitle(t("settings.ai_provider.claude.title", "🎭 Claude Configuration"))
+            if hasattr(self, 'mode_group'):
+                self.mode_group.setTitle(t("settings.audio.title", "🎤 Audio Configuration"))
+            if hasattr(self, 'system_audio_group'):
+                self.system_audio_group.setTitle(t("settings.audio.system_audio.title", "🔊 System Audio Monitoring"))
+            if hasattr(self, 'transcription_group'):
+                self.transcription_group.setTitle(t("settings.audio.transcription.title", "📝 Transcription Settings"))
+            if hasattr(self, 'whisper_group'):
+                self.whisper_group.setTitle(t("settings.audio.transcription.whisper.title", "🤖 Local Whisper Configuration"))
+            if hasattr(self, 'google_speech_group'):
+                self.google_speech_group.setTitle(t("settings.audio.transcription.google_speech.title", "🔴 Google Speech-to-Text Configuration"))
+            if hasattr(self, 'azure_speech_group'):
+                self.azure_speech_group.setTitle(t("settings.audio.transcription.azure_speech.title", "🔷 Azure Speech Services Configuration"))
+            if hasattr(self, 'openai_whisper_group'):
+                self.openai_whisper_group.setTitle(t("settings.audio.transcription.openai_whisper.title", "🟢 OpenAI Whisper API Configuration"))
+            if hasattr(self, 'behavior_group'):
+                self.behavior_group.setTitle(t("settings.assistant.title", "🧠 Assistant Behavior"))
+            if hasattr(self, 'prompt_group'):
+                self.prompt_group.setTitle(t("settings.prompts.title", "📝 AI Prompt Configuration"))
+            if hasattr(self, 'knowledge_group'):
+                self.knowledge_group.setTitle(t("settings.knowledge.title", "🧠 Knowledge Graph"))
+            if hasattr(self, 'doc_settings_group'):
+                self.doc_settings_group.setTitle(t("settings.documents.title", "📚 Document Store Configuration"))
+            if hasattr(self, 'debug_group'):
+                self.debug_group.setTitle(t("settings.debug.title", "🐛 Debug & Logging"))
+            
+            # Update auto_hide suffix
+            if hasattr(self, 'auto_hide_seconds'):
+                self.auto_hide_seconds.setSuffix(t("settings.auto_hide.suffix", " seconds (0 = disabled)"))
+            
+            # Update theme selector items
+            if hasattr(self, 'theme_selector'):
+                current_theme = self.theme_selector.currentText()
+                self.theme_selector.clear()
+                self.theme_selector.addItems([t("settings.theme.dark", "Dark Mode"), t("settings.theme.light", "Light Mode")])
+                # Restore selection
+                if "Light" in current_theme or t("settings.theme.light", "Light Mode") in current_theme:
+                    self.theme_selector.setCurrentText(t("settings.theme.light", "Light Mode"))
+                else:
+                    self.theme_selector.setCurrentText(t("settings.theme.dark", "Dark Mode"))
+            
+            # Update prompt tab widgets
+            if hasattr(self, 'prompt_info'):
+                self.prompt_info.setText(t("settings.prompts.info", "Customize the MeetMinder assistant's behavior and response style:"))
+            if hasattr(self, 'system_prompt'):
+                self.system_prompt.setPlaceholderText(t("settings.prompts.placeholder", "Enter system prompt that defines the MeetMinder assistant's behavior, tone, and expertise..."))
+            if hasattr(self, 'load_prompt_btn'):
+                self.load_prompt_btn.setText(t("settings.prompts.load_file", "📁 Load from File"))
+            if hasattr(self, 'save_prompt_btn'):
+                self.save_prompt_btn.setText(t("settings.prompts.save_file", "💾 Save to File"))
+            if hasattr(self, 'reset_prompt_btn'):
+                self.reset_prompt_btn.setText(t("settings.prompts.reset_default", "🔄 Reset to Default"))
+            
+            # Update knowledge tab widgets
+            if hasattr(self, 'enable_topic_graph'):
+                self.enable_topic_graph.setText(t("settings.knowledge.enable", "Enable topic analysis and suggestions"))
+            if hasattr(self, 'topic_info'):
+                self.topic_info.setText(t("settings.knowledge.topic_definitions", "Topic Definitions:"))
+            if hasattr(self, 'topic_definitions'):
+                self.topic_definitions.setPlaceholderText(t("settings.knowledge.topic_definitions_placeholder", "Example topic definitions:\n\nMeeting Management: Strategies for organizing and running effective meetings\nProject Planning: Techniques for project planning and execution\nTechnical Discussions: Handling technical topics and problem-solving\nClient Communication: Best practices for client interactions\n\nEnter one topic per line with format: Topic Name: Description"))
+            
+            # Update documents tab widgets
+            if hasattr(self, 'documents_enabled'):
+                self.documents_enabled.setText(t("settings.documents.enabled", "Enable document storage and retrieval"))
+            if hasattr(self, 'documents_list'):
+                self.documents_list.setPlaceholderText(t("settings.documents.uploaded_documents", "Uploaded documents will appear here..."))
+            if hasattr(self, 'upload_button'):
+                self.upload_button.setText(t("settings.documents.upload", "📤 Upload Document"))
+            if hasattr(self, 'refresh_button'):
+                self.refresh_button.setText(t("settings.documents.refresh_list", "🔄 Refresh List"))
+            if hasattr(self, 'embedding_group'):
+                self.embedding_group.setTitle(t("settings.documents.embedding_provider_title", "🧮 Embedding Provider"))
+            if hasattr(self, 'vector_group'):
+                self.vector_group.setTitle(t("settings.documents.vector_storage_title", "💾 Vector Storage"))
+            if hasattr(self, 'management_group'):
+                self.management_group.setTitle(t("settings.documents.management_title", "📁 Document Management"))
+            
+            # Update knowledge tab buttons
+            if hasattr(self, 'import_topics_btn'):
+                self.import_topics_btn.setText(t("settings.knowledge.import_topics", "📁 Import Topics"))
+            if hasattr(self, 'export_topics_btn'):
+                self.export_topics_btn.setText(t("settings.knowledge.export_topics", "💾 Export Topics"))
+            if hasattr(self, 'clear_topics_btn'):
+                self.clear_topics_btn.setText(t("settings.knowledge.clear_all", "🗑️ Clear All"))
+            
+            # Update hotkeys group title
+            if hasattr(self, 'hotkeys_group'):
+                self.hotkeys_group.setTitle(t("settings.hotkeys.title", "⌨️ Global Hotkeys"))
+            
+            # Update debug tab widgets
+            if hasattr(self, 'debug_enabled'):
+                self.debug_enabled.setText(t("settings.debug.enabled", "Enable debug mode"))
+            if hasattr(self, 'verbose_logging'):
+                self.verbose_logging.setText(t("settings.debug.verbose_logging", "Verbose logging"))
+            if hasattr(self, 'save_transcriptions'):
+                self.save_transcriptions.setText(t("settings.debug.save_transcriptions", "Save transcriptions to files"))
+            if hasattr(self, 'save_audio_chunks'):
+                self.save_audio_chunks.setText(t("settings.debug.save_audio", "Save audio chunks to files"))
+            
+            # Update audio tab widgets
+            if hasattr(self, 'full_system_audio'):
+                self.full_system_audio.setText(t("settings.audio.system_audio.full_monitoring", "Monitor all system audio (overrides specific app selection)"))
+            if hasattr(self, 'app_selection_label'):
+                self.app_selection_label.setText(t("settings.audio.system_audio.select_apps", "Select specific applications to monitor:"))
+            if hasattr(self, 'meeting_label'):
+                self.meeting_label.setText(t("settings.audio.system_audio.meeting_apps", "📞 Meeting & Communication Apps (Enabled by Default)"))
+            if hasattr(self, 'other_label'):
+                self.other_label.setText(t("settings.audio.system_audio.other_apps", "🖥️ Other Applications (Disabled by Default)"))
+            if hasattr(self, 'custom_app_input'):
+                self.custom_app_input.setPlaceholderText(t("settings.audio.system_audio.custom_app", "Enter custom application name (e.g., MyApp.exe)"))
+            if hasattr(self, 'add_custom_btn'):
+                self.add_custom_btn.setText(t("settings.audio.system_audio.add_custom", "➕ Add"))
+            if hasattr(self, 'filter_label'):
+                self.filter_label.setText(t("settings.audio.system_audio.filtering", "🎛️ Audio Filtering:"))
+            if hasattr(self, 'filter_music'):
+                self.filter_music.setText(t("settings.audio.system_audio.filter_music", "🎵 Filter out music and non-speech audio (recommended)"))
+                self.filter_music.setToolTip(t("settings.audio.system_audio.filter_music_tooltip", "Uses AI to detect and ignore music, sound effects, and other non-speech audio"))
+            if hasattr(self, 'monitoring_status'):
+                # Update monitoring status text (will be updated by update_monitoring_status)
+                pass
+            
+            print("✅ Settings dialog translations refreshed")
+        except Exception as e:
+            print(f"❌ Error refreshing settings translations: {e}")
+            import traceback
+            traceback.print_exc()
+    
+    def _refresh_widget_translations(self, widget):
+        """Recursively refresh translations in a widget and its children"""
+        # This is a helper to refresh form labels and other text
+        # For now, we'll update the most critical ones explicitly
+        pass
     
     def on_theme_changed(self, theme_name):
         """Handle theme change"""
@@ -1484,7 +1727,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         """Add a custom application to monitor"""
         app_name = self.custom_app_input.text().strip()
         if not app_name:
-            QMessageBox.warning(self, "Invalid Input", "Please enter an application name.")
+            QMessageBox.warning(self, t("messages.invalid_input", "Invalid Input"), t("messages.invalid_input_msg", "Please enter an application name."))
             return
         
         # Create a unique key from the app name
@@ -1492,7 +1735,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         
         # Check if already exists
         if app_key in self.app_checkboxes:
-            QMessageBox.information(self, "Already Added", f"'{app_name}' is already in the list.")
+            QMessageBox.information(self, t("messages.already_added", "Already Added"), t("messages.already_added_msg", "'{name}' is already in the list.").format(name=app_name))
             return
         
         # Add the checkbox (find a good position for it)
@@ -1504,8 +1747,8 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         # Add to the layout - find the custom application section
         # For now, we'll show a success message and suggest restart
         QMessageBox.information(
-            self, "Custom App Added", 
-            f"'{app_name}' has been added to the monitoring list.\n\nNote: You may need to restart the application for changes to take effect."
+            self, t("messages.application_added", "Application Added"), 
+            t("messages.application_added_msg", "'{name}' has been added to the monitoring list.\n\nNote: The application will be monitored on the next audio capture restart.").format(name=app_name)
         )
         
         # Clear the input
@@ -1571,7 +1814,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
     def import_topics(self):
         """Import topics from file"""
         file_path, _ = QFileDialog.getOpenFileName(
-            self, "Import Topics", "", "Text Files (*.txt);;All Files (*)"
+            self, t("messages.topics_imported", "Import Topics"), "", "Text Files (*.txt);;All Files (*)"
         )
         if file_path:
             try:
@@ -1579,26 +1822,26 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                     content = f.read()
                 self.topic_definitions.setPlainText(content)
             except Exception as e:
-                QMessageBox.warning(self, "Error", f"Failed to import topics: {e}")
+                QMessageBox.warning(self, t("messages.error_loading_file", "Error"), t("messages.error_loading_file_msg", "Failed to load file: {error}").format(error=str(e)))
     
     def export_topics(self):
         """Export topics to file"""
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "Export Topics", "topics.txt", "Text Files (*.txt);;All Files (*)"
+            self, t("messages.topics_exported", "Export Topics"), "topics.txt", "Text Files (*.txt);;All Files (*)"
         )
         if file_path:
             try:
                 with open(file_path, 'w', encoding='utf-8') as f:
                     f.write(self.topic_definitions.toPlainText())
-                QMessageBox.information(self, "Success", "Topics exported successfully!")
+                QMessageBox.information(self, t("messages.success", "Success"), t("messages.topics_exported", "Topics exported successfully!"))
             except Exception as e:
-                QMessageBox.warning(self, "Error", f"Failed to export topics: {e}")
+                QMessageBox.warning(self, t("messages.error_loading_file", "Error"), t("messages.error_exporting", "Failed to export topics: {error}").format(error=str(e)))
     
     def clear_topics(self):
         """Clear all topics"""
         reply = QMessageBox.question(
-            self, "Clear Topics", 
-            "Are you sure you want to clear all topic definitions?",
+            self, t("messages.clear_topics", "Clear Topics"), 
+            t("messages.clear_topics_msg", "Are you sure you want to clear all topic definitions?"),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )
@@ -1610,22 +1853,22 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         button_layout = QHBoxLayout()
         
         # Save button
-        save_button = QPushButton("💾 Save Settings")
-        save_button.setProperty("class", "primary")
-        save_button.clicked.connect(self.save_settings)
-        
+        self.save_button = QPushButton(t("settings.buttons.save", "💾 Save Settings"))
+        self.save_button.setProperty("class", "primary")
+        self.save_button.clicked.connect(self.save_settings)
+
         # Cancel button
-        cancel_button = QPushButton("❌ Cancel")
-        cancel_button.clicked.connect(self.reject)
-        
+        self.cancel_button = QPushButton(t("settings.buttons.cancel", "❌ Cancel"))
+        self.cancel_button.clicked.connect(self.reject)
+
         # Reset button
-        reset_button = QPushButton("🔄 Reset to Defaults")
-        reset_button.clicked.connect(self.reset_to_defaults)
+        self.reset_button = QPushButton(t("settings.buttons.reset", "🔄 Reset to Defaults"))
+        self.reset_button.clicked.connect(self.reset_to_defaults)
         
-        button_layout.addWidget(reset_button)
+        button_layout.addWidget(self.reset_button)
         button_layout.addStretch()
-        button_layout.addWidget(cancel_button)
-        button_layout.addWidget(save_button)
+        button_layout.addWidget(self.cancel_button)
+        button_layout.addWidget(self.save_button)
         
         layout.addLayout(button_layout)
     
@@ -1750,6 +1993,22 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
         
         # Hide overlay for screenshots/debugging
         self.hide_overlay_for_screenshots.setChecked(ui.get('hide_overlay_for_screenshots', False))
+        
+        # Language selection - get current language from translation manager
+        if TRANSLATIONS_AVAILABLE:
+            translation_manager = get_translation_manager()
+            current_language = translation_manager.get_language()
+            for i in range(self.language_selector.count()):
+                if self.language_selector.itemData(i) == current_language:
+                    self.language_selector.setCurrentIndex(i)
+                    break
+        else:
+            # Fallback to config if translations not available
+            current_language = ui.get('language', 'en')
+            for i in range(self.language_selector.count()):
+                if self.language_selector.itemData(i) == current_language:
+                    self.language_selector.setCurrentIndex(i)
+                    break
         
         # Theme selection
         theme = ui.get('theme', 'dark')
@@ -1896,7 +2155,8 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
                         'dynamic_transparency': self.enable_dynamic_transparency.isChecked()
                     }
                 },
-                'hide_overlay_for_screenshots': self.hide_overlay_for_screenshots.isChecked()
+                'hide_overlay_for_screenshots': self.hide_overlay_for_screenshots.isChecked(),
+                'language': self.language_selector.itemData(self.language_selector.currentIndex()) or 'en'
             },
             'screen_sharing_detection': {
                 'enabled': self.enable_screen_sharing_detection.isChecked(),
@@ -1960,7 +2220,7 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
             with open('topic_definitions.txt', 'w', encoding='utf-8') as f:
                 f.write(self.topic_definitions.toPlainText())
         except Exception as e:
-            QMessageBox.warning(self, "Warning", f"Failed to save topic definitions: {e}")
+            QMessageBox.warning(self, t("messages.warning", "Warning"), t("messages.warning_save_topics", "Failed to save topic definitions: {error}").format(error=str(e)))
         
         self.settings_changed.emit(new_config)
         self.accept()
@@ -1968,8 +2228,8 @@ Meetings -> Review (suggestion: "Document key decisions and next steps")""")
     def reset_to_defaults(self):
         """Reset all settings to defaults"""
         reply = QMessageBox.question(
-            self, "Reset Settings", 
-            "Are you sure you want to reset all settings to defaults?",
+            self, t("messages.reset_confirm", "Reset Settings"), 
+            t("messages.reset_confirm_msg", "Are you sure you want to reset all settings to defaults?"),
             QMessageBox.Yes | QMessageBox.No,
             QMessageBox.No
         )

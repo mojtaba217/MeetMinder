@@ -58,6 +58,14 @@ from utils.hotkeys import AsyncHotkeyManager
 # Import lightweight webview overlay instead of PyQt5
 from ui.webview_overlay_manager import WebviewOverlay
 
+# Import translation system
+try:
+    from utils.translation_manager import get_translation_manager, set_language
+    TRANSLATIONS_AVAILABLE = True
+except ImportError:
+    TRANSLATIONS_AVAILABLE = False
+    logger.info("[TRANSLATION] Translation system not available")
+
 
 def get_resource_path(relative_path):
     """Get absolute path to resource, works for dev and PyInstaller"""
@@ -96,6 +104,19 @@ class AIAssistantLightweight:
             logger.info("[CONFIG] Loading configuration...")
             try:
                 self.config = ConfigManager()
+                
+                # Initialize translation system
+                if TRANSLATIONS_AVAILABLE:
+                    try:
+                        # Get language from config
+                        ui_config = self.config.get('ui', {})
+                        language = ui_config.get('language', 'en')
+                        
+                        # Initialize translation manager
+                        translation_manager = get_translation_manager(language=language)
+                        logger.info(f"[TRANSLATION] Language initialized: {translation_manager.get_language()}")
+                    except Exception as e:
+                        logger.info(f"[TRANSLATION] Error initializing translation system: {e}")
             except ValueError as config_error:
                 # Handle configuration errors with user-friendly dialog
                 error_msg = str(config_error)
@@ -169,6 +190,13 @@ class AIAssistantLightweight:
             self.overlay.set_toggle_mic_callback(self._handle_toggle_mic)
             self.overlay.set_settings_callback(self._handle_settings)
             self.overlay.set_close_app_callback(self._handle_close_app)
+            
+            # Initialize translations in overlay
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    self.overlay.initialize_translations()
+                except Exception as e:
+                    logger.info(f"[TRANSLATION] Error initializing overlay translations: {e}")
             
             # 7. Document Store
             print("[DOCS] Initializing document store...")
@@ -249,7 +277,15 @@ class AIAssistantLightweight:
     def _hotkey_take_screenshot(self):
         """Hotkey callback for taking screenshot"""
         logger.info("[HOTKEY] Take screenshot")
-        self.overlay.update_ai_response("[SCREENSHOT] Screenshot taken!")
+        if TRANSLATIONS_AVAILABLE:
+            try:
+                translation_manager = get_translation_manager()
+                screenshot_msg = translation_manager.t('ui.status.screenshot_taken', "[SCREENSHOT] Screenshot taken!")
+                self.overlay.update_ai_response(screenshot_msg)
+            except Exception:
+                self.overlay.update_ai_response("[SCREENSHOT] Screenshot taken!")
+        else:
+            self.overlay.update_ai_response("[SCREENSHOT] Screenshot taken!")
     
     def _handle_ask_ai(self):
         """Handle Ask AI button click"""
@@ -264,8 +300,16 @@ class AIAssistantLightweight:
             # Get context
             context = self._gather_context()
             
-            # Update UI
-            self.overlay.update_ai_response("[AI] Analyzing context...")
+            # Update UI with translated message
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    translation_manager = get_translation_manager()
+                    analyzing_msg = translation_manager.t('ui.status.analyzing', "[AI] Analyzing context...")
+                    self.overlay.update_ai_response(analyzing_msg)
+                except Exception:
+                    self.overlay.update_ai_response("[AI] Analyzing context...")
+            else:
+                self.overlay.update_ai_response("[AI] Analyzing context...")
 
             # Get AI response
             prompt = self._build_prompt(context)
@@ -280,7 +324,15 @@ class AIAssistantLightweight:
             
         except Exception as e:
             logger.error(f"[ERROR] Error processing AI request: {e}")
-            self.overlay.update_ai_response(f"[ERROR] {str(e)}")
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    translation_manager = get_translation_manager()
+                    error_msg = translation_manager.t('ui.status.error', "Error: {error}").format(error=str(e))
+                    self.overlay.update_ai_response(error_msg)
+                except Exception:
+                    self.overlay.update_ai_response(f"[ERROR] {str(e)}")
+            else:
+                self.overlay.update_ai_response(f"[ERROR] {str(e)}")
     
     def _gather_context(self) -> Dict[str, Any]:
         """Gather context for AI prompt"""
@@ -370,6 +422,38 @@ class AIAssistantLightweight:
             def __init__(self, *args, **kwargs):
                 """Accept any arguments but ignore them to prevent pywebview errors"""
                 pass
+            
+            def __getattribute__(self, name):
+                """Override to prevent introspection of internal attributes that cause hangs"""
+                # Block access to problematic internal attributes that cause pywebview to hang
+                blocked_attrs = {
+                    '__abstractmethods__', '__dict__', '__weakref__', 
+                    '__module__', '__qualname__', '__annotations__',
+                    '__orig_bases__', '__parameters__', '__args__',
+                    '__mro__', '__bases__', '__subclasses__'
+                }
+                if name in blocked_attrs:
+                    raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+                # Only allow access to our defined methods and essential attributes
+                allowed_attrs = {'__class__', '__slots__', '__doc__', '__init__', '__getattribute__', '__dir__'}
+                allowed_methods = {'get_settings', 'save_settings', 'close_settings', 
+                                 'upload_document', 'delete_document', 'toggle_document'}
+                if name.startswith('_') and name not in allowed_attrs and name not in allowed_methods:
+                    raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+                try:
+                    return super().__getattribute__(name)
+                except AttributeError:
+                    raise AttributeError(f"'{self.__class__.__name__}' object has no attribute '{name}'")
+            
+            def __dir__(self):
+                """Limit introspection to only our public methods"""
+                return ['get_settings', 'save_settings', 'close_settings', 
+                        'upload_document', 'delete_document', 'toggle_document']
+            
+            def __dir__(self):
+                """Limit introspection to only our public methods"""
+                return ['get_settings', 'save_settings', 'close_settings', 
+                        'upload_document', 'delete_document', 'toggle_document']
 
             def get_settings(self):
                 """Get current settings - returns only simple data types"""
@@ -395,6 +479,290 @@ class AIAssistantLightweight:
                             }
                             for d in docs
                         ]
+
+                    # Get available languages that have actual locale files
+                    available_languages = {}
+                    ui_translations = {}
+                    if TRANSLATIONS_AVAILABLE:
+                        try:
+                            translation_manager = get_translation_manager()
+                            current_lang = translation_manager.get_language()
+                            
+                            # Only get languages that have locale files
+                            for lang_code, lang_name in translation_manager.get_available_locale_files():
+                                available_languages[lang_code] = lang_name
+                            
+                            # Get comprehensive UI translations for all static texts
+                            ui_translations = {
+                                # Title and navigation
+                                'title': translation_manager.t('settings.title', 'MeetMinder Settings'),
+                                'nav_general': translation_manager.t('settings.nav.general', 'General'),
+                                'nav_ai': translation_manager.t('settings.nav.ai', 'AI & Model'),
+                                'nav_audio': translation_manager.t('settings.nav.audio', 'Audio'),
+                                'nav_documents': translation_manager.t('settings.nav.documents', 'Documents'),
+                                'nav_profile': translation_manager.t('settings.nav.profile', 'Profile'),
+                                
+                                # General tab
+                                'general_title': translation_manager.t('settings.general.title', 'General Settings'),
+                                'general_subtitle': translation_manager.t('settings.general.subtitle', 'Configure interface and application behavior'),
+                                'always_on_top': translation_manager.t('settings.general.always_on_top', 'Always on Top'),
+                                'always_on_top_desc': translation_manager.t('settings.general.always_on_top_desc', 'Keep overlay visible above other windows'),
+                                'hide_from_sharing': translation_manager.t('settings.hide_from_sharing.label', 'Hide from screen sharing'),
+                                'hide_from_sharing_desc': translation_manager.t('settings.general.hide_from_sharing_desc', 'Invisible to Zoom/Teams/Meet'),
+                                'interface_language': translation_manager.t('settings.language.label', 'Interface Language'),
+                                'select_language': translation_manager.t('settings.language.tooltip', 'Select the interface language'),
+                                'overlay_opacity': translation_manager.t('settings.general.overlay_opacity', 'Overlay Opacity'),
+                                'auto_hide_timer': translation_manager.t('settings.general.auto_hide_timer', 'Auto-hide Timer (seconds)'),
+                                
+                                # AI tab
+                                'ai_title': translation_manager.t('settings.ai.title', 'AI Configuration'),
+                                'ai_subtitle': translation_manager.t('settings.ai.subtitle', 'Manage your AI provider and model settings'),
+                                'ai_provider': translation_manager.t('settings.ai_provider.provider_label', 'AI Provider'),
+                                'api_key': translation_manager.t('settings.ai_provider.azure.api_key', 'API Key'),
+                                'model_name': translation_manager.t('settings.ai_provider.azure.model', 'Model Name'),
+                                'response_style': translation_manager.t('settings.assistant.response_style', 'Response Style'),
+                                # AI Provider options
+                                'ai_provider_azure': translation_manager.t('settings.ai_provider.azure.title', '🔷 Azure OpenAI').replace('🔷 ', ''),
+                                'ai_provider_openai': translation_manager.t('settings.ai_provider.openai.title', '🟢 OpenAI').replace('🟢 ', ''),
+                                'ai_provider_gemini': translation_manager.t('settings.ai_provider.gemini.title', '🔴 Google Gemini').replace('🔴 ', ''),
+                                # Response Style options
+                                'response_concise': translation_manager.t('settings.ai.response_concise', 'Concise'),
+                                'response_balanced': translation_manager.t('settings.ai.response_balanced', 'Balanced'),
+                                'response_detailed': translation_manager.t('settings.ai.response_detailed', 'Detailed'),
+                                # Placeholders
+                                'placeholder_api_key': translation_manager.t('settings.ai_provider.azure.api_key_placeholder', 'sk-...'),
+                                'placeholder_model': translation_manager.t('settings.ai_provider.azure.model_placeholder', 'gpt-4'),
+                                
+                                # Audio tab
+                                'audio_title': translation_manager.t('settings.audio.title', 'Audio Settings'),
+                                'audio_subtitle': translation_manager.t('settings.audio.subtitle', 'Configure microphone and transcription'),
+                                'audio_mode': translation_manager.t('settings.audio.mode', 'Audio Input Mode'),
+                                'whisper_language': translation_manager.t('settings.audio.whisper_language', 'Whisper Language'),
+                                'auto_start': translation_manager.t('settings.audio.auto_start', 'Auto-start Transcription'),
+                                'auto_start_desc': translation_manager.t('settings.audio.auto_start_desc', 'Start listening when app launches'),
+                                # Audio Mode options
+                                'audio_mode_single': translation_manager.t('settings.audio.mode_single', 'Microphone Only'),
+                                'audio_mode_dual': translation_manager.t('settings.audio.mode_dual', 'Microphone + System Audio'),
+                                # Whisper Language options
+                                'language_english': translation_manager.t('settings.audio.language_english', 'English'),
+                                'language_auto': translation_manager.t('settings.audio.language_auto', 'Auto-detect'),
+                                'language_spanish': translation_manager.t('settings.audio.language_spanish', 'Spanish'),
+                                'language_french': translation_manager.t('settings.audio.language_french', 'French'),
+                                'language_german': translation_manager.t('settings.audio.language_german', 'German'),
+                                
+                                # Documents tab
+                                'documents_title': translation_manager.t('settings.documents.title_short', 'Knowledge Base'),
+                                'documents_subtitle': translation_manager.t('settings.documents.subtitle', 'Manage documents for context-aware answers'),
+                                'upload_documents': translation_manager.t('settings.documents.upload_documents', 'Click to Upload Documents'),
+                                'support_formats': translation_manager.t('settings.documents.support_formats', 'Support for PDF, TXT, MD, DOCX'),
+                                
+                                # Profile tab
+                                'profile_title': translation_manager.t('settings.profile.title', 'User Profile'),
+                                'profile_subtitle': translation_manager.t('settings.profile.subtitle', 'Personalize AI responses for your role'),
+                                'full_name': translation_manager.t('settings.profile.full_name', 'Full Name'),
+                                'job_title': translation_manager.t('settings.profile.job_title', 'Job Title'),
+                                'skills': translation_manager.t('settings.profile.skills', 'Skills & Expertise'),
+                                # Profile placeholders
+                                'placeholder_name': translation_manager.t('settings.profile.placeholder_name', 'Your name'),
+                                'placeholder_title': translation_manager.t('settings.profile.placeholder_title', 'e.g. Software Engineer'),
+                                'placeholder_skills': translation_manager.t('settings.profile.placeholder_skills', 'Python, Project Management, etc.'),
+                                # Documents
+                                'loading_documents': translation_manager.t('settings.documents.loading', 'Loading documents...'),
+                                'delete_confirm': translation_manager.t('settings.documents.delete_confirm', 'Are you sure you want to delete this document?'),
+                                'upload_failed': translation_manager.t('settings.documents.upload_failed', 'Upload failed: {error}'),
+                                'error_saving': translation_manager.t('settings.documents.error_saving', 'Error saving settings: {error}'),
+                                'kb': translation_manager.t('settings.documents.kb', 'KB'),
+                                'chunks_label': translation_manager.t('settings.documents.chunks', 'chunks'),
+                                'status_active': translation_manager.t('settings.documents.status.active', 'Active'),
+                                'status_inactive': translation_manager.t('settings.documents.status.inactive', 'Inactive'),
+                                'status_processing': translation_manager.t('settings.documents.status.processing', 'Processing'),
+                                'status_ready': translation_manager.t('settings.documents.status.ready', 'Ready'),
+                                'status_error': translation_manager.t('settings.documents.status.error', 'Error'),
+                                'delete_button': translation_manager.t('settings.documents.delete', '🗑️ Delete').replace('🗑️ ', ''),
+                                'no_documents': translation_manager.t('settings.documents.no_documents', 'No documents yet. Upload some to get started!'),
+                                
+                                # Buttons
+                                'save': translation_manager.t('settings.buttons.save_changes', 'Save Changes'),
+                                'cancel': translation_manager.t('settings.buttons.cancel', '❌ Cancel').replace('❌ ', '')
+                            }
+                        except Exception as e:
+                            logger.info(f"[SETTINGS] Error getting languages: {e}")
+                            # Fallback: only include languages with files
+                            import os
+                            from pathlib import Path
+                            locale_dir = Path("data/locales")
+                            fallback_map = {
+                                'en': 'English',
+                                'es': 'Español',
+                                'fr': 'Français',
+                                'de': 'Deutsch',
+                                'zh': '中文',
+                                'ja': '日本語',
+                                'ko': '한국어',
+                                'pt': 'Português',
+                                'it': 'Italiano',
+                                'ru': 'Русский'
+                            }
+                            available_languages = {}
+                            for lang_code, lang_name in fallback_map.items():
+                                if (locale_dir / f"{lang_code}.json").exists():
+                                    available_languages[lang_code] = lang_name
+                            # Fallback translations (minimal set)
+                            ui_translations = {
+                                'title': 'MeetMinder Settings',
+                                'nav_general': 'General',
+                                'nav_ai': 'AI & Model',
+                                'nav_audio': 'Audio',
+                                'nav_documents': 'Documents',
+                                'nav_profile': 'Profile',
+                                'general_title': 'General Settings',
+                                'general_subtitle': 'Configure interface and application behavior',
+                                'always_on_top': 'Always on Top',
+                                'always_on_top_desc': 'Keep overlay visible above other windows',
+                                'hide_from_sharing': 'Hide from Screen Sharing',
+                                'hide_from_sharing_desc': 'Invisible to Zoom/Teams/Meet',
+                                'interface_language': 'Interface Language',
+                                'select_language': 'Select the interface language',
+                                'overlay_opacity': 'Overlay Opacity',
+                                'auto_hide_timer': 'Auto-hide Timer (seconds)',
+                                'ai_title': 'AI Configuration',
+                                'ai_subtitle': 'Manage your AI provider and model settings',
+                                'ai_provider': 'AI Provider',
+                                'api_key': 'API Key',
+                                'model_name': 'Model Name',
+                                'response_style': 'Response Style',
+                                'ai_provider_azure': 'Azure OpenAI',
+                                'ai_provider_openai': 'OpenAI',
+                                'ai_provider_gemini': 'Google Gemini',
+                                'response_concise': 'Concise',
+                                'response_balanced': 'Balanced',
+                                'response_detailed': 'Detailed',
+                                'placeholder_api_key': 'sk-...',
+                                'placeholder_model': 'gpt-4',
+                                'audio_title': 'Audio Settings',
+                                'audio_subtitle': 'Configure microphone and transcription',
+                                'audio_mode': 'Audio Input Mode',
+                                'whisper_language': 'Whisper Language',
+                                'auto_start': 'Auto-start Transcription',
+                                'auto_start_desc': 'Start listening when app launches',
+                                'audio_mode_single': 'Microphone Only',
+                                'audio_mode_dual': 'Microphone + System Audio',
+                                'language_english': 'English',
+                                'language_auto': 'Auto-detect',
+                                'language_spanish': 'Spanish',
+                                'language_french': 'French',
+                                'language_german': 'German',
+                                'documents_title': 'Knowledge Base',
+                                'documents_subtitle': 'Manage documents for context-aware answers',
+                                'upload_documents': 'Click to Upload Documents',
+                                'support_formats': 'Support for PDF, TXT, MD, DOCX',
+                                'loading_documents': 'Loading documents...',
+                                'no_documents': 'No documents yet. Upload some to get started!',
+                                'profile_title': 'User Profile',
+                                'profile_subtitle': 'Personalize AI responses for your role',
+                                'full_name': 'Full Name',
+                                'job_title': 'Job Title',
+                                'skills': 'Skills & Expertise',
+                                'placeholder_name': 'Your name',
+                                'placeholder_title': 'e.g. Software Engineer',
+                                'placeholder_skills': 'Python, Project Management, etc.',
+                                'save': 'Save Changes',
+                                'cancel': 'Cancel'
+                            }
+                    else:
+                        # Fallback: only include languages with files
+                        import os
+                        from pathlib import Path
+                        locale_dir = Path("data/locales")
+                        fallback_map = {
+                            'en': 'English',
+                            'es': 'Español',
+                            'fr': 'Français',
+                            'de': 'Deutsch',
+                            'zh': '中文',
+                            'ja': '日本語',
+                            'ko': '한국어',
+                            'pt': 'Português',
+                            'it': 'Italiano',
+                            'ru': 'Русский'
+                        }
+                        available_languages = {}
+                        for lang_code, lang_name in fallback_map.items():
+                            if (locale_dir / f"{lang_code}.json").exists():
+                                available_languages[lang_code] = lang_name
+                        # Fallback translations (minimal set)
+                        ui_translations = {
+                            'title': 'MeetMinder Settings',
+                            'nav_general': 'General',
+                            'nav_ai': 'AI & Model',
+                            'nav_audio': 'Audio',
+                            'nav_documents': 'Documents',
+                            'nav_profile': 'Profile',
+                            'general_title': 'General Settings',
+                            'general_subtitle': 'Configure interface and application behavior',
+                            'always_on_top': 'Always on Top',
+                            'always_on_top_desc': 'Keep overlay visible above other windows',
+                            'hide_from_sharing': 'Hide from Screen Sharing',
+                            'hide_from_sharing_desc': 'Invisible to Zoom/Teams/Meet',
+                            'interface_language': 'Language:',
+                            'select_language': 'Select the interface language',
+                            'overlay_opacity': 'Overlay Opacity',
+                            'auto_hide_timer': 'Auto-hide Timer (seconds)',
+                            'ai_title': 'AI Configuration',
+                            'ai_subtitle': 'Manage your AI provider and model settings',
+                            'ai_provider': 'AI Provider',
+                            'api_key': 'API Key',
+                            'model_name': 'Model Name',
+                            'response_style': 'Response Style',
+                            'ai_provider_azure': 'Azure OpenAI',
+                            'ai_provider_openai': 'OpenAI',
+                            'ai_provider_gemini': 'Google Gemini',
+                            'response_concise': 'Concise',
+                            'response_balanced': 'Balanced',
+                            'response_detailed': 'Detailed',
+                            'placeholder_api_key': 'sk-...',
+                            'placeholder_model': 'gpt-4',
+                            'audio_title': 'Audio Settings',
+                            'audio_subtitle': 'Configure microphone and transcription',
+                            'audio_mode': 'Audio Input Mode',
+                            'whisper_language': 'Whisper Language',
+                            'auto_start': 'Auto-start Transcription',
+                            'auto_start_desc': 'Start listening when app launches',
+                            'audio_mode_single': 'Microphone Only',
+                            'audio_mode_dual': 'Microphone + System Audio',
+                            'language_english': 'English',
+                            'language_auto': 'Auto-detect',
+                            'language_spanish': 'Spanish',
+                            'language_french': 'French',
+                            'language_german': 'German',
+                            'documents_title': 'Knowledge Base',
+                            'documents_subtitle': 'Manage documents for context-aware answers',
+                            'upload_documents': 'Click to Upload Documents',
+                            'support_formats': 'Support for PDF, TXT, MD, DOCX',
+                            'loading_documents': 'Loading documents...',
+                            'no_documents': 'No documents yet. Upload some to get started!',
+                            'profile_title': 'User Profile',
+                            'profile_subtitle': 'Personalize AI responses for your role',
+                            'full_name': 'Full Name',
+                            'job_title': 'Job Title',
+                            'skills': 'Skills & Expertise',
+                            'placeholder_name': 'Your name',
+                            'placeholder_title': 'e.g. Software Engineer',
+                            'placeholder_skills': 'Python, Project Management, etc.',
+                            'delete_confirm': 'Are you sure you want to delete this document?',
+                            'upload_failed': 'Upload failed: {error}',
+                            'error_saving': 'Error saving settings: {error}',
+                            'kb': 'KB',
+                            'chunks_label': 'chunks',
+                            'status_active': 'Active',
+                            'status_inactive': 'Inactive',
+                            'status_processing': 'Processing',
+                            'status_ready': 'Ready',
+                            'status_error': 'Error',
+                            'delete_button': 'Delete',
+                            'save': 'Save Changes',
+                            'cancel': 'Cancel'
+                        }
 
                     return {
                         'documents': documents,
@@ -424,8 +792,11 @@ class AIAssistantLightweight:
                             'always_on_top': overlay_config.get('enhanced', {}).get('always_on_top', True),
                             'hide_from_sharing': overlay_config.get('hide_from_sharing', False),
                             'hide_for_screenshots': overlay_config.get('hide_for_screenshots', False),
-                            'show_transcript': overlay_config.get('show_transcript', False)
+                            'show_transcript': overlay_config.get('show_transcript', False),
+                            'language': config.get('ui.language', 'en')
                         },
+                        'available_languages': available_languages,
+                        'translations': ui_translations,
                         'user_profile': {
                             'name': profile.name if profile else '',
                             'title': profile.title if profile else '',
@@ -529,6 +900,22 @@ class AIAssistantLightweight:
 
                         overlay_updates['enhanced'] = overlay_enhanced
                         updates.setdefault('ui', {})['overlay'] = overlay_updates
+                        
+                        # Handle language change
+                        ui_language = ui_settings.get('language', None)
+                        if ui_language and TRANSLATIONS_AVAILABLE:
+                            current_language = get_translation_manager().get_language()
+                            if ui_language != current_language:
+                                logger.info(f"[TRANSLATION] Language changing from {current_language} to {ui_language}")
+                                set_language(ui_language)
+                                # Refresh overlay translations
+                                if hasattr(app, 'overlay') and hasattr(app.overlay, 'refresh_translations'):
+                                    app.overlay.refresh_translations()
+                                logger.info(f"[TRANSLATION] Language changed to: {ui_language}")
+                        
+                        # Store language in config
+                        if ui_language:
+                            updates.setdefault('ui', {})['language'] = ui_language
 
                     if 'advanced' in settings:
                         advanced_settings = settings['advanced']
@@ -556,10 +943,16 @@ class AIAssistantLightweight:
                     if updates:
                         config_mgr.save_config()
                         logger.info("[SETTINGS] Settings saved successfully")
-                        return {'success': True}
+                        
+                        # If language changed, return a flag so frontend knows to reload
+                        language_changed = False
+                        if 'ui' in updates and 'language' in updates['ui']:
+                            language_changed = True
+                        
+                        return {'success': True, 'language_changed': language_changed}
                     else:
                         logger.info("[SETTINGS] No configuration changes detected")
-                        return {'success': True, 'message': 'No changes'}
+                        return {'success': True, 'message': 'No changes', 'language_changed': False}
                 except Exception as e:
                     logger.error(f"[SETTINGS] Error saving settings: {e}")
                     import traceback
@@ -715,7 +1108,13 @@ class AIAssistantLightweight:
                 # Apply settings in background
                 threading.Thread(target=apply_settings_window_config, daemon=True).start()
                 
-                webview.start(debug=False)
+                # Start webview with minimal introspection to avoid hanging
+                try:
+                    webview.start(debug=False)
+                except Exception as e:
+                    logger.error(f"[SETTINGS] Error starting webview: {e}")
+                    import traceback
+                    traceback.print_exc()
             except Exception as e:
                 logger.error(f"[SETTINGS] Error opening settings: {e}")
         
@@ -772,8 +1171,16 @@ class AIAssistantLightweight:
             logger.info("[AUDIO] Starting audio processing...")
             self.audio_contextualizer.start_continuous_capture()
 
-            # Update overlay
-            self.overlay.update_ai_response("Ready to assist! Press Ctrl+Space or click 'Ask AI'")
+            # Update overlay with translated message
+            if TRANSLATIONS_AVAILABLE:
+                try:
+                    translation_manager = get_translation_manager()
+                    ready_msg = translation_manager.t('ui.status.waiting', "Ready to assist! Press Ctrl+Space or click 'Ask AI'")
+                    self.overlay.update_ai_response(ready_msg)
+                except Exception:
+                    self.overlay.update_ai_response("Ready to assist! Press Ctrl+Space or click 'Ask AI'")
+            else:
+                self.overlay.update_ai_response("Ready to assist! Press Ctrl+Space or click 'Ask AI'")
 
             # Start webview (blocking call)
             logger.info("[UI] Starting webview overlay...")
